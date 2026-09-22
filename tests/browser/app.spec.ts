@@ -29,7 +29,7 @@ test('full demo: unique sets, one-point scoring, refresh, finale and group wipe'
   await page.screenshot({ path: 'test-results/group-desktop.png', fullPage: true, animations: 'disabled' });
   expect(errors).toEqual([]);
 });
-test('exports and imports reusable face pairs', async ({ page }) => {
+test('demo pair bundle replaces the library and restores the whole-team reveal', async ({ page }) => {
   await home(page);
   await page.getByRole('button', { name: 'Try the demo' }).click();
   await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
@@ -43,23 +43,6 @@ test('exports and imports reusable face pairs', async ({ page }) => {
   const pairsBytes = await readFile(pairsPath!);
 
   const demoSession = await saved(page);
-  await page.evaluate(({ key, session }) => {
-    localStorage.clear();
-    localStorage.setItem(key, JSON.stringify({
-      ...session,
-      id: crypto.randomUUID(),
-      isDemo: false,
-      phase: 'setup',
-      setupStepId: 'upload',
-      people: [],
-      facePairs: [],
-      assets: {},
-      game: { previews: {}, rounds: [], currentRoundIndex: 0, finale: { wipePosition: 0 } },
-    }));
-  }, { key, session: demoSession });
-  await page.reload();
-  await home(page);
-  await page.getByRole('button', { name: 'People library', exact: true }).click();
   await page.locator('input[aria-label="Import face pairs ZIP"]').setInputFiles({
     name: 'exported-face-pairs.zip',
     mimeType: 'application/zip',
@@ -70,7 +53,19 @@ test('exports and imports reusable face pairs', async ({ page }) => {
   const imported = await saved(page);
   expect(imported.people).toHaveLength(4);
   expect(imported.facePairs).toHaveLength(4);
-  expect(Object.keys(imported.assets)).toHaveLength(8);
+  expect(imported.teams).toEqual(demoSession.teams);
+  expect(imported.isDemo).toBe(false);
+  expect(imported.phase).toBe('setup');
+  expect(imported.setupStepId).toBe('game');
+  expect(imported.game.rounds).toEqual([]);
+  expect(imported.scoreEntries).toEqual([]);
+  expect(imported.game.finale).toEqual({ wipePosition: 0 });
+  expect(Object.keys(imported.assets).some(id => demoSession.assets[id])).toBe(false);
+  expect(imported.assets[imported.game.originalImageId]).toBeTruthy();
+  expect(imported.assets[imported.game.childhoodImageId]).toBeTruthy();
+  expect(imported.game.childhoodUploadId).toBe(imported.game.childhoodImageId);
+  expect(imported.assets[imported.game.previews[imported.game.originalImageId]]).toBeTruthy();
+  expect(imported.assets[imported.game.previews[imported.game.childhoodImageId]]).toBeTruthy();
   expect(new Set(imported.people.map((person: any) => person.name))).toEqual(new Set(['Asha', 'Leo', 'Maya', 'Dev']));
   for (const person of imported.people) {
     const pair = imported.facePairs.find((candidate: any) => candidate.id === person.facePairId);
@@ -80,6 +75,20 @@ test('exports and imports reusable face pairs', async ({ page }) => {
   }
   await expect(page.getByRole('img', { name: 'Asha as a child' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Asha now' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Activity library', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue session' }).click();
+  await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Start new game' }).click();
+  for (let i = 0; i < 4; i++) {
+    await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+    await page.getByRole('button', { name: /^Missed/ }).click();
+    await page.getByRole('button', { name: i < 3 ? /^Next team:/ : 'Final results' }).click();
+  }
+  await page.getByRole('button', { name: 'The whole team reveal' }).click();
+  await expect(page.getByRole('img', { name: 'The whole team as children' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'The whole team today' })).toBeVisible();
+  await expect(page.locator('.image-missing')).toHaveCount(0);
 });
 test('setup edits, CSV mapping, local detection, crops, export and import', async ({ page }) => {
   await home(page); await page.getByRole('button', { name: 'Set up your game' }).click();
