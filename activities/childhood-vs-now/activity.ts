@@ -1,4 +1,4 @@
-import { Images } from 'lucide-react';
+import { Images, Users, Check } from 'lucide-react';
 import type { Activity } from '../../src/core/types';
 import { UploadStep } from './setup/UploadStep';
 import { MatchPeopleStep } from './setup/MatchPeopleStep';
@@ -12,7 +12,7 @@ import { markResult, moveRound, reveal, startNewGame } from './logic/rounds';
 import { loadDemo } from './logic/preparation';
 export const childhoodVsNow: Activity<Settings, GameState> = {
   id: 'childhood-vs-now', version: 1, name: 'Childhood vs Now', description: 'Tiny faces. Familiar people. Can your team recognise their colleagues before the big reveal?', icon: Images,
-  card: { label: 'THE NOSTALGIA EDITION', eyebrow: 'A TRIP DOWN MEMORY LANE', tags: ['1–8 teams', 'No repeated photos', '2 base points per correct guess'] },
+  card: { label: 'THE NOSTALGIA EDITION', eyebrow: 'A TRIP DOWN MEMORY LANE', tags: [{ icon: Users, text: '1–8 teams' }, { icon: Check, text: 'No repeated photos' }, { text: '2 base points per correct guess' }] },
   setupSteps: [
     { id: 'upload', title: 'Upload photos', View: UploadStep, validate: (s) => s.game.originalImageId && s.game.childhoodImageId ? [] : ['Upload both group photos first.'] },
     { id: 'match', title: 'Match people', View: MatchPeopleStep, validate: (_s, e) => e.facePairs.some(p => p.now && p.then) ? [] : ['Match at least one pair of faces.'] },

@@ -1,4 +1,4 @@
-import { Drama } from 'lucide-react';
+import { Drama, Users, Check } from 'lucide-react';
 import type { Activity } from '../../src/core/types';
 import { PromptsStep } from './setup/PromptsStep';
 import { GameSetupStep } from './setup/GameSetupStep';
@@ -11,7 +11,7 @@ import { currentTurn, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTu
 const acting = (ctx: { segment: { phase: string; game: GameState } }) => ctx.segment.phase === 'play' && currentTurn(ctx.segment.game)?.status === 'acting';
 export const actItOut: Activity<Settings, GameState> = {
   id: 'act-it-out', version: 1, name: 'Act It Out', description: 'No props, no prep, no talking. One teammate faces away while the rest of the team acts the screen out.', icon: Drama,
-  card: { label: 'THE NO-PREP ONE', eyebrow: 'EVERYBODY OUT OF THEIR SEATS', tags: ['1–8 teams', 'Nothing to prepare', '2 base points per prompt'] },
+  card: { label: 'THE NO-PREP ONE', eyebrow: 'EVERYBODY OUT OF THEIR SEATS', tags: [{ icon: Users, text: '1–8 teams' }, { icon: Check, text: 'Nothing to prepare' }, { text: '2 base points per prompt' }] },
   setupSteps: [
     { id: 'prompts', title: 'Choose prompts', View: PromptsStep, validate: (s, e) => {
       const available = eligiblePrompts(s.settings).length, needed = Math.max(3, e.teams.length * s.settings.roundsPerTeam * 3);
