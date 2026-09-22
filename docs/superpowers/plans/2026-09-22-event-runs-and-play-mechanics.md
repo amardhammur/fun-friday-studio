@@ -28,8 +28,9 @@
 - Copy is British-inflected and warm ("colours", "Recognise"). Match it.
 - `npm test` must pass before **every** task's commit step, with no exceptions.
 - `npx tsc -b` must pass before the commit step from **Task 5 onward**. Tasks 1–4 move the session
-  model across four commits, so `App.tsx` and `transfer.ts` are knowingly red until Task 5 rewires
-  them. Each of those tasks names the files expected to fail and why; a failure anywhere else, or a
+  model across four commits, so `src/app/App.tsx`, `src/core/transfer.ts` and `src/main.tsx` are
+  knowingly red until Task 5 rewires them. (`main.tsx` was missing from this list until Task 3
+  surfaced it: Task 3 deletes `createSession`/`validateSession`, which `main.tsx` imports.) Each of those tasks names the files expected to fail and why; a failure anywhere else, or a
   red `tsc` from Task 5 on, is a real break and must be fixed before committing.
   (Ruling by the human partner, 2026-09-22: staged refactor beats throwaway shims. The trade
   accepted is that commits for Tasks 1–4 do not compile and are not individually bisectable.)
