@@ -52,9 +52,9 @@
 | `src/app/Interstitial.tsx` | Between-segment standings screen |
 | `src/app/EventFinale.tsx` | Overall winner screen |
 | `tests/unit/event.test.ts` | Segment view round-trips, `createEvent` |
-| `tests/unit/migration.test.ts` | v1 → v2 migration |
+| `tests/unit/session.test.ts` | v2 document validation |
 | `tests/unit/play.test.ts` | Steal, wager, timer state |
-| `tests/fixtures/session-v1.json` | Real v1 document for the migration test |
+| `tests/fixtures/event-v2.json` | Valid v2 event document for the validation tests |
 
 **Modified:**
 
@@ -62,7 +62,7 @@
 | --- | --- |
 | `src/core/types.ts` | `ScoreEntry` gains `segmentId` + new kinds; `Session` becomes the segment view type; `Activity.Finale` optional, `estimatedMinutes` added |
 | `src/core/scoring.ts` | `segmentId` threading, `segmentScore`, weight at award time |
-| `src/core/session.ts` | v2 schema, per-segment validation, `migrateV1` |
+| `src/core/session.ts` | v2 schema, per-segment validation |
 | `src/core/transfer.ts` | Per-segment `remapImages` |
 | `src/app/App.tsx` | Event phases, segment view in context, routing |
 | `src/core/teams/Scoreboard.tsx` | Reads event-level scores (no functional change, prop rename only) |
@@ -449,180 +449,64 @@ git commit -m "feat: add the event model and the segment view activities read"
 
 ---
 
-### Task 3: Session schema v2 and v1 migration
+### Task 3: Session schema v2
 
 **Files:**
 - Modify: `src/core/session.ts` (whole file)
-- Create: `tests/fixtures/session-v1.json`
-- Create: `tests/unit/migration.test.ts`
+- Create: `tests/fixtures/event-v2.json`
+- Create: `tests/unit/session.test.ts`
+- Delete: `tests/unit/session-compat.test.ts` (imports the removed `validateSession`)
 
 **Interfaces:**
 - Consumes: `createEvent`, `segmentView` (Task 2); `Segment`, `EventSession` (Task 2).
 - Produces:
-  - `validateEvent(raw: unknown): EventSession` (replaces `validateSession`)
-  - `migrateV1(raw: unknown): unknown` — shapes a v1 document into a v2 document before validation
-  - `teamColors`, `newTeams` unchanged
+  - `validateEvent(raw: unknown): EventSession` — replaces `createSession` and `validateSession`
+  - `teamColors`, `newTeams` re-exported from `./event` (moved there in Task 2)
 
-- [ ] **Step 1: Create the v1 fixture**
+**Scope ruling (human partner, 2026-09-22): there is no v1 → v2 migration.** `validateEvent` accepts
+`formatVersion: 2` only. The app has never shipped, so the only v1 documents in existence are on the
+author's laptop, and the expensive prep (photos, face boxes, matching, names) is independently
+recoverable through the pair-bundle path, which never touches the session schema. See the spec's
+"No v1 migration" section.
 
-Create `tests/fixtures/session-v1.json`. This is a minimal but *real* v1 document — one person, one
-face pair, one played round, one score entry:
+- [ ] **Step 1: Create the v2 fixture**
 
-```json
-{
-  "formatVersion": 1,
-  "id": "11111111-1111-4111-8111-111111111111",
-  "title": "Our Fun Friday",
-  "activityId": "childhood-vs-now",
-  "activityVersion": 1,
-  "createdAt": "2026-09-01T10:00:00.000Z",
-  "updatedAt": "2026-09-01T11:00:00.000Z",
-  "isDemo": false,
-  "phase": "play",
-  "setupStepId": "game",
-  "people": [{ "id": "p1", "name": "Asha", "funFact": "Keeper of the snack drawer", "included": true, "facePairId": "f1" }],
-  "facePairs": [{
-    "id": "f1", "number": 1, "color": "#f7d873", "matchMethod": "manual", "reviewStatus": "confirmed",
-    "now": { "sourceImageId": "img-now", "cropImageId": "img-now-crop", "faceBox": { "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.2 }, "padding": { "top": 0.3, "right": 0.24, "bottom": 0.52, "left": 0.24 } },
-    "then": { "sourceImageId": "img-then", "cropImageId": "img-then-crop", "faceBox": { "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.2 }, "padding": { "top": 0.3, "right": 0.24, "bottom": 0.52, "left": 0.24 } }
-  }],
-  "teams": [{ "id": "t0", "name": "Coffee Breakers", "color": "#f7d873" }],
-  "scoreEntries": [{ "id": "award-round-p1", "teamId": "t0", "roundId": "round-p1", "kind": "round-award", "points": 1, "active": true }],
-  "settings": { "shuffle": true, "matchingTolerance": 0.12 },
-  "game": {
-    "originalImageId": "img-now", "childhoodImageId": "img-then", "childhoodUploadId": "img-then",
-    "previews": {},
-    "rounds": [{ "id": "round-p1", "personId": "p1", "teamId": "t0", "revealed": true, "result": "correct" }],
-    "currentRoundIndex": 0,
-    "finale": { "wipePosition": 0 }
-  },
-  "assets": {
-    "img-now": { "id": "img-now", "name": "now.jpg", "width": 1200, "height": 800, "mime": "image/jpeg" },
-    "img-then": { "id": "img-then", "name": "then.jpg", "width": 1200, "height": 800, "mime": "image/jpeg" },
-    "img-now-crop": { "id": "img-now-crop", "name": "Face 1 - now.jpg", "width": 400, "height": 500, "mime": "image/jpeg" },
-    "img-then-crop": { "id": "img-then-crop", "name": "Face 1 - then.jpg", "width": 400, "height": 500, "mime": "image/jpeg" }
-  }
-}
-```
+Create `tests/fixtures/event-v2.json`: a valid v2 event document with one segment
+(`activityId: "childhood-vs-now"`, `status: "play"`, `weight: 1`), one person, one face pair with
+both crops, one team, one score entry whose `segmentId` matches the segment's `id`, and the four
+assets those crops reference. It must satisfy the Zod schema and every cross-reference check in
+`validateEvent`, so it can go through the real parse path.
 
-- [ ] **Step 2: Write the failing migration tests**
+- [ ] **Step 2: Write the failing tests**
 
-Create `tests/unit/migration.test.ts`:
+Create `tests/unit/session.test.ts`. Register the activity first
+(`if (!getActivity(childhoodVsNow.id)) registerActivity(childhoodVsNow);`), then cover:
 
-```ts
-import { beforeAll, describe, expect, it } from 'vitest';
-import v1 from '../fixtures/session-v1.json';
-import { discoverActivities } from '../../src/core/registry';
-import { validateEvent } from '../../src/core/session';
-
-beforeAll(async () => { await discoverActivities(); });
-
-describe('v1 to v2 migration', () => {
-  it('wraps a v1 session as a single segment', () => {
-    const event = validateEvent(v1);
-    expect(event.formatVersion).toBe(2);
-    expect(event.segments).toHaveLength(1);
-    expect(event.segments[0].activityId).toBe('childhood-vs-now');
-    expect(event.segments[0].settings).toEqual({ shuffle: true, matchingTolerance: 0.12 });
-    expect((event.segments[0].game as { rounds: unknown[] }).rounds).toHaveLength(1);
-    expect(event.currentSegmentIndex).toBe(0);
-  });
-  it('maps v1 play phase onto the segment and the event', () => {
-    const event = validateEvent(v1);
-    expect(event.segments[0].status).toBe('play');
-    expect(event.phase).toBe('segment');
-  });
-  it('maps v1 finale onto a segment finale', () => {
-    const event = validateEvent({ ...v1, phase: 'finale' });
-    expect(event.segments[0].status).toBe('finale');
-    expect(event.phase).toBe('segment');
-  });
-  it('keeps shared people, teams, scores and assets at the event level', () => {
-    const event = validateEvent(v1);
-    expect(event.people).toHaveLength(1);
-    expect(event.teams).toHaveLength(1);
-    expect(event.scoreEntries).toHaveLength(1);
-    expect(Object.keys(event.assets)).toHaveLength(4);
-  });
-  it('carries a migrated event with no wager', () => {
-    expect(validateEvent(v1).wager).toBeUndefined();
-  });
-  it('rejects a segment whose activity is not installed', () => {
-    expect(() => validateEvent({ ...v1, activityId: 'not-real' })).toThrow(/not installed/);
-  });
-  it('rejects a score entry pointing at an unknown team', () => {
-    const broken = { ...v1, scoreEntries: [{ ...v1.scoreEntries[0], teamId: 'ghost' }] };
-    expect(() => validateEvent(broken)).toThrow(/unknown team/);
-  });
-});
-
-describe('v2 round trip', () => {
-  it('accepts its own output unchanged', () => {
-    const once = validateEvent(v1);
-    expect(validateEvent(JSON.parse(JSON.stringify(once)))).toEqual(once);
-  });
-});
-```
+- a valid v2 document round-trips through `validateEvent` unchanged
+- a segment whose `activityId` is not registered is rejected
+- a score entry naming an unknown team is rejected
+- a score entry naming a segment not in the event is rejected
+- `currentSegmentIndex` beyond the end of `segments` is rejected
+- duplicate ids (across people, face pairs, teams, score entries, segments) are rejected
+- a `formatVersion: 1` document is rejected, and the thrown message mentions Export pairs
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `npx vitest run tests/unit/migration.test.ts`
+Run: `npx vitest run tests/unit/session.test.ts`
 Expected: FAIL — `validateEvent` is not exported from `src/core/session`.
 
 - [ ] **Step 4: Rewrite `src/core/session.ts`**
 
-Keep `teamColors` and `newTeams` exactly as they are. Replace `createSession` and the schema:
+Keep the `teamColors`/`newTeams` re-export from `./event` exactly as Task 2 left it. Remove
+`createSession` and the v1 schema. Add the v2 schema (`segmentSchema` plus the event `schema`,
+with `scoreEntries` carrying optional `segmentId` and the four `kind` values), then:
 
 ```ts
-import { z } from 'zod';
-import { getActivity } from './registry';
-import type { EventSession, Segment } from './types';
-export const teamColors = ['#f7d873', '#eea7bb', '#8fcbe0', '#9edbbd', '#d2b5f2', '#f0b085', '#b8d685', '#c2c9ed'];
-export const newTeams = () => ['Coffee Breakers', 'Reply-All Crew', 'Deadline Dodgers', 'Snack Drawer Squad'].map((name, i) => ({ id: crypto.randomUUID(), name, color: teamColors[i] }));
-const rect = z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().positive().max(1), height: z.number().positive().max(1) }).refine(r => r.x + r.width <= 1.00001 && r.y + r.height <= 1.00001, 'Crop lies outside the image');
-const crop = z.object({ sourceImageId: z.string(), faceBox: rect, padding: z.object({ top: z.number().min(0).max(3), right: z.number().min(0).max(3), bottom: z.number().min(0).max(3), left: z.number().min(0).max(3) }), cropImageId: z.string().optional() });
-const segmentSchema = z.object({
-  id: z.string(), activityId: z.string(), activityVersion: z.number().int().positive(), title: z.string(),
-  settings: z.unknown(), game: z.unknown(),
-  status: z.enum(['pending', 'setup', 'play', 'finale', 'done']), setupStepId: z.string(),
-  weight: z.number().int().min(1).max(5),
-});
-const schema = z.object({
-  formatVersion: z.literal(2), id: z.string(), title: z.string(), createdAt: z.string(), updatedAt: z.string(), isDemo: z.boolean(),
-  segments: z.array(segmentSchema).max(12), currentSegmentIndex: z.number().int().min(0),
-  phase: z.enum(['lineup', 'segment', 'interstitial', 'wager', 'finale']),
-  wager: z.object({ question: z.string(), answer: z.string(), bets: z.record(z.string(), z.number().int().min(0)) }).optional(),
-  correctPoints: z.number().int().min(1).max(10), stealPoints: z.number().int().min(0).max(10),
-  people: z.array(z.object({ id: z.string(), name: z.string(), funFact: z.string(), included: z.boolean(), facePairId: z.string() })).max(500),
-  facePairs: z.array(z.object({ id: z.string(), number: z.number().int().positive(), color: z.string(), now: crop.optional(), then: crop.optional(), matchMethod: z.enum(['automatic', 'manual']), reviewStatus: z.enum(['suggested', 'confirmed', 'unmatched']) })).max(1000),
-  teams: z.array(z.object({ id: z.string(), name: z.string().min(1), color: z.string().regex(/^#[0-9a-f]{6}$/i) })).min(1).max(8),
-  scoreEntries: z.array(z.object({ id: z.string(), teamId: z.string(), segmentId: z.string().optional(), roundId: z.string().optional(), kind: z.enum(['round-award', 'steal-award', 'manual-adjustment', 'wager']), points: z.number().int(), active: z.boolean() })),
-  assets: z.record(z.string(), z.object({ id: z.string(), name: z.string(), width: z.number().positive(), height: z.number().positive(), mime: z.string() })),
-});
-// A v1 document is one activity. Wrap it as a single segment so old sessions and old ZIPs keep
-// opening; everything shared already sat at the top level and stays there.
-export function migrateV1(raw: unknown): unknown {
-  const v1 = raw as Record<string, any>;
-  const segmentId = crypto.randomUUID();
-  const segment = {
-    id: segmentId, activityId: v1.activityId, activityVersion: v1.activityVersion,
-    title: getActivity(v1.activityId)?.name ?? v1.activityId,
-    settings: v1.settings, game: v1.game,
-    status: v1.phase, setupStepId: v1.setupStepId, weight: 1,
-  };
-  // Legacy ledgers keyed awards as `award-${roundId}` with no segmentId. Rebase every round
-  // award onto the migrated segment so a later re-mark upserts the same entry instead of
-  // adding a second, double-counting one. Manual adjustments have no roundId; leave them.
-  const scoreEntries = (v1.scoreEntries ?? []).map((entry: any) => entry.kind === 'round-award' && entry.roundId
-    ? { ...entry, segmentId, id: `${segmentId}:award-${entry.roundId}` }
-    : entry);
-  const { activityId, activityVersion, settings, game, phase, setupStepId, ...shared } = v1;
-  return { ...shared, scoreEntries, formatVersion: 2, segments: [segment], currentSegmentIndex: 0, phase: 'segment', correctPoints: 2, stealPoints: 1 };
-}
 export function validateEvent(raw: unknown): EventSession {
   const version = (raw as { formatVersion?: unknown })?.formatVersion;
-  if (version !== 1 && version !== 2) throw new Error('This session needs a newer version of Fun Friday Studio.');
-  const event = schema.parse(version === 1 ? migrateV1(raw) : raw);
+  if (version === 1) throw new Error('This session was saved before Fun Friday Studio learned to run events. Please set up your game again — your photos and names are safe in Export pairs.');
+  if (version !== 2) throw new Error('This session needs a newer version of Fun Friday Studio.');
+  const event = schema.parse(raw);
   const segments: Segment[] = event.segments.map(segment => {
     const activity = getActivity(segment.activityId);
     if (!activity) throw new Error(`This session uses an activity that is not installed: ${segment.activityId}.`);
@@ -631,51 +515,30 @@ export function validateEvent(raw: unknown): EventSession {
     return { ...segment, activityVersion: activity.version, settings: activity.settingsSchema.parse(data.settings), game: activity.stateSchema.parse(data.game) };
   });
   const session: EventSession = { ...event, segments };
-  if (session.segments.length && session.currentSegmentIndex >= session.segments.length) throw new Error('The event points at an activity that is not in its line-up.');
-  for (const pair of session.facePairs) for (const face of [pair.now, pair.then]) {
-    if (face && (!session.assets[face.sourceImageId] || (face.cropImageId && !session.assets[face.cropImageId]))) throw new Error('A face references a missing image in this session.');
-  }
-  if (session.people.some(p => !session.facePairs.some(f => f.id === p.facePairId))) throw new Error('A person references a missing face pair.');
-  const ids = (items: { id: string }[]) => new Set(items.map(i => i.id)).size === items.length;
-  if (![session.people, session.facePairs, session.teams, session.scoreEntries, session.segments].every(ids)) throw new Error('The session contains duplicate identifiers.');
-  if (session.scoreEntries.some(e => !session.teams.some(t => t.id === e.teamId))) throw new Error('A score references an unknown team.');
-  if (session.scoreEntries.some(e => e.segmentId && !session.segments.some(s => s.id === e.segmentId))) throw new Error('A score references an activity that is not in this event.');
-  for (const [index, segment] of session.segments.entries()) {
-    const issues = getActivity(segment.activityId)!.validateSession?.(segmentViewFor(session, index)) ?? [];
-    if (issues.length) throw new Error(issues[0]);
-  }
+  // cross-reference checks: currentSegmentIndex in range, face crops resolve to assets,
+  // people resolve to face pairs, no duplicate ids, scores resolve to teams and segments,
+  // then each activity's own validateSession against segmentView(session, index)
   return session;
 }
 ```
 
-`segmentViewFor` is `segmentView` from `src/core/event.ts`. Import it as:
-
-```ts
-import { segmentView as segmentViewFor } from './event';
-```
-
-`event.ts` imports `newTeams` from `session.ts` and `session.ts` imports `segmentView` from
-`event.ts`. This is a cycle. Break it by moving `teamColors` and `newTeams` into `src/core/event.ts`
-and re-exporting them from `session.ts` for the existing `TeamEditor` import:
-
-In `src/core/event.ts` define `teamColors` and `newTeams` (moved verbatim from `session.ts`), and in
-`src/core/session.ts` replace their definitions with:
-
-```ts
-export { newTeams, teamColors } from './event';
-```
+`Activity.migrate` keeps its per-activity meaning and is unchanged.
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `npx vitest run tests/unit/migration.test.ts tests/unit/event.test.ts`
-Expected: all PASS. `tsc -b` still fails on `App.tsx`/`transfer.ts` (they call the removed
-`createSession`/`validateSession`) — that is expected and fixed in Tasks 4 and 5.
+Run: `npx vitest run tests/unit/session.test.ts && npm test`
+Expected: PASS. `tsc -b` stays red in `src/app/App.tsx`, `src/core/transfer.ts` and `src/main.tsx`
+until Tasks 4 and 5 rewire them.
+
+Note for Task 5: `src/main.tsx:23`'s catch discards the thrown error and shows a fixed string, so
+the new v1 message does not reach the host. Task 5 surfaces `(error as Error).message` there.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/core/session.ts src/core/event.ts tests/fixtures/session-v1.json tests/unit/migration.test.ts
-git commit -m "feat: validate and migrate v2 event documents"
+git add src/core/session.ts tests/fixtures/event-v2.json tests/unit/session.test.ts
+git rm tests/unit/session-compat.test.ts
+git commit -m "feat: validate v2 event documents"
 ```
 
 ---
@@ -696,8 +559,8 @@ Create `tests/unit/transfer-remap.test.ts`:
 
 ```ts
 import { beforeAll, describe, expect, it } from 'vitest';
-import v1 from '../fixtures/session-v1.json';
-import { discoverActivities, getActivity } from '../../src/core/registry';
+import eventDoc from '../fixtures/event-v2.json';
+import { discoverActivities } from '../../src/core/registry';
 import { validateEvent } from '../../src/core/session';
 import { remapEventImages } from '../../src/core/transfer';
 
@@ -705,7 +568,7 @@ beforeAll(async () => { await discoverActivities(); });
 
 describe('per-segment image remapping', () => {
   it('rewrites every segment game and leaves user text alone', () => {
-    const event = validateEvent(v1);
+    const event = validateEvent(eventDoc);
     event.segments.push({ ...event.segments[0], id: 'seg-b' });
     const remap = { 'img-now': 'new-now', 'img-then': 'new-then', 'img-now-crop': 'new-now-crop', 'img-then-crop': 'new-then-crop' };
     remapEventImages(event, remap);
@@ -717,7 +580,7 @@ describe('per-segment image remapping', () => {
     expect(event.people[0].funFact).toBe('Keeper of the snack drawer');
   });
   it('rewrites face crops on the shared face pairs exactly once', () => {
-    const event = validateEvent(v1);
+    const event = validateEvent(eventDoc);
     remapEventImages(event, { 'img-now': 'a', 'img-then': 'b', 'img-now-crop': 'c', 'img-then-crop': 'd' });
     expect(event.facePairs[0].now!.sourceImageId).toBe('a');
     expect(event.facePairs[0].now!.cropImageId).toBe('c');
@@ -725,7 +588,7 @@ describe('per-segment image remapping', () => {
     expect(event.facePairs[0].then!.cropImageId).toBe('d');
   });
   it('throws when an activity in the line-up is not installed', () => {
-    const event = validateEvent(v1);
+    const event = validateEvent(eventDoc);
     event.segments[0].activityId = 'not-real';
     expect(() => remapEventImages(event, {})).toThrow(/not installed/);
   });
@@ -1927,21 +1790,7 @@ test('the line-up builder runs two activities on one leaderboard', async ({ page
   expect(session.wager.question).toContain('biscuits');
 });
 
-test('a v1 session document still opens as a one-activity event', async ({ page }) => {
-  const v1 = JSON.parse(await readFile('tests/fixtures/session-v1.json', 'utf8'));
-  await page.goto('/');
-  await page.evaluate(([k, doc]) => localStorage.setItem(k as string, JSON.stringify(doc)), [key, v1] as const);
-  await page.reload();
-  const session = await saved(page);
-  expect(session.formatVersion).toBe(2);
-  expect(session.segments).toHaveLength(1);
-  expect(session.segments[0].activityId).toBe('childhood-vs-now');
-});
 ```
-
-The v1 fixture references image IDs that are not in IndexedDB, so the app will show a missing-image
-warning rather than rendering crops. The test only asserts the migrated document shape, which is the
-point.
 
 - [ ] **Step 3: Run the browser suite to verify the new tests fail, then pass**
 
@@ -1999,8 +1848,8 @@ that got it from the steal panel.
 
 ```markdown
 - The line-up, names, settings, team definitions, score entries, and per-activity progress live in
-  **localStorage** as a versioned event document. Sessions saved by earlier versions are migrated to
-  the event format the first time they are opened.
+  **localStorage** as a versioned event document. Sessions saved before the event format are not
+  restored; set the game up again. Face crops and names survive independently via **Export pairs**.
 ```
 
 - In **How to add a new activity**, add to the `Activity` bullet list:
@@ -2021,7 +1870,7 @@ that got it from the steal panel.
 src/core/play/              Timer, steal, final wager
 ```
 
-- In **Tests**, add to the Vitest sentence: "segment views, v1→v2 migration, steal and wager
+- In **Tests**, add to the Vitest sentence: "segment views, v2 document validation, steal and wager
   invariants, and line-up validation".
 
 - [ ] **Step 5: Run everything**

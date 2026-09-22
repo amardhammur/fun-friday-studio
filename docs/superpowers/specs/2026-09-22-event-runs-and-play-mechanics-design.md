@@ -96,19 +96,20 @@ activity change required is described under Scoring below.
 
 The view carries one added field, `segmentId: ID`, so activities can scope ledger writes.
 
-### Migration
+### No v1 migration
 
-`formatVersion` goes 1 → 2. A v1 document becomes a one-segment event: the old
-`activityId`/`settings`/`game`/`setupStepId` become segment 0, and the old `phase` maps as follows.
+`validateEvent` accepts `formatVersion: 2` only. A v1 document is rejected with a message naming
+Export pairs as the recovery route.
 
-| v1 `phase` | segment 0 `status` | event `phase` |
-| --- | --- | --- |
-| `setup` | `setup` | `segment` |
-| `play` | `play` | `segment` |
-| `finale` | `finale` | `segment` |
+Ruling by the human partner, 2026-09-22: the app has never shipped — no git remote, never deployed —
+so the only v1 documents that exist are on the author's own laptop. The expensive prep (photos, face
+boxes, matching, names) is independently recoverable through the pair-bundle path, which never
+touches the session schema, so migration was protecting an evening's game state rather than hours of
+work. Weighed against permanent surface area and a Critical defect found inside the migration itself
+during Task 3, it was cut.
 
-A migrated event has no wager, so its event finale shows the single segment's standings. Existing
-localStorage sessions and exported ZIPs keep working.
+A migration hook belongs at the first real release, when actual hosts have actual saved sessions and
+a format change genuinely cannot reset them.
 
 `Activity.migrate` keeps its current per-activity meaning and is unchanged.
 
@@ -256,8 +257,8 @@ Following the existing split.
 
 **Vitest.** Ledger invariants 1–4 above, including repeated and out-of-order host clicks. Entry-ID
 uniqueness across segments. Weight application at award time. Wager clamping at the floor and
-ceiling. v1 → v2 migration against a checked-in v1 fixture. Lineup validation, including a segment
-whose activity is not registered.
+ceiling. v2 document validation against a checked-in fixture, including rejection of a v1 document.
+Lineup validation, including a segment whose activity is not registered.
 
 Segment view round-trips get their own suite, because they are the load-bearing piece for leaving
 activities untouched: in-place mutation writes through, whole-field assignment folds back,
@@ -266,13 +267,9 @@ view never touches another segment's `game`.
 
 **Playwright**, on the production build as today. A complete three-segment event through interstitials,
 wager, and event finale. Refresh mid-round restoring the timer deadline rather than resetting it.
-Multi-segment ZIP export and re-import. Import of a v1 ZIP migrating to a one-segment event. Phone
-layout of the lineup builder and interstitial.
+Multi-segment ZIP export and re-import. Phone layout of the lineup builder and interstitial.
 
 ## Risks
-
-**Migration.** Existing sessions and ZIPs must keep working. Mitigated by an explicit v1 → v2 step
-and a checked-in v1 fixture exercised by both the unit and browser suites.
 
 **Timer persistence.** A naive implementation would write to storage every second. Mitigated by
 persisting the deadline rather than the tick, which is also what makes refresh recovery correct.
