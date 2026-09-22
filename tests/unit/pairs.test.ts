@@ -303,7 +303,7 @@ function demoSession(): AnySession {
   const padding = { top: 0.4, right: 0.3, bottom: 0.7, left: 0.3 };
   return {
     formatVersion: 1, id: 'session-id', title: 'Demo', activityId: 'childhood-vs-now',
-    activityVersion: 1, createdAt: '', updatedAt: '', isDemo: false, phase: 'setup',
+    activityVersion: 1, segmentId: 'default', createdAt: '', updatedAt: '', isDemo: false, phase: 'setup',
     setupStepId: 'people', teams: [], scoreEntries: [], settings: {}, assets: {
       'now-source': { id: 'now-source', name: 'Today.png', width: 1000, height: 800, mime: 'image/png' },
       'then-source': { id: 'then-source', name: 'Childhood.webp', width: 1000, height: 800, mime: 'image/webp' },

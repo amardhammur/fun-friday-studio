@@ -19,9 +19,10 @@ export interface FacePair {
 }
 export interface Person { id: ID; name: string; funFact: string; included: boolean; facePairId: ID }
 export interface Team { id: ID; name: string; color: string }
-export interface ScoreEntry { id: ID; teamId: ID; roundId?: ID; kind: 'round-award' | 'manual-adjustment'; points: number; active: boolean }
+export interface ScoreEntry { id: ID; teamId: ID; segmentId?: ID; roundId?: ID; kind: 'round-award' | 'steal-award' | 'manual-adjustment' | 'wager'; points: number; active: boolean }
 export interface Session<S = unknown, G = unknown> {
   formatVersion: 1; id: ID; title: string; activityId: string; activityVersion: number;
+  segmentId: ID;
   createdAt: string; updatedAt: string; isDemo: boolean;
   phase: 'setup' | 'play' | 'finale'; setupStepId: string;
   people: Person[]; facePairs: FacePair[]; teams: Team[]; scoreEntries: ScoreEntry[];

@@ -27,7 +27,7 @@ export function markResult(session: CVSession, result: 'correct' | 'missed') {
   const round = session.game.rounds[session.game.currentRoundIndex];
   if (!round?.revealed) return;
   round.result = result;
-  session.scoreEntries = setRoundAward(session.scoreEntries, round.id, round.teamId, result === 'correct');
+  session.scoreEntries = setRoundAward(session.scoreEntries, session.segmentId, round.id, round.teamId, result === 'correct');
 }
 export function moveRound(session: CVSession, delta: number) {
   const next = session.game.currentRoundIndex + delta;
