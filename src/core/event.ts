@@ -12,7 +12,7 @@ export function createEvent(): EventSession {
   const now = new Date().toISOString();
   return { formatVersion: 2, id: crypto.randomUUID(), title: 'Our Fun Friday', createdAt: now, updatedAt: now, isDemo: false, segments: [], currentSegmentIndex: 0, phase: 'lineup', correctPoints: 2, stealPoints: 1, people: [], facePairs: [], teams: newTeams(), scoreEntries: [], assets: {} };
 }
-export const currentSegment = (event: EventSession) => event.segments[event.currentSegmentIndex];
+export const currentSegment = (event: EventSession): Segment | undefined => event.segments[event.currentSegmentIndex];
 // A shallow projection: shared arrays and the segment's game object are the SAME references the
 // event holds, so in-place mutation writes through. foldSegmentView exists to catch whole-field
 // assignment (s.game = ..., s.people = [...], Object.assign(s, prepared)).
@@ -36,8 +36,9 @@ export function foldSegmentView(event: EventSession, index: number, view: AnySes
   const segment = event.segments[index];
   if (!segment) throw new Error('This event has no activity at that position.');
   segment.settings = view.settings; segment.game = view.game; segment.setupStepId = view.setupStepId;
-  // 'pending' and 'done' are event-owned; an activity writing 'setup' must not resurrect a
-  // finished segment, so only advance a segment that is already running.
+  // 'done' is terminal and event-owned, so a fold must never resurrect a finished segment.
+  // 'pending' is just a starting state: a first fold legitimately advances it to whatever
+  // the activity wrote (typically 'setup').
   if (segment.status !== 'done') segment.status = view.phase;
   event.people = view.people; event.facePairs = view.facePairs; event.teams = view.teams;
   event.scoreEntries = view.scoreEntries; event.assets = view.assets;

@@ -31,6 +31,18 @@ describe('segment view', () => {
     expect((view.game as { rounds: unknown[] }).rounds).toHaveLength(1);
     expect(view.segmentId).toBe('seg-a');
   });
+  it('aliases the segment game object and the event people array, not copies of them', () => {
+    const ev = event();
+    const view = segmentView(ev, 0);
+    expect(view.game).toBe(ev.segments[0].game);
+    expect(view.people).toBe(ev.people);
+    // Mutate through the view with no fold at all: if segmentView ever cloned instead of
+    // aliasing, these writes would be invisible on the event's own segment/people.
+    (view.game as { rounds: unknown[] }).rounds.push({ id: 'r2' });
+    view.people[0].name = 'Asha B';
+    expect((ev.segments[0].game as { rounds: unknown[] }).rounds).toHaveLength(2);
+    expect(ev.people[0].name).toBe('Asha B');
+  });
   it('resolves the segment weight into the point values the activity awards', () => {
     const base = event();
     base.correctPoints = 2; base.stealPoints = 1; base.segments[0].weight = 3;
