@@ -225,7 +225,7 @@ export async function importFacePairs(file: File, options: FacePairImportOptions
     throw error instanceof Error ? error : new Error('Could not import face pairs.');
   }
 }
-export async function exportFacePairs(session: AnySession) {
+export async function exportFacePairs(session: AnySession | EventSession) {
   const people = session.people.filter(p => session.facePairs.some(f => f.id === p.facePairId && f.now?.cropImageId && f.then?.cropImageId));
   if (!people.length) throw new Error('Finish matching at least one person before exporting face pairs.');
   const pairs = people.map(person => session.facePairs.find(pair => pair.id === person.facePairId)!);
@@ -236,7 +236,7 @@ export async function exportFacePairs(session: AnySession) {
   }
   const nowSource = requireAsset(session, nowSourceId, 'current group photo');
   const thenSource = requireAsset(session, thenSourceId, 'childhood group photo');
-  const previewIds = (session.game as { previews?: Record<string, string> }).previews ?? {};
+  const previewIds = ('game' in session ? (session.game as { previews?: Record<string, string> }).previews : undefined) ?? {};
   const nowPreview = optionalAsset(session, previewIds[nowSourceId]);
   const thenPreview = optionalAsset(session, previewIds[thenSourceId]);
 
@@ -299,13 +299,13 @@ function cropPath(number: number, side: 'now' | 'then') {
   return `pairs/${String(number).padStart(3, '0')}-${side}.jpg`;
 }
 
-function requireAsset(session: AnySession, id: string, label: string): Asset {
+function requireAsset(session: AnySession | EventSession, id: string, label: string): Asset {
   const asset = session.assets[id];
   if (!asset) throw new Error(`The ${label} is missing from this session.`);
   return asset;
 }
 
-function optionalAsset(session: AnySession, id: string | undefined): Asset | undefined {
+function optionalAsset(session: AnySession | EventSession, id: string | undefined): Asset | undefined {
   return id ? requireAsset(session, id, 'group preview') : undefined;
 }
 
