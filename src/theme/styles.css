@@ -104,6 +104,15 @@
   .wager-bet small { color: var(--muted); font-size: 12px; }
   .wager-answer { display: flex; align-items: center; gap: 8px; color: var(--yellow); }
   @media (prefers-reduced-motion: reduce) { .interstitial-row .score-bar span { transition: none; } }
+  .aio-setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 23px; align-items: start; }
+  .aio-setup-grid textarea { width: 100%; resize: vertical; font-size: 15px; line-height: 1.7; }
+  .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; margin-top: 18px; }
+  .category-tile { display: grid; gap: 4px; text-align: left; padding: 15px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #ffffff05; }
+  .category-tile.on { border-color: var(--yellow); background: #f7d8731a; }
+  .category-tile b { font-family: var(--heading); font-size: 16px; letter-spacing: -.02em; }
+  .category-tile small { color: var(--muted); }
+  .category-check { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid #ffffff40; border-radius: 5px; margin-bottom: 4px; }
+  .category-tile.on .category-check { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
 }
 
 @layer responsive {
