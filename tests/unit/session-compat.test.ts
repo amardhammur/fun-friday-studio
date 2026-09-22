@@ -12,7 +12,7 @@ if (!getActivity(childhoodVsNow.id)) registerActivity(childhoodVsNow);
 function validSession(): AnySession {
   return {
     formatVersion: 1, id: 'session-id', title: 'Demo', activityId: 'childhood-vs-now',
-    activityVersion: 1, segmentId: 'default', createdAt: '', updatedAt: '', isDemo: false, phase: 'setup',
+    activityVersion: 1, segmentId: 'default', points: { correct: 2, steal: 1 }, createdAt: '', updatedAt: '', isDemo: false, phase: 'setup',
     setupStepId: 'people',
     teams: [{ id: 'team-id', name: 'Team 1', color: '#f7d873' }],
     scoreEntries: [],
