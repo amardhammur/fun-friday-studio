@@ -30,9 +30,31 @@ export interface Session<S = unknown, G = unknown> {
 }
 // Runtime schemas validate this erased type at the registry/import boundary.
 export type AnySession = Session<any, any>;
+export interface ActivitySegment<S = unknown, G = unknown> {
+  formatVersion: 1; id: ID; title: string; activityId: string; activityVersion: number;
+  segmentId: ID; points: { correct: number; steal: number };
+  createdAt: string; updatedAt: string; isDemo: boolean;
+  phase: 'setup' | 'play' | 'finale'; setupStepId: string;
+  settings: S; game: G;
+  /** Deprecated compatibility ledger; activity UI uses the separate event context. */
+  scoreEntries: ScoreEntry[];
+}
+export interface ActivityEvent {
+  id: ID; title: string; createdAt: string; updatedAt: string; isDemo: boolean;
+  phase: EventSession['phase']; currentSegmentIndex: number;
+  wager?: EventWager; correctPoints: number; stealPoints: number;
+  readonly people: readonly Person[]; readonly facePairs: readonly FacePair[];
+  readonly teams: readonly Team[]; readonly scoreEntries: readonly ScoreEntry[];
+  readonly assets: Readonly<Record<ID, Asset>>;
+}
+export type EventUpdate = Pick<EventSession, 'title' | 'isDemo' | 'phase' | 'wager' | 'correctPoints' | 'stealPoints' | 'people' | 'facePairs' | 'teams' | 'scoreEntries' | 'assets'>;
+export interface PreparedActivity<S = unknown, G = unknown> { segment: ActivitySegment<S, G>; event: EventUpdate }
 export interface ActivityContext<S = any, G = any> {
-  session: Session<S, G>;
-  update: (change: (draft: Session<S, G>) => void) => void;
+  rosterLocked?: boolean;
+  segment: ActivitySegment<S, G>;
+  event: ActivityEvent;
+  update: (change: (draft: ActivitySegment<S, G>) => void) => void;
+  updateEvent: (change: (draft: EventUpdate) => void) => void;
   notify: (message: string) => void;
   runTask: (label: string, task: () => Promise<void>) => Promise<void>;
   goHome: () => void;
@@ -40,17 +62,18 @@ export interface ActivityContext<S = any, G = any> {
 export interface SettingsField { key: string; label: string; type: 'boolean' | 'number' | 'select'; options?: { label: string; value: string | number }[] }
 export interface Activity<S = any, G = any> {
   id: string; version: number; name: string; description: string; icon: ComponentType<{ size?: number }>;
-  setupSteps: { id: string; title: string; View: ComponentType<ActivityContext<S, G>>; validate: (s: Session<S, G>) => string[] }[];
+  setupSteps: { id: string; title: string; View: ComponentType<ActivityContext<S, G>>; validate: (segment: ActivitySegment<S, G>, event: ActivityEvent) => string[] }[];
   settingsSchema: z.ZodType<S>; stateSchema: z.ZodType<G>; settingsFields: SettingsField[];
   Stage: ComponentType<ActivityContext<S, G>>; Finale?: ComponentType<ActivityContext<S, G>>;
   estimatedMinutes?: number;
   Preview?: ComponentType<{ session: Session<S, G> }>;
-  createDemo?: (session: Session<S, G>) => Promise<Session<S, G>>;
-  validateSession?: (session: Session<S, G>) => string[];
+  createDemo?: (segment: ActivitySegment<S, G>, event: EventUpdate) => Promise<PreparedActivity<S, G>>;
+  validateSession?: (segment: ActivitySegment<S, G>, event: ActivityEvent) => string[];
   remapImages: (game: G, ids: Record<string, string>) => G;
   shortcuts: { key: string; label: string; run: (ctx: ActivityContext<S, G>) => void }[];
   createInitialState: () => G; defaultSettings: () => S;
-  startNewGame: (s: Session<S, G>) => void;
+  preparePeople?: (segment: ActivitySegment<S, G>, event: EventUpdate, previews?: Record<string, string>) => void;
+  startNewGame: (segment: ActivitySegment<S, G>, event?: EventUpdate) => void;
   migrate: (saved: unknown, fromVersion: number) => { settings: S; game: G };
 }
 export interface Segment {

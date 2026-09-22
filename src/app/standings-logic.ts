@@ -1,5 +1,6 @@
 import { segmentScore, teamScore } from '../core/scoring';
 import type { EventSession } from '../core/types';
+import { prepareSegmentPeople } from '../core/people/event-library';
 
 export function segmentStandings(event: EventSession, segmentId: string) {
   return event.teams
@@ -14,6 +15,7 @@ export function advanceSegment(event: EventSession) {
   if (next < event.segments.length) {
     event.currentSegmentIndex = next;
     event.segments[next].status = 'setup';
+    prepareSegmentPeople(event, next);
     event.phase = 'segment';
     return;
   }

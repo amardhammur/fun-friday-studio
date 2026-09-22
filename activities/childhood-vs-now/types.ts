@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ActivityContext, Session } from '../../src/core/types';
+import type { ActivityContext, ActivityEvent, ActivitySegment, EventUpdate } from '../../src/core/types';
 export const settingsSchema = z.object({ shuffle: z.boolean(), matchingTolerance: z.number().min(.01).max(.4) });
 export const stateSchema = z.object({
   originalImageId: z.string().optional(), childhoodImageId: z.string().optional(), childhoodUploadId: z.string().optional(),
@@ -13,6 +13,8 @@ export const stateSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export type GameState = z.infer<typeof stateSchema>;
-export type CVSession = Session<Settings, GameState>;
+export type CVSession = ActivitySegment<Settings, GameState>;
+export type CVEvent = ActivityEvent;
+export type CVEventUpdate = EventUpdate;
 export type Context = ActivityContext<Settings, GameState>;
 export const initialState = (): GameState => ({ previews: {}, rounds: [], currentRoundIndex: 0, finale: { wipePosition: 0 } });

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getActivity } from './registry';
-import { segmentView as segmentViewFor } from './event';
+import { activitySegment, activityEvent } from './event';
 import type { EventSession, Segment } from './types';
 export { newTeams, teamColors } from './event';
 const rect = z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().positive().max(1), height: z.number().positive().max(1) }).refine(r => r.x + r.width <= 1.00001 && r.y + r.height <= 1.00001, 'Crop lies outside the image');
@@ -46,7 +46,7 @@ export function validateEvent(raw: unknown): EventSession {
   if (session.scoreEntries.some(e => !session.teams.some(t => t.id === e.teamId))) throw new Error('A score references an unknown team.');
   if (session.scoreEntries.some(e => e.segmentId && !session.segments.some(s => s.id === e.segmentId))) throw new Error('A score references an activity that is not in this event.');
   for (const [index, segment] of session.segments.entries()) {
-    const issues = getActivity(segment.activityId)!.validateSession?.(segmentViewFor(session, index)) ?? [];
+    const issues = getActivity(segment.activityId)!.validateSession?.(activitySegment(session, index), activityEvent(session)) ?? [];
     if (issues.length) throw new Error(issues[0]);
   }
   return session;

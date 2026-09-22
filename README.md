@@ -112,7 +112,9 @@ Names map by the horizontal centre of the **current** face, left to right (verti
 
 **Export face pairs** downloads matched faces as `<Name> - then.jpg` and `<Name> - now.jpg`. Filename characters are sanitized; duplicate names receive suffixes. Exporting pairs does not export game progress.
 
-The People library uses the same `Person` and `FacePair` records as the activity. Names can be edited there and shared face crops can be reused by future activities.
+The People library belongs to the whole event and is available even before activities are added. Names can be edited there; new Childhood vs Now segments reuse the shared photos and face pairs. **Import pairs** replaces the library after confirmation: all activity progress, scores, and wager bets reset, while the line-up, activity settings, teams, and wager question remain. An event already under way returns to the first activity's setup; a line-up stays in the builder. Cancel leaves the event untouched.
+
+After an earlier activity has been played, photo/matching/roster setup and team editing are locked to protect its saved rounds. Use the People library to rename people, or import a replacement library to reset the event. Starting or replaying one activity clears only that segment's score entries and preserves earlier activities' scores.
 
 ## How to add a new activity
 
@@ -135,6 +137,7 @@ Export an `Activity<Settings, GameState>` definition in `activity.ts`. The inter
 - `Stage`, `Finale`, initial state/settings, new-game behaviour, keyboard shortcuts, and migration handling.
 - `remapImages(game, ids)` to rewrite only your activity’s image references during ZIP import; preserve user-entered text.
 - Optional session-reference validation, a home-card `Preview`, and a local `createDemo` generator.
+- Optional `preparePeople(session, previews)` to initialise activity-specific state from shared people and photos. It runs when entering a new segment and after a library replacement has reset each segment with `createInitialState()`. Honour `ActivityContext.rosterLocked` for controls that change shared people or teams.
 - `Finale` is optional and closes your activity before the leaderboard; omit it to go straight to the standings.
 - `estimatedMinutes` feeds the line-up builder’s runtime estimate.
 - Shared play mechanics live in `src/core/play/`: `Timer`, `StealPanel`, `Wager`. Use them rather than writing your own — they keep the score ledger idempotent and segment-scoped.

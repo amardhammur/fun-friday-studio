@@ -1,0 +1,59 @@
+import { beforeAll, describe, expect, it } from 'vitest';
+import fixture from '../fixtures/event-v2.json';
+import { discoverActivities, getActivity } from '../../src/core/registry';
+import { createEvent, createSegment, foldSegmentView, segmentView } from '../../src/core/event';
+import { prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
+import { validateEvent } from '../../src/core/session';
+import type { ImportedFacePairs } from '../../src/core/transfer';
+
+beforeAll(discoverActivities);
+function imported(): ImportedFacePairs {
+  const event = validateEvent(fixture), game = segmentView(event, 0).game;
+  return { people: event.people, facePairs: event.facePairs, assets: event.assets, originalImageId: game.originalImageId, childhoodImageId: game.childhoodImageId, childhoodUploadId: game.childhoodUploadId, previews: game.previews };
+}
+
+describe('event people library', () => {
+  it.each(['lineup', 'segment', 'interstitial', 'wager', 'finale'] as const)('replaces the library from %s and resets every segment and bet', phase => {
+    const event = validateEvent(fixture), second = structuredClone(event.segments[0]);
+    second.id = 'second'; second.weight = 3; event.segments.push(second);
+    event.segments[0].status = 'done'; event.currentSegmentIndex = 1; event.phase = phase;
+    event.wager = { question: 'Question', answer: 'Answer', bets: { [event.teams[0].id]: 5 } };
+    const teams = structuredClone(event.teams), settings = structuredClone(second.settings);
+    for (const s of event.segments) (s.game as any).originalImageId = 'obsolete';
+    replaceEventPeople(event, imported());
+    expect(event.currentSegmentIndex).toBe(0);
+    expect(event.phase).toBe(phase === 'lineup' ? 'lineup' : 'segment');
+    expect(event.scoreEntries).toEqual([]);
+    expect(event.wager).toEqual({ question: 'Question', answer: 'Answer', bets: {} });
+    expect(event.teams).toEqual(teams);
+    expect(event.segments[1]).toMatchObject({ id: 'second', settings, weight: 3, status: 'pending' });
+    event.segments.forEach((_, i) => {
+      const view = segmentView(event, i);
+      expect(view.game.rounds).toEqual([]);
+      expect(view.game.originalImageId).not.toBe('obsolete');
+      expect(view.game.finale).toEqual({ wipePosition: 0 });
+    });
+    expect(event.segments[0].game).not.toBe(event.segments[1].game);
+    expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
+  });
+  it('imports before any activities exist and prepares a later activity from shared people', () => {
+    const event = createEvent(); replaceEventPeople(event, imported());
+    expect(event.segments).toEqual([]); expect(event.phase).toBe('lineup');
+    event.segments.push(createSegment(getActivity('childhood-vs-now')!));
+    prepareSegmentPeople(event, 0);
+    expect(event.segments[0].status).toBe('pending');
+    expect(segmentView(event, 0).game.originalImageId).toBe(event.facePairs[0].now!.sourceImageId);
+    expect(validateEvent(event)).toEqual(event);
+  });
+  it('starting and restarting a segment keeps earlier awards and clears only its own awards', () => {
+    const event = validateEvent(fixture), activity = getActivity('childhood-vs-now')!;
+    const earlier = structuredClone(event.scoreEntries);
+    event.segments.push(createSegment(activity)); prepareSegmentPeople(event, 1);
+    const view = segmentView(event, 1);
+    view.scoreEntries.push({ id: 'old-second', segmentId: view.segmentId, teamId: event.teams[0].id, kind: 'steal-award', points: 1, active: true });
+    activity.startNewGame(view); foldSegmentView(event, 1, view);
+    expect(event.scoreEntries).toEqual(earlier);
+    expect(view.game.rounds).toHaveLength(1);
+    expect(validateEvent(event)).toEqual(event);
+  });
+});

@@ -43,6 +43,7 @@ test('demo pair bundle replaces the library and restores the whole-team reveal',
   const pairsBytes = await readFile(pairsPath!);
 
   const demoSession = await saved(page);
+  page.once('dialog', dialog => dialog.accept());
   await page.locator('input[aria-label="Import face pairs ZIP"]').setInputFiles({
     name: 'exported-face-pairs.zip',
     mimeType: 'application/zip',
@@ -77,7 +78,7 @@ test('demo pair bundle replaces the library and restores the whole-team reveal',
   await expect(page.getByRole('img', { name: 'Asha now' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Activity library', exact: true }).click();
-  await page.getByRole('button', { name: 'Continue session' }).click();
+  await page.getByRole('button', { name: 'Continue event', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
   await page.getByRole('button', { name: 'Start new game' }).click();
   for (let i = 0; i < 4; i++) {
@@ -130,7 +131,7 @@ test('offline reload and local model remain available with network disconnected'
   await expect(page.getByRole('status')).not.toContainText('unavailable');
 });
 test('unreadable files show a clear error without removing existing photos', async ({ page }) => {
-  await home(page); await page.getByRole('button', { name: 'Set up your game' }).click();
+  await home(page); page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Set up your game' }).click();
   await page.getByLabel('Original group photo (now)', { exact: true }).setInputFiles({ name: 'broken.heic', mimeType: 'image/heic', buffer: Buffer.from('not an image') });
   await expect(page.getByRole('status')).toContainText('Convert HEIC/HEIF photos to JPEG');
   expect((await saved(page)).facePairs).toHaveLength(4);
@@ -235,7 +236,8 @@ test('stealing, retracting a steal, and reaching the event finale through the st
   expect(errors).toEqual([]);
 });
 
-test('the line-up builder runs two activities on one leaderboard', async ({ page }) => {
+test('three activities carry scores through ZIP restore and a wager changes the winner', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await home(page);
   await page.getByRole('button', { name: /^Build an event/ }).click();
   await expect(page.getByRole('heading', { name: /Build your Friday/ })).toBeVisible();
@@ -245,12 +247,95 @@ test('the line-up builder runs two activities on one leaderboard', async ({ page
   await page.getByRole('button', { name: /^Build an event/ }).click();
   await page.getByRole('button', { name: 'Childhood vs Now' }).click();
   await page.getByRole('button', { name: 'Childhood vs Now' }).click();
+  await page.getByRole('button', { name: 'Childhood vs Now' }).click();
+  await page.getByLabel('Points multiplier for activity 2').selectOption('2');
   await page.getByRole('textbox', { name: 'Final wager question' }).fill('How many biscuits does this office get through a week?');
   await page.getByRole('textbox', { name: 'Final wager answer' }).fill('Far too many');
   await page.getByRole('button', { name: /Start the event/ }).click();
-  const session = await saved(page);
-  expect(session.segments).toHaveLength(2);
+  let session = await saved(page);
+  expect(session.segments).toHaveLength(3);
   expect(session.phase).toBe('segment');
   expect(session.segments[0].status).toBe('setup');
   expect(session.wager.question).toContain('biscuits');
+  await page.getByRole('button', { name: 'Fun Friday Studio home' }).click();
+  await expect(page.getByRole('button', { name: 'Continue event', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start a new game', exact: true })).toBeVisible();
+  await expect(page.getByText(/ACTIVE EVENT · Childhood vs Now · setup/)).toBeVisible();
+  await page.getByRole('button', { name: 'Continue event', exact: true }).click();
+  const total = (s: any, teamId: string) => s.scoreEntries.filter((e: any) => e.active && e.teamId === teamId).reduce((n: number, e: any) => n + e.points, 0);
+  const leader = session.teams[0], challenger = session.teams[1];
+  for (let segment = 0; segment < 3; segment++) {
+    await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
+    await expect(page.getByText(`Correct = ${segment === 1 ? 4 : 2} points. Stolen = ${segment === 1 ? 2 : 1}. Missed = 0.`)).toBeVisible();
+    if (segment > 0) {
+      await expect(page.getByRole('button', { name: 'Upload photos', exact: false })).toBeDisabled();
+      await expect(page.getByLabel('Team 1 name', { exact: true })).toBeDisabled();
+    }
+    await page.getByRole('button', { name: 'Start new game' }).click();
+    session = await saved(page);
+    expect(total(session, leader.id)).toBe([0, 2, 6][segment]);
+    for (let round = 0; round < 4; round++) {
+      await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+      await page.getByRole('button', { name: round === 0 ? /^Correct/ : /^Missed/ }).click();
+      await page.getByRole('button', { name: round < 3 ? /^Next team:/ : 'Final results' }).click();
+    }
+    await page.getByRole('button', { name: /^Leaderboard/ }).click();
+    await expect(page.getByText(`ROUND ${segment + 1} OF 3`, { exact: false })).toBeVisible();
+    session = await saved(page);
+    expect(total(session, leader.id)).toBe([2, 6, 8][segment]);
+    if (segment === 1) {
+      const download = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Export session', exact: true }).click();
+      const zip = await (await download).path();
+      await page.getByLabel('Choose session ZIP').setInputFiles(zip!);
+      await expect(page.getByRole('status')).toContainText('Session restored');
+      await page.reload();
+      const restored = await saved(page);
+      expect(restored.scoreEntries).toEqual(session.scoreEntries);
+      expect(restored.segments.map((s: any) => s.id)).toEqual(session.segments.map((s: any) => s.id));
+      await expect(page.locator('.storage-warning')).toHaveCount(0);
+    }
+    await page.getByRole('button', { name: segment < 2 ? 'Next activity' : 'On to the finish' }).click();
+  }
+  await expect(page.getByRole('heading', { name: 'Place your bets.' })).toBeVisible();
+  for (const team of session.teams) await page.getByLabel(`Wager for ${team.name}`).fill(team.id === leader.id ? '8' : '5');
+  await page.getByRole('button', { name: 'Reveal the question' }).click();
+  for (const team of session.teams) {
+    const row = page.locator('.wager-bet').filter({ has: page.getByText(team.name, { exact: true }) });
+    await row.getByRole('button', { name: team.id === challenger.id ? '+5' : team.id === leader.id ? '−8' : '−5', exact: true }).click();
+  }
+  await page.getByRole('button', { name: 'The final results' }).click();
+  await expect(page.locator('.winner-name')).toHaveText(challenger.name);
+  session = await saved(page);
+  expect(total(session, leader.id)).toBe(0); expect(total(session, challenger.id)).toBe(5);
+  await page.reload();
+  await expect(page.locator('.winner-name')).toHaveText(challenger.name);
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+  const pairDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export pairs', exact: true }).click();
+  const pairs = await (await pairDownload).path();
+  const replacementFile = { name: 'people.zip', mimeType: 'application/zip', buffer: await readFile(pairs!) };
+  const beforeReplace = await saved(page);
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByLabel('Import face pairs ZIP').setInputFiles(replacementFile);
+  expect(await saved(page)).toEqual(beforeReplace);
+  page.once('dialog', async dialog => { expect(dialog.message()).toContain('All activity progress, scores, and wager bets'); await dialog.accept(); });
+  await page.getByLabel('Import face pairs ZIP').setInputFiles(replacementFile);
+  await expect(page.getByRole('status')).toContainText('4 people imported.');
+  const replaced = await saved(page);
+  expect(replaced.scoreEntries).toEqual([]); expect(replaced.wager.bets).toEqual({});
+  expect(replaced.wager.question).toBe(beforeReplace.wager.question);
+  expect(replaced.teams).toEqual(beforeReplace.teams);
+  expect(replaced.currentSegmentIndex).toBe(0);
+  expect(replaced.segments.map((s: any) => s.status)).toEqual(['setup', 'pending', 'pending']);
+  for (const segment of replaced.segments) {
+    expect(segment.game.rounds).toEqual([]);
+    expect(replaced.assets[segment.game.originalImageId]).toBeTruthy();
+    expect(beforeReplace.assets[segment.game.originalImageId]).toBeUndefined();
+  }
+  await page.reload();
+  await expect(page.locator('.storage-warning')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Continue event', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
+  expect(errors).toEqual([]);
 });

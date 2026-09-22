@@ -241,3 +241,185 @@ not in the implementation**. Two are worth knowing about because they nearly shi
   the *correction* path does, not just the happy path.
 
 Implementers who stopped and asked instead of improvising were right every time.
+
+---
+
+## Post-handover review — Cursor continuation
+
+**Reviewed:** 2026-09-22 · **Current HEAD:** `a309003` · **Scope:** commits after `30ea5d6`
+
+Cursor implemented Tasks 8–11 and stayed close to the written plan. The core event architecture,
+segment-scoped scoring, standings transition, final wager logic, no-dependency constraint, and offline
+shape were preserved. Verification completed successfully: `npm test` reports 101 tests across 12 files,
+`npx tsc -b` passes, `npm run build` passes, and Playwright passes 10/10 browser tests.
+
+### Decision: does People Library need to become event-aware?
+
+Not necessarily. The original carry-forward deliberately left two valid options: provide an event-level
+People Library path, or disable the People Library navigation during the line-up phase with an
+explanation. The current implementation chose the first option only partially.
+
+The data itself is already event-level (`people`, `facePairs`, `teams`, and `assets`). However, the
+existing People Library import flow is coupled to one activity's `game`. When a multi-segment event
+imports new face pairs, it replaces the shared assets and clears the shared score ledger, but only
+resets the current segment's game. Other segments can retain old image IDs and stale progress. The
+route also uses an activity segment view whenever a current segment exists, even during line-up.
+
+**Recommended ruling:** for the current scope, disable or explain the People Library navigation while
+the event is in line-up. Keep the existing activity-scoped library for setup. If an event-level library
+is needed later, define its import semantics explicitly: replacing face pairs must either reset the
+whole line-up and all segment progress, or provide a generic reset/import hook for every activity.
+Do not keep the current hybrid behaviour.
+
+### Remaining findings
+
+- The browser test creates two segments and writes a wager question, but does not play the second
+  segment, place bets, mark wager results, or verify the final wager changes the event winner. The
+  broader spec asks for that end-to-end verification. The exact Task 11 test snippet in the plan has
+  the same coverage limitation, so this is a plan/spec gap as well as a missing regression test.
+- `src/core/play/Wager.tsx` is a re-export; the implementation lives in the additional
+  `WagerView.tsx`. Behaviour is correct, but the intended public module boundary is not followed.
+- The line-up exposes weights 1–5, while the Task 8 example listed 1–3. The schema permits 1–5, so
+  this is a benign extension. Setup copy still says “Correct = 2 points. Stolen = 1” even when a
+  segment multiplier makes the actual values higher; prefer “base points” wording or display the
+  segment's effective values.
+
+The original handover snapshot above intentionally remains historical. This addendum is the current
+review state and should be used when continuing work.
+
+---
+
+## Resolution — event-owned People library
+
+**Implemented and verified:** 2026-09-22. This section supersedes the recommendation above;
+the earlier snapshot and Luna review are preserved as history.
+
+**Ruling:** keep People library available at event level, including an empty or populated line-up.
+Disabling it only during line-up would still leave the same unsafe replacement reachable during
+activity setup. The library now accepts only `EventSession`; no activity-view/event hybrid remains.
+
+Replacement semantics are explicit and confirmed before import:
+
+- Replace shared people, face pairs, and asset references.
+- Reset every segment through its registered activity's `createInitialState()`, then optionally
+  initialise its shared-person/photo references through `Activity.preparePeople`.
+- Clear the full score ledger and wager bets; retain the wager question/answer, teams, activity
+  order, segment IDs, weights, titles, and settings.
+- Return an event already under way to the first activity's setup. A line-up stays in line-up,
+  including when no activities exist. Cancel preserves the event.
+
+New Childhood vs Now segments use the shared face pairs to prepare their group-photo references.
+The People library can export previews from the event's segments. Home can resume a line-up even
+without a segment, and Manage people has an actual setup path from an empty event.
+
+**Additional defects fixed:**
+
+- `startNewGame` previously cleared **all** event scores. It now clears only entries scoped to its
+  segment, preserving earlier activities. The previous browser test never started a second activity,
+  which is why the main event invariant was passing without being exercised.
+- Later activity setup cannot delete shared people/teams used by previous rounds. Photo/matching/
+  roster steps and team editing are locked after another segment has been played. Names remain
+  editable in the library; replacing the library provides the explicit whole-event reset route.
+- Setup instructions display the segment's effective correct/steal points, including its multiplier.
+- The demo photo shortcut no longer tries to edit a nonexistent segment during line-up. The activity
+  card resumes event-level standings/wager/finale instead of reopening a completed segment behind
+  those phases.
+
+**Wager module finding reconsidered:** keep `WagerView.tsx` as the implementation/import path.
+On this case-insensitive filesystem, an extensionless `./Wager` import resolves against `wager.ts`
+and produces TypeScript casing/export errors. The extra filename is functional, not a behavioural
+gap; moving it solely to match the plan would regress the build.
+
+**Verification:** 108 unit tests across 13 files; production build (including TypeScript) passes;
+10/10 browser tests pass. The event browser test now plays three weighted segments, verifies score
+carry-over, exports/imports the multi-segment ZIP, reloads, places/marks wagers, verifies a changed
+winner, then checks cancellation and whole-event library replacement followed by reload. Unit tests
+validate replacement from every event phase, independent segment state, an empty line-up, and
+segment-scoped score reset. Existing single-activity, offline, upload, and steal tests still pass.
+
+No dependencies added. Changes are uncommitted. This is a focused resolution of the People library
+and event-continuity gaps, not a claim that every historical deferred minor has been addressed.
+
+### Home/resume UX resolution
+
+The activity cupboard is a catalogue, not the resume control. Home now shows an active event card with
+the event title, current segment, current phase, and a primary **Continue event** action. Activity cards
+remain visible for discovery, but while a saved event is active they say **Start a new game** and **Try
+demo separately**. Both paths require confirmation before replacing the current event. **Build an
+event** becomes **Start a new event** and retains its confirmation. A demo event keeps the original
+quick setup/demo labels so the first-use flow stays lightweight.
+
+Direct setup from the initial demo returns to the upload step. Starting a new one-activity event from
+an active event is explicit; it does not resume or mutate the current segment. The browser suite covers
+returning Home from a multi-segment event and resuming it via Continue event.
+
+New event instances now receive a timestamped default title (for example, `Fun Friday · 22 Sept 2026,
+21:03:14`) and the line-up builder exposes an editable Event name field. Resetting into a new event no
+longer leaves every run displaying `Our Fun Friday`; the event ID remains the durable identity used by
+storage and exports.
+
+### Implemented architecture — activity access to event-owned state
+
+The activity-facing API now separates segment-local state from event-owned state. An activity receives
+`context.segment` (settings, game, phase, setup step) and a read-only `context.event` snapshot
+(people, face pairs, teams, scores, and assets). Segment changes go through `context.update`; shared
+changes go through the explicit `context.updateEvent` command. App-level code clones and applies each
+draft atomically, so an activity cannot accidentally write through to the event while editing its
+segment.
+
+The old `segmentView`/`foldSegmentView` helpers may remain temporarily in low-level test fixtures,
+but they are not a product compatibility or migration path and are no longer passed to activity
+setup, stage, finale, validation, or demo APIs.
+
+Previously, the adapter exposed shared event fields using the old activity session shape:
+
+```ts
+view.people
+view.facePairs
+view.teams
+view.scoreEntries
+view.assets
+```
+
+Those arrays and the segment's `game` object are shallow aliases. This was the compatibility decision
+that let the existing activity continue to work without rewriting roughly 35 call sites. It also means
+an activity can mutate event-owned state directly. `foldSegmentView` catches whole-field assignments,
+but it cannot stop in-place mutation before the fold.
+
+Examples of the risk:
+
+- `s.people.splice(...)` can remove people shared by completed and future segments.
+- `s.teams = [...]` or an in-place team rename changes the event's teams and every standings view.
+- `s.scoreEntries = []` can erase scores from earlier activities; an activity that does not filter by
+  `segmentId` can also alter another segment's ledger entries.
+- `s.assets = {}` or deleting an asset can make image references in other segments invalid.
+- A future activity could assign a malformed shared object that passes through the adapter before the
+  event-level schema is checked on the next restore.
+
+The current mitigations are partial: score helpers require a segment ID, roster controls lock after a
+previous segment has been played, event-level People Library replacement resets all segments, and ZIP
+restore/session validation checks references. These protect known paths but do not make the Activity
+interface safe by construction.
+
+The implemented boundary addresses the original mutation hazard. Future work can still refine the
+event command surface and add runtime freezing in development. Possible directions:
+
+1. **Read-only shared data plus event commands.** Give activities snapshots of people, teams, and
+   assets, and expose narrow commands such as `renamePerson`, `setTeamNames`, `awardRound`, and
+   `addAsset`. The event remains the only writer.
+2. **Separate activity and event contexts.** Keep `session.game` and activity settings in the activity
+   context, but move shared fields behind an explicitly read-only `event` object and an event-level
+   command API.
+3. **Draft-and-validate updates.** Keep the compatibility view, but clone shared fields before an
+   activity update, compare the changed fields afterward, and reject changes outside an allow-list.
+   This is safer but adds copying and makes existing setup code more awkward.
+4. **Immutable state enforcement.** Freeze shared snapshots in development/tests so accidental direct
+   mutation fails loudly, then migrate activities to commands. This helps discovery but is not by
+   itself a production boundary.
+
+Any replacement should preserve the important properties pinned by `tests/unit/event.test.ts`: activity
+game state remains segment-local, event updates remain atomic and persisted after folding, scoring is
+idempotent and segment-scoped, and future activities do not need to understand storage or ZIP layout.
+The first useful experiment is to build Act It Out using the current interface and record every shared
+mutation it needs; that will show whether a command API can stay small and general rather than being
+designed from Childhood vs Now's photo workflow alone.

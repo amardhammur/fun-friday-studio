@@ -13,7 +13,7 @@ export function Lineup({ event, onChange, onStart }: { event: EventSession; onCh
     [s.segments[index], s.segments[to]] = [s.segments[to], s.segments[index]];
   });
   return <main className="lineup-page">
-    <div className="section-heading"><span className="eyebrow">THE RUNNING ORDER</span><h1>Build your Friday<span className="accent">.</span></h1><p>Pick your activities. One set of teams, one leaderboard, one winner.</p></div>
+    <div className="section-heading"><span className="eyebrow">THE RUNNING ORDER</span><h1>Build your Friday<span className="accent">.</span></h1><p>Pick your activities. One set of teams, one leaderboard, one winner.</p><label className="event-title-field"><span className="eyebrow">EVENT NAME</span><input aria-label="Event name" maxLength={80} value={event.title} onChange={e => onChange(s => { s.title = e.target.value; })}/></label></div>
     <div className="lineup-grid">
       <section className="panel"><div className="panel-heading"><Clock size={21}/><h2>Your line-up</h2><span className="pill">{minutes} min</span></div>
         {!event.segments.length && <p className="muted">Nothing here yet. Add an activity to get started.</p>}

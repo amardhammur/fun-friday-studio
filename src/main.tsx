@@ -8,7 +8,8 @@ import '@fontsource/caveat/latin-500.css';
 import './theme/styles.css';
 import { App } from './app/App';
 import { discoverActivities, getActivities } from './core/registry';
-import { createEvent, createSegment, foldSegmentView, segmentView } from './core/event';
+import { activitySegment, applyActivitySegment, applyEventUpdate, createEvent, createSegment } from './core/event';
+import type { EventUpdate } from './core/types';
 import { validateEvent } from './core/session';
 import type { EventSession } from './core/types';
 import { checkStorage, readSavedSession, saveSession, storageWarning } from './core/storage';
@@ -26,7 +27,7 @@ async function boot() {
   if (!session) {
     const activity = getActivities()[0];
     session = createEvent(); session.segments = [createSegment(activity)]; session.phase = 'segment'; session.segments[0].status = 'setup';
-    if (activity.createDemo) { try { foldSegmentView(session, 0, await activity.createDemo(segmentView(session, 0))); } catch (error) { storageWarning(`The demo could not load. You can still upload your own photos. ${(error as Error).message}`); } }
+    if (activity.createDemo) { try { const evt: EventUpdate = { title: session.title, isDemo: session.isDemo, phase: session.phase, wager: session.wager, correctPoints: session.correctPoints, stealPoints: session.stealPoints, people: session.people, facePairs: session.facePairs, teams: session.teams, scoreEntries: session.scoreEntries, assets: session.assets }; const prepared = await activity.createDemo(activitySegment(session, 0), evt); activity.startNewGame(prepared.segment, prepared.event); applyActivitySegment(session, 0, prepared.segment); applyEventUpdate(session, prepared.event); } catch (error) { storageWarning(`The demo could not load. You can still upload your own photos. ${(error as Error).message}`); } }
     saveSession(session);
   }
   root.render(<ErrorBoundary><App initialSession={session}/></ErrorBoundary>);

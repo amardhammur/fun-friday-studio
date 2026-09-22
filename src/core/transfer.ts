@@ -236,7 +236,7 @@ export async function exportFacePairs(session: AnySession | EventSession) {
   }
   const nowSource = requireAsset(session, nowSourceId, 'current group photo');
   const thenSource = requireAsset(session, thenSourceId, 'childhood group photo');
-  const previewIds = ('game' in session ? (session.game as { previews?: Record<string, string> }).previews : undefined) ?? {};
+  const previewIds = ('game' in session ? (session.game as { previews?: Record<string, string> }).previews : session.segments.map(s => (s.game as { previews?: Record<string, string> }).previews).find(p => p?.[nowSourceId] && p?.[thenSourceId])) ?? {};
   const nowPreview = optionalAsset(session, previewIds[nowSourceId]);
   const thenPreview = optionalAsset(session, previewIds[thenSourceId]);
 

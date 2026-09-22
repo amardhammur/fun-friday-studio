@@ -69,14 +69,14 @@ interface Session {              // now an event
 schema in `src/core/session.ts` validates `segments` and resolves each segment's activity through the
 registry, running that activity's `settingsSchema`, `stateSchema`, and `validateSession` per segment.
 
-### Segment view
+### Segment view (superseded by explicit activity context)
 
 Activities are not rewritten to read `segment.game`. There are about thirty-five call sites of
 `session.game`, `session.settings`, `session.phase`, and `session.setupStepId` across
 `logic/rounds.ts`, `stage/Stage.tsx`, `stage/Finale.tsx`, `logic/preparation.ts`, and the four setup
 steps. Rewriting each by hand is a large mechanical change that no test would catch a miss in.
 
-Instead the core hands each activity a **segment view**: a shallow projection of the event that still
+The original implementation handed each activity a **segment view**: a shallow projection of the event that still
 exposes `game`, `settings`, `phase`, and `setupStepId` at the top level, alongside the shared
 `people`, `facePairs`, `teams`, `scoreEntries`, and `assets`.
 
@@ -95,6 +95,18 @@ writes through to the clone; the fold-back exists to catch whole-field assignmen
 activity change required is described under Scoring below.
 
 The view carries one added field, `segmentId: ID`, so activities can scope ledger writes.
+
+### People library ownership — 2026-09-22 resolution
+
+The library is event-owned and remains available before any segments exist. Replacing its people
+and photos requires confirmation and resets every segment's game state, all scores, and wager bets.
+Keep the line-up, segment settings/weights, teams, and wager question/answer. A running event returns
+to the first activity's setup; a line-up remains a line-up. Cancellation leaves the event unchanged.
+
+Activities may implement `preparePeople(session, previews)` to initialise their state from the shared
+roster after a reset or on entering a fresh segment. Starting/replaying an activity clears only that
+segment's score entries. After another segment has been played, roster and team setup is locked to
+protect saved references; whole-event library replacement is the explicit reset route.
 
 ### No v1 migration
 
