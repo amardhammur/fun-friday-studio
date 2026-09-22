@@ -1,6 +1,6 @@
 import { inspectImage, rpc } from './images/client';
 import { imageStore } from './storage';
-import { validateSession } from './session';
+import { validateEvent } from './session';
 import {
   assertFacePairImportCapacity,
   FACE_PAIR_BUNDLE_VERSION,
@@ -10,7 +10,7 @@ import {
   type FacePairsBundleManifest,
 } from './people/pairs';
 import { getActivity } from './registry';
-import type { AnySession, Asset, FacePair, Person } from './types';
+import type { AnySession, Asset, EventSession, FacePair, Person } from './types';
 const archiveJob = rpc(() => new Worker(new URL('../workers/archive.worker.ts', import.meta.url), { type: 'module' }));
 export interface ImportedFacePairs {
   assets: Record<string, Asset>;
@@ -32,16 +32,16 @@ function download(bytes: Uint8Array, name: string) {
   const a = document.createElement('a'); a.href = url; a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
-export async function exportSession(session: AnySession) {
+export async function exportSession(session: EventSession) {
   const files: Record<string, Uint8Array> = {};
   for (const id of Object.keys(session.assets)) files[`images/${id}`] = new Uint8Array(await (await imageStore.get(id)).arrayBuffer());
   const bytes = await archiveJob<Uint8Array>({ type: 'zip', files, manifest: session });
   download(bytes, `Fun Friday - ${new Date().toISOString().slice(0, 10)}.zip`);
 }
-export async function importSession(file: File) {
+export async function importSession(file: File): Promise<EventSession> {
   if (file.size > 512 * 1024 * 1024) throw new Error('Please use a session ZIP smaller than 512 MB.');
   const { manifest, files } = await archiveJob<{ manifest: unknown; files: Record<string, Uint8Array> }>({ type: 'unzip', bytes: new Uint8Array(await file.arrayBuffer()) });
-  const session = validateSession(manifest);
+  const session = validateEvent(manifest);
   for (const [id, asset] of Object.entries(session.assets)) {
     if (id !== asset.id || !files[`images/${id}`]) throw new Error('The session ZIP is missing one or more images.');
     if (!asset.mime.startsWith('image/')) throw new Error('The session contains an unsupported image type.');
@@ -50,12 +50,20 @@ export async function importSession(file: File) {
   const remap: Record<string, string> = {};
   for (const [id, asset] of Object.entries(session.assets)) remap[id] = await imageStore.put(new Blob([files[`images/${id}`] as BlobPart], { type: asset.mime }));
   session.assets = Object.fromEntries(Object.entries(session.assets).map(([id, asset]) => [remap[id], { ...asset, id: remap[id] }]));
-  for (const pair of session.facePairs) for (const face of [pair.now, pair.then]) if (face) {
-    face.sourceImageId = remap[face.sourceImageId];
-    if (face.cropImageId) face.cropImageId = remap[face.cropImageId];
+  remapEventImages(session, remap);
+  return validateEvent(session);
+}
+// Face pairs are shared at the event level, so they are remapped once, not per segment.
+export function remapEventImages(event: EventSession, remap: Record<string, string>) {
+  for (const pair of event.facePairs) for (const face of [pair.now, pair.then]) if (face) {
+    face.sourceImageId = remap[face.sourceImageId] ?? face.sourceImageId;
+    if (face.cropImageId) face.cropImageId = remap[face.cropImageId] ?? face.cropImageId;
   }
-  session.game = getActivity(session.activityId)!.remapImages(session.game, remap);
-  return validateSession(session);
+  for (const segment of event.segments) {
+    const activity = getActivity(segment.activityId);
+    if (!activity) throw new Error(`This session uses an activity that is not installed: ${segment.activityId}.`);
+    segment.game = activity.remapImages(segment.game, remap);
+  }
 }
 export async function importFacePairs(file: File, options: FacePairImportOptions): Promise<ImportedFacePairs> {
   const zipMime = !file.type || file.type === 'application/zip' || file.type === 'application/x-zip-compressed';
