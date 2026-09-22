@@ -1,7 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import v1 from '../fixtures/session-v1.json';
+import v1Windowed from '../fixtures/session-v1-windowed.json';
 import { discoverActivities } from '../../src/core/registry';
 import { validateEvent } from '../../src/core/session';
+import { setRoundAward, teamScore } from '../../src/core/scoring';
 
 beforeAll(async () => { await discoverActivities(); });
 
@@ -41,6 +43,30 @@ describe('v1 to v2 migration', () => {
   it('rejects a score entry pointing at an unknown team', () => {
     const broken = { ...v1, scoreEntries: [{ ...v1.scoreEntries[0], teamId: 'ghost' }] };
     expect(() => validateEvent(broken)).toThrow(/unknown team/);
+  });
+  it('rebases a legacy round-award entry onto the migrated segment id', () => {
+    const event = validateEvent(v1);
+    const segmentId = event.segments[0].id;
+    expect(event.scoreEntries[0].id).toBe(`${segmentId}:award-round-p1`);
+    expect(event.scoreEntries[0].segmentId).toBe(segmentId);
+  });
+  it('lets a re-mark of an already-scored round upsert instead of double-counting', () => {
+    const event = validateEvent(v1);
+    const segmentId = event.segments[0].id;
+    const before = event.scoreEntries.length;
+    const next = setRoundAward(event.scoreEntries, segmentId, 'round-p1', 't0', true, event.scoreEntries[0].points);
+    expect(next).toHaveLength(before);
+    expect(teamScore(next, 't0')).toBe(teamScore(event.scoreEntries, 't0'));
+  });
+  it('rebases a Task1-3 window document carrying top-level segmentId/points onto the migrated segment', () => {
+    const event = validateEvent(v1Windowed);
+    expect(() => validateEvent(v1Windowed)).not.toThrow();
+    const segmentId = event.segments[0].id;
+    expect(segmentId).not.toBe('default');
+    expect(event.scoreEntries[0].id).toBe(`${segmentId}:award-round-p1`);
+    expect(event.scoreEntries[0].segmentId).toBe(segmentId);
+    expect(event).not.toHaveProperty('segmentId');
+    expect(event).not.toHaveProperty('points');
   });
 });
 

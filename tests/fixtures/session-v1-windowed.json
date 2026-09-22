@@ -1,0 +1,36 @@
+{
+  "formatVersion": 1,
+  "id": "22222222-2222-4222-8222-222222222222",
+  "title": "Our Fun Friday",
+  "activityId": "childhood-vs-now",
+  "activityVersion": 1,
+  "segmentId": "default",
+  "points": { "correct": 2, "steal": 1 },
+  "createdAt": "2026-09-15T10:00:00.000Z",
+  "updatedAt": "2026-09-15T11:00:00.000Z",
+  "isDemo": false,
+  "phase": "play",
+  "setupStepId": "game",
+  "people": [{ "id": "p1", "name": "Asha", "funFact": "Keeper of the snack drawer", "included": true, "facePairId": "f1" }],
+  "facePairs": [{
+    "id": "f1", "number": 1, "color": "#f7d873", "matchMethod": "manual", "reviewStatus": "confirmed",
+    "now": { "sourceImageId": "img-now", "cropImageId": "img-now-crop", "faceBox": { "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.2 }, "padding": { "top": 0.3, "right": 0.24, "bottom": 0.52, "left": 0.24 } },
+    "then": { "sourceImageId": "img-then", "cropImageId": "img-then-crop", "faceBox": { "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.2 }, "padding": { "top": 0.3, "right": 0.24, "bottom": 0.52, "left": 0.24 } }
+  }],
+  "teams": [{ "id": "t0", "name": "Coffee Breakers", "color": "#f7d873" }],
+  "scoreEntries": [{ "id": "default:award-round-p1", "teamId": "t0", "segmentId": "default", "roundId": "round-p1", "kind": "round-award", "points": 1, "active": true }],
+  "settings": { "shuffle": true, "matchingTolerance": 0.12 },
+  "game": {
+    "originalImageId": "img-now", "childhoodImageId": "img-then", "childhoodUploadId": "img-then",
+    "previews": {},
+    "rounds": [{ "id": "round-p1", "personId": "p1", "teamId": "t0", "revealed": true, "result": "correct" }],
+    "currentRoundIndex": 0,
+    "finale": { "wipePosition": 0 }
+  },
+  "assets": {
+    "img-now": { "id": "img-now", "name": "now.jpg", "width": 1200, "height": 800, "mime": "image/jpeg" },
+    "img-then": { "id": "img-then", "name": "then.jpg", "width": 1200, "height": 800, "mime": "image/jpeg" },
+    "img-now-crop": { "id": "img-now-crop", "name": "Face 1 - now.jpg", "width": 400, "height": 500, "mime": "image/jpeg" },
+    "img-then-crop": { "id": "img-then-crop", "name": "Face 1 - then.jpg", "width": 400, "height": 500, "mime": "image/jpeg" }
+  }
+}
