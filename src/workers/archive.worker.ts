@@ -16,8 +16,13 @@ worker.onmessage = ({ data }) => {
         if (file.name.includes('..') || file.name.startsWith('/')) throw new Error('The ZIP contains an invalid path.');
         return true;
       } });
-      if (!files['session.json']) throw new Error('This is not a Fun Friday Studio session ZIP.');
-      const manifest = JSON.parse(strFromU8(files['session.json'])); delete files['session.json'];
+      if (!files['session.json'] && !data.allowMissingManifest) {
+        throw new Error('This is not a Fun Friday Studio session ZIP.');
+      }
+      const manifest = files['session.json']
+        ? JSON.parse(strFromU8(files['session.json']))
+        : undefined;
+      if (files['session.json']) delete files['session.json'];
       worker.postMessage({ id: data.id, result: { manifest, files } }, Object.values(files).map(file => file.buffer));
     }
   } catch (error) { worker.postMessage({ id: data.id, error: error instanceof Error ? error.message : 'Could not read this ZIP.' }); }
