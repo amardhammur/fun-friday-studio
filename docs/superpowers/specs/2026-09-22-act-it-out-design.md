@@ -131,7 +131,7 @@ that makes this a genuine test of the contract.
 
 ### The bundled deck
 
-`prompts.ts` exports four categories of roughly 40 prompts each: **Office Life**, **Movies & TV**,
+`prompts.ts` exports four categories of 30 prompts each: **Office Life**, **Movies & TV**,
 **Actions**, **Around the House**. Plain TypeScript, not a JSON asset, so it code-splits into the
 activity's own chunk and the service worker precaches it with everything else.
 
@@ -188,6 +188,7 @@ Moving forward off the last turn, once every turn is `done`, sets `phase = 'fina
 | Space or Enter | Got it |
 | S | Skip |
 | Z | Undo the last card |
+| E | End the turn |
 | Left / Right | Previous / next turn |
 
 Undo removes the last entry in the **current** turn's `results`, decrements `cursor`, and re-upserts
@@ -217,9 +218,9 @@ second, instant demo proves `createDemo` is not secretly a Childhood vs Now hook
 
 ## Core changes
 
-Three couplings to Childhood vs Now in `src/app/App.tsx` that a second activity exposes. All three
-are small, and all three are the kind of thing that should be fixed by the activity that reveals
-them rather than worked around inside it.
+Four couplings to Childhood vs Now that a second activity exposes. All four are small, and all four
+are the kind of thing that should be fixed by the activity that reveals them rather than worked
+around inside it.
 
 1. **`jumpStep` and the step nav hardcode `'game'`** (`App.tsx:87` and the `setup-steps` nav). The
    rule intended is "the roster-independent step stays reachable when the roster is locked." Keep
@@ -236,7 +237,22 @@ them rather than worked around inside it.
    `M Missed`. Derive the hints from `activity.shortcuts` instead. The shortcuts modal already does
    exactly this, so the footer is just behind.
 
-Nothing in `src/core/` changes. No schema version bumps. No migration: this is a new activity at
+4. **Every activity card on the home screen is Childhood vs Now's** (`Home.tsx:10`). The card label
+   "THE NOSTALGIA EDITION", the eyebrow "A TRIP DOWN MEMORY LANE", and the tags "1–8 teams", "No
+   repeated photos" and "2 base points per correct guess" are written into the `getActivities().map`
+   body, so an Act It Out card would advertise itself as a photo game. Add an optional
+   `card?: { label: string; eyebrow: string; tags: string[] }` to `Activity`, give both activities
+   their own, and have `Home` fall back to the current strings when an activity omits it.
+
+   The same line renders a `Preview` only when `session` is truthy, and `session` is undefined until
+   an event has a segment — so on a fresh install no card shows its art at all. Make `Home` render
+   the preview unconditionally and let Childhood vs Now's `Preview` accept an optional session,
+   which it nearly does already.
+
+This is the only contract change in this spec, and it is purely presentational with a safe default.
+The `rosterIndependent` flag that coupling 1 wants is behavioural and stays out.
+
+No `src/core/` behaviour changes beyond the optional `card` field on `Activity`. No schema version bumps. No migration: this is a new activity at
 `version: 1`, and `migrate` throws as Childhood vs Now's does.
 
 ## Testing
