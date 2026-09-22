@@ -12,6 +12,7 @@ import { Interstitial } from './Interstitial';
 import { EventFinale } from './EventFinale';
 import { advanceSegment } from './standings-logic';
 import { PeopleLibrary } from '../core/people/PeopleLibrary';
+import { Wager } from '../core/play/WagerView';
 export function App({ initialSession }: { initialSession: EventSession }) {
   const [session, setSession] = useState(initialSession), sessionRef = useRef(initialSession);
   const [route, setRoute] = useState<'home' | 'session' | 'people'>(initialSession.phase === 'lineup' || currentSegment(initialSession)?.status === 'setup' ? 'home' : 'session');
@@ -86,6 +87,7 @@ export function App({ initialSession }: { initialSession: EventSession }) {
     {route === 'session' && session.phase === 'segment' && segment?.status === 'finale' && activity?.Finale && context && <activity.Finale {...context}/>}
     {route === 'session' && session.phase === 'segment' && segment?.status === 'finale' && <div className="segment-finale-bar"><button className="button primary" onClick={() => updateEvent(s => { s.phase = 'interstitial'; })}>Leaderboard <ArrowRight size={18}/></button></div>}
     {route === 'session' && session.phase === 'interstitial' && <Interstitial event={session} onContinue={() => updateEvent(advanceSegment)}/>}
+    {route === 'session' && session.phase === 'wager' && session.wager && <Wager event={session} onChange={updateEvent} onFinish={() => updateEvent(s => { s.phase = 'finale'; })}/>}
     {route === 'session' && session.phase === 'finale' && <EventFinale event={session} onRestart={() => updateEvent(s => { s.phase = 'lineup'; s.scoreEntries = []; s.segments = []; s.wager = undefined; s.currentSegmentIndex = 0; })} onHome={() => setRoute('home')}/>}
     {isStage ? <footer className="stage-footer"><button onClick={() => { if (window.confirm('Return to game setup? Your current progress remains saved until you start a new game.')) update(s => { s.phase = 'setup'; s.setupStepId = 'game'; }); }}><Settings size={15}/> Host settings</button><div><span><kbd>↵</kbd> Reveal</span><span><kbd>C</kbd> Correct</span><span><kbd>M</kbd> Missed</span><span><kbd>←</kbd><kbd>→</kbd> Navigate</span></div><button aria-label="Keyboard shortcuts" onClick={() => setShortcutsOpen(true)}><Keyboard size={17}/></button></footer> : <footer className="app-footer"><span>FUN FRIDAY STUDIO</span><span>A little nostalgia. A lot of team spirit.</span><span>Made for Fridays. And your people.</span></footer>}
     {toast && <div className="toast" role="status"><span>{toast}</span><button className="icon-button" aria-label="Dismiss notification" onClick={() => setToast('')}><X size={17}/></button></div>}

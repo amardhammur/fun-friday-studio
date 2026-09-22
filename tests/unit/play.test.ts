@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pauseTimer, remainingMs, resetTimer, startTimer, type TimerState } from '../../src/core/play/timer';
 import { retractSteal, setStealAward, stealTeamId } from '../../src/core/play/steal';
+import { clampWager, maxWager, setWagerResult, WAGER_FLOOR } from '../../src/core/play/wager';
 import { setRoundAward, teamScore } from '../../src/core/scoring';
 import type { ScoreEntry } from '../../src/core/types';
 
@@ -76,5 +77,38 @@ describe('steal on a miss', () => {
     entries = setStealAward(entries, 'seg-b', 'r1', 't0', 't2');
     expect(teamScore(entries, 't1')).toBe(1);
     expect(teamScore(entries, 't2')).toBe(1);
+  });
+});
+
+describe('final wager', () => {
+  const rich: ScoreEntry[] = [{ id: 'a', teamId: 't0', kind: 'manual-adjustment', points: 30, active: true }];
+  it('caps a bet at the team score', () => {
+    expect(maxWager(rich, 't0')).toBe(30);
+    expect(clampWager(rich, 't0', 45)).toBe(30);
+    expect(clampWager(rich, 't0', 12)).toBe(12);
+  });
+  it('lets a team on zero still bet the floor', () => {
+    expect(maxWager([], 't9')).toBe(WAGER_FLOOR);
+    expect(clampWager([], 't9', 5)).toBe(5);
+    expect(clampWager([], 't9', 99)).toBe(WAGER_FLOOR);
+  });
+  it('never allows a negative bet', () => {
+    expect(clampWager(rich, 't0', -8)).toBe(0);
+  });
+  it('treats a team below the floor as able to reach the floor', () => {
+    const poor: ScoreEntry[] = [{ id: 'a', teamId: 't0', kind: 'manual-adjustment', points: 2, active: true }];
+    expect(maxWager(poor, 't0')).toBe(WAGER_FLOOR);
+  });
+  it('adds the bet on a correct answer and subtracts it on a wrong one', () => {
+    expect(teamScore(setWagerResult(rich, 't0', 10, true), 't0')).toBe(40);
+    expect(teamScore(setWagerResult(rich, 't0', 10, false), 't0')).toBe(20);
+  });
+  it('is idempotent and reversible on re-marking', () => {
+    let entries = setWagerResult(rich, 't0', 10, false);
+    entries = setWagerResult(entries, 't0', 10, false);
+    expect(teamScore(entries, 't0')).toBe(20);
+    expect(entries.filter(e => e.kind === 'wager')).toHaveLength(1);
+    entries = setWagerResult(entries, 't0', 10, true);
+    expect(teamScore(entries, 't0')).toBe(40);
   });
 });
