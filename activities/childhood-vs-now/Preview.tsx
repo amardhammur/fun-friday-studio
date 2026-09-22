@@ -1,0 +1,6 @@
+import type { CVSession } from './types';
+import { StoredImage } from '../../src/components/Images';
+export function Preview({ session }: { session: CVSession }) {
+  const pair = session.facePairs.find(p => p.now?.cropImageId && p.then?.cropImageId);
+  return <div className="activity-art" aria-label="A childhood portrait beside a current portrait"><span className="art-doodle d1">✧</span><span className="art-doodle d2">✳</span><div className="art-grid"/><div className="mini-polaroid mini-then"><span className="tape"/>{pair ? <StoredImage id={pair.then?.cropImageId} alt="Sample childhood portrait"/> : <div className="placeholder-portrait">☺</div>}<span className="handwritten">back then</span></div><div className="mini-polaroid mini-now">{pair ? <StoredImage id={pair.now?.cropImageId} alt="Sample current portrait"/> : <div className="placeholder-portrait">☺</div>}<span className="handwritten">all grown up</span></div><span className="art-arrow handwritten">⤷</span><span className="art-note handwritten">Wait… is that you?</span></div>;
+}

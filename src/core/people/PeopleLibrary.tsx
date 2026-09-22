@@ -1,0 +1,10 @@
+import { Users, Download, ArrowRight } from 'lucide-react';
+import type { ActivityContext } from '../types';
+import { StoredImage } from '../../components/Images';
+import { exportFacePairs } from '../transfer';
+export function PeopleLibrary({ session, update, runTask, onSetup }: ActivityContext & { onSetup: () => void }) {
+  return <main className="library-page"><div className="section-heading"><span className="eyebrow">THE FAMILIAR FACES</span><h1>Your people library<span className="accent">.</span></h1><p>One class register, ready for every activity. Names and face pairs travel with your session.</p></div><div className="names-toolbar"><span><Users size={18}/> {session.people.length} people in this session</span><div className="button-row"><button className="button secondary" disabled={!session.people.length} onClick={() => void runTask('Packing the face pairs…', () => exportFacePairs(session))}><Download size={16}/> Export pairs</button><button className="button primary" onClick={onSetup}>Manage people <ArrowRight size={17}/></button></div></div><div className="library-grid">{session.people.map(person => {
+    const pair = session.facePairs.find(p => p.id === person.facePairId);
+    return <article className="library-person" key={person.id}><div className="library-portraits"><StoredImage id={pair?.then?.cropImageId} alt={`${person.name || 'Unnamed person'} as a child`}/><StoredImage id={pair?.now?.cropImageId} alt={`${person.name || 'Unnamed person'} now`}/></div><input aria-label={`Library name ${person.id}`} value={person.name} placeholder="Add a name" onChange={e => update(s => { s.people.find(p => p.id === person.id)!.name = e.target.value; })}/><p>{person.funFact || 'A face worth remembering.'}</p><span className={`pill ${person.included ? 'mint' : ''}`}>{person.included ? 'In the game' : 'Sitting this one out'}</span></article>;
+  })}</div>{!session.people.length && <div className="empty-state"><Users size={42}/><h2>The register is empty.</h2><p>Upload your two photos and match the faces to add your colleagues.</p></div>}</main>;
+}
