@@ -66,6 +66,8 @@ export interface Activity<S = any, G = any> {
   settingsSchema: z.ZodType<S>; stateSchema: z.ZodType<G>; settingsFields: SettingsField[];
   Stage: ComponentType<ActivityContext<S, G>>; Finale?: ComponentType<ActivityContext<S, G>>;
   estimatedMinutes?: number;
+  /** Home-screen card copy. Falls back to the original Childhood vs Now wording when omitted. */
+  card?: { label: string; eyebrow: string; tags: string[] };
   Preview?: ComponentType<{ session: Session<S, G> }>;
   createDemo?: (segment: ActivitySegment<S, G>, event: EventUpdate) => Promise<PreparedActivity<S, G>>;
   validateSession?: (segment: ActivitySegment<S, G>, event: ActivityEvent) => string[];
