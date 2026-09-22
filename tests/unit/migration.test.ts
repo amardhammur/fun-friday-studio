@@ -58,6 +58,15 @@ describe('v1 to v2 migration', () => {
     expect(next).toHaveLength(before);
     expect(teamScore(next, 't0')).toBe(teamScore(event.scoreEntries, 't0'));
   });
+  it('lets a correction to incorrect un-score the round, not just avoid duplicating it', () => {
+    const event = validateEvent(v1);
+    const segmentId = event.segments[0].id;
+    // Without the ledger rebase, the legacy `award-${roundId}` entry stays active alongside a
+    // new `active: false` one (upsert matches by id alone), so segmentScore looks right while
+    // the event total stays inflated — exactly the failure mode nobody would notice mid-event.
+    const corrected = setRoundAward(event.scoreEntries, segmentId, 'round-p1', 't0', false);
+    expect(teamScore(corrected, 't0')).toBe(0);
+  });
   it('rebases a Task1-3 window document carrying top-level segmentId/points onto the migrated segment', () => {
     const event = validateEvent(v1Windowed);
     expect(() => validateEvent(v1Windowed)).not.toThrow();
