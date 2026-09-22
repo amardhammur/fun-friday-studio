@@ -45,7 +45,7 @@ interface Segment {
   title: string;                 // host-renamable, e.g. "Round 3: Who Said It?"
   settings: unknown;
   game: unknown;
-  status: 'pending' | 'setup' | 'play' | 'done';
+  status: 'pending' | 'setup' | 'play' | 'finale' | 'done';
   setupStepId: string;
   weight: number;                // points multiplier, default 1
 }
@@ -69,6 +69,33 @@ interface Session {              // now an event
 schema in `src/core/session.ts` validates `segments` and resolves each segment's activity through the
 registry, running that activity's `settingsSchema`, `stateSchema`, and `validateSession` per segment.
 
+### Segment view
+
+Activities are not rewritten to read `segment.game`. There are about thirty-five call sites of
+`session.game`, `session.settings`, `session.phase`, and `session.setupStepId` across
+`logic/rounds.ts`, `stage/Stage.tsx`, `stage/Finale.tsx`, `logic/preparation.ts`, and the four setup
+steps. Rewriting each by hand is a large mechanical change that no test would catch a miss in.
+
+Instead the core hands each activity a **segment view**: a shallow projection of the event that still
+exposes `game`, `settings`, `phase`, and `setupStepId` at the top level, alongside the shared
+`people`, `facePairs`, `teams`, `scoreEntries`, and `assets`.
+
+```ts
+function segmentView(event: EventSession, index: number): SegmentSession;
+function foldSegmentView(event: EventSession, index: number, view: SegmentSession): void;
+```
+
+`ActivityContext.update` clones the event, builds a view over the clone, runs the activity's change
+against the view, then folds the view's top-level fields back into the segment. Because the view is a
+shallow copy, in-place mutation (`s.people.find(…)!.name = x`, `s.game.rounds.push(…)`) already
+writes through to the clone; the fold-back exists to catch whole-field assignment
+(`s.game = …`, `s.people = […]`, and the `Object.assign(s, next)` pattern the setup steps use).
+
+`Activity`, `ActivityContext`, and every existing activity file keep their current shape. The one
+activity change required is described under Scoring below.
+
+The view carries one added field, `segmentId: ID`, so activities can scope ledger writes.
+
 ### Migration
 
 `formatVersion` goes 1 → 2. A v1 document becomes a one-segment event: the old
@@ -78,7 +105,7 @@ registry, running that activity's `settingsSchema`, `stateSchema`, and `validate
 | --- | --- | --- |
 | `setup` | `setup` | `segment` |
 | `play` | `play` | `segment` |
-| `finale` | `done` | `finale` |
+| `finale` | `finale` | `segment` |
 
 A migrated event has no wager, so its event finale shows the single segment's standings. Existing
 localStorage sessions and exported ZIPs keep working.
@@ -102,10 +129,11 @@ interface ScoreEntry {
 `teamScore` and `standings` keep summing active entries and need no change. Add
 `segmentScore(entries, segmentId, teamId)` for the interstitial breakdown.
 
-**Round IDs become globally unique.** Today they are `round-${personId}`, unique only within one
-activity. Two segments containing the same person would collide in the ledger. Round IDs become
-`${segmentId}:round-${personId}`, and activities are responsible for namespacing their own round IDs
-by segment.
+**Ledger entry IDs become globally unique.** Round IDs are `round-${personId}`, unique only within
+one activity, so two segments containing the same person would collide in the shared ledger. Rather
+than rewriting activity round IDs, the scoring helpers take a `segmentId` and build entry IDs as
+`${segmentId}:award-${roundId}`. The segment view exposes `segmentId`, so the only activity change is
+one line in `logic/rounds.ts` passing it through to `setRoundAward`.
 
 **The base award is 2 points; a steal is 1.** `points` is an integer, so a half-point steal is not
 representable. Rescaling keeps the ledger integral and avoids float-comparison bugs. Both values are
@@ -119,8 +147,9 @@ and re-clicking an award stays idempotent.
 These are the correctness core of the feature and carry the heaviest unit tests.
 
 1. Repeating any host action is idempotent. Every entry has a deterministic ID
-   (`award-${roundId}`, `steal-${roundId}`, `award-${roundId}-${teamId}`, `wager-${teamId}`) and is
-   updated in place rather than appended, following the existing `setRoundAward` pattern.
+   (`${segmentId}:award-${roundId}`, `${segmentId}:steal-${roundId}`,
+   `${segmentId}:award-${roundId}-${teamId}`, `wager-${teamId}`) and is updated in place rather than
+   appended, following the existing `setRoundAward` pattern.
 2. A steal implies the owning team missed. If the host then flips the owner to Correct, the steal
    entry is deactivated.
 3. A steal cannot be awarded to the round's owning team.
@@ -196,8 +225,9 @@ because the app learned to run six.
   group reveal; Act It Out will not need one.
 - `remapImages` and `validateSession` are invoked per segment through a registry lookup during ZIP
   import and session validation.
-- Activities namespace their round IDs by segment ID.
 - Optional `estimatedMinutes` for the lineup builder's runtime estimate.
+
+Everything else in `Activity` and `ActivityContext` is unchanged, because of the segment view above.
 
 ## Activity backlog
 
@@ -219,10 +249,15 @@ Each is a separate spec and build, in this order.
 
 Following the existing split.
 
-**Vitest.** Ledger invariants 1–4 above, including repeated and out-of-order host clicks. Round-ID
+**Vitest.** Ledger invariants 1–4 above, including repeated and out-of-order host clicks. Entry-ID
 uniqueness across segments. Weight application at award time. Wager clamping at the floor and
 ceiling. v1 → v2 migration against a checked-in v1 fixture. Lineup validation, including a segment
 whose activity is not registered.
+
+Segment view round-trips get their own suite, because they are the load-bearing piece for leaving
+activities untouched: in-place mutation writes through, whole-field assignment folds back,
+`Object.assign(s, next)` folds back, shared fields reach the event, and a write through one segment's
+view never touches another segment's `game`.
 
 **Playwright**, on the production build as today. A complete three-segment event through interstitials,
 wager, and event finale. Refresh mid-round restoring the timer deadline rather than resetting it.
