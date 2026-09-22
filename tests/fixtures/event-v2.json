@@ -1,16 +1,26 @@
 {
-  "formatVersion": 1,
-  "id": "22222222-2222-4222-8222-222222222222",
+  "formatVersion": 2,
+  "id": "11111111-1111-4111-8111-111111111111",
   "title": "Our Fun Friday",
-  "activityId": "childhood-vs-now",
-  "activityVersion": 1,
-  "segmentId": "default",
-  "points": { "correct": 2, "steal": 1 },
-  "createdAt": "2026-09-15T10:00:00.000Z",
-  "updatedAt": "2026-09-15T11:00:00.000Z",
+  "createdAt": "2026-09-01T10:00:00.000Z",
+  "updatedAt": "2026-09-01T11:00:00.000Z",
   "isDemo": false,
-  "phase": "play",
-  "setupStepId": "game",
+  "segments": [{
+    "id": "seg-1", "activityId": "childhood-vs-now", "activityVersion": 1, "title": "Childhood vs. Now",
+    "settings": { "shuffle": true, "matchingTolerance": 0.12 },
+    "game": {
+      "originalImageId": "img-now", "childhoodImageId": "img-then", "childhoodUploadId": "img-then",
+      "previews": {},
+      "rounds": [{ "id": "round-p1", "personId": "p1", "teamId": "t0", "revealed": true, "result": "correct" }],
+      "currentRoundIndex": 0,
+      "finale": { "wipePosition": 0 }
+    },
+    "status": "play", "setupStepId": "game", "weight": 1
+  }],
+  "currentSegmentIndex": 0,
+  "phase": "segment",
+  "correctPoints": 2,
+  "stealPoints": 1,
   "people": [{ "id": "p1", "name": "Asha", "funFact": "Keeper of the snack drawer", "included": true, "facePairId": "f1" }],
   "facePairs": [{
     "id": "f1", "number": 1, "color": "#f7d873", "matchMethod": "manual", "reviewStatus": "confirmed",
@@ -18,15 +28,7 @@
     "then": { "sourceImageId": "img-then", "cropImageId": "img-then-crop", "faceBox": { "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.2 }, "padding": { "top": 0.3, "right": 0.24, "bottom": 0.52, "left": 0.24 } }
   }],
   "teams": [{ "id": "t0", "name": "Coffee Breakers", "color": "#f7d873" }],
-  "scoreEntries": [{ "id": "default:award-round-p1", "teamId": "t0", "segmentId": "default", "roundId": "round-p1", "kind": "round-award", "points": 1, "active": true }],
-  "settings": { "shuffle": true, "matchingTolerance": 0.12 },
-  "game": {
-    "originalImageId": "img-now", "childhoodImageId": "img-then", "childhoodUploadId": "img-then",
-    "previews": {},
-    "rounds": [{ "id": "round-p1", "personId": "p1", "teamId": "t0", "revealed": true, "result": "correct" }],
-    "currentRoundIndex": 0,
-    "finale": { "wipePosition": 0 }
-  },
+  "scoreEntries": [{ "id": "seg-1:award-round-p1", "teamId": "t0", "segmentId": "seg-1", "roundId": "round-p1", "kind": "round-award", "points": 1, "active": true }],
   "assets": {
     "img-now": { "id": "img-now", "name": "now.jpg", "width": 1200, "height": 800, "mime": "image/jpeg" },
     "img-then": { "id": "img-then", "name": "then.jpg", "width": 1200, "height": 800, "mime": "image/jpeg" },

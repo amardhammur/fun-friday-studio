@@ -23,30 +23,11 @@ const schema = z.object({
   scoreEntries: z.array(z.object({ id: z.string(), teamId: z.string(), segmentId: z.string().optional(), roundId: z.string().optional(), kind: z.enum(['round-award', 'steal-award', 'manual-adjustment', 'wager']), points: z.number().int(), active: z.boolean() })),
   assets: z.record(z.string(), z.object({ id: z.string(), name: z.string(), width: z.number().positive(), height: z.number().positive(), mime: z.string() })),
 });
-// A v1 document is one activity. Wrap it as a single segment so old sessions and old ZIPs keep
-// opening; everything shared already sat at the top level and stays there.
-export function migrateV1(raw: unknown): unknown {
-  const v1 = raw as Record<string, any>;
-  const segmentId = crypto.randomUUID();
-  const segment = {
-    id: segmentId, activityId: v1.activityId, activityVersion: v1.activityVersion,
-    title: getActivity(v1.activityId)?.name ?? v1.activityId,
-    settings: v1.settings, game: v1.game,
-    status: v1.phase, setupStepId: v1.setupStepId, weight: 1,
-  };
-  // Legacy ledgers keyed awards as `award-${roundId}` with no segmentId. Rebase every round
-  // award onto the migrated segment so a later re-mark upserts the same entry instead of
-  // adding a second, double-counting one.
-  const scoreEntries = (v1.scoreEntries ?? []).map((entry: any) => entry.kind === 'round-award' && entry.roundId
-    ? { ...entry, segmentId, id: `${segmentId}:award-${entry.roundId}` }
-    : entry);
-  const { activityId, activityVersion, settings, game, phase, setupStepId, scoreEntries: _scoreEntries, segmentId: _segmentId, points: _points, ...shared } = v1;
-  return { ...shared, formatVersion: 2, segments: [segment], currentSegmentIndex: 0, phase: 'segment', correctPoints: 2, stealPoints: 1, scoreEntries };
-}
 export function validateEvent(raw: unknown): EventSession {
   const version = (raw as { formatVersion?: unknown })?.formatVersion;
-  if (version !== 1 && version !== 2) throw new Error('This session needs a newer version of Fun Friday Studio.');
-  const event = schema.parse(version === 1 ? migrateV1(raw) : raw);
+  if (version === 1) throw new Error('This session was saved before Fun Friday Studio learned to run events. Please set up your game again — your photos and names are safe in Export pairs.');
+  if (version !== 2) throw new Error('This session needs a newer version of Fun Friday Studio.');
+  const event = schema.parse(raw);
   const segments: Segment[] = event.segments.map(segment => {
     const activity = getActivity(segment.activityId);
     if (!activity) throw new Error(`This session uses an activity that is not installed: ${segment.activityId}.`);
