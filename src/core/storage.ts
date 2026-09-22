@@ -1,5 +1,5 @@
 import { openDB, type IDBPDatabase } from 'idb';
-import type { AnySession } from './types';
+import type { EventSession } from './types';
 
 const SESSION_KEY = 'fun-friday-studio.session.v1';
 let db: Promise<IDBPDatabase> | undefined;
@@ -43,7 +43,7 @@ export const imageStore = {
     try { await (await database()).delete('images', id); } catch { /* Temporary cleanup is best effort. */ }
   },
 };
-export function saveSession(session: AnySession) {
+export function saveSession(session: EventSession) {
   try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
   catch { storageWarning('Temporary game progress — saving is unavailable. Export your session before closing this tab.'); }
 }

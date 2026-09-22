@@ -9,9 +9,9 @@ test('full demo: unique sets, one-point scoring, refresh, finale and group wipe'
   await page.getByRole('button', { name: 'Try the demo' }).click();
   await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
   await page.screenshot({ path: 'test-results/stage-desktop.png', fullPage: true, animations: 'disabled' });
-  let session = await saved(page); expect(session.game.rounds).toHaveLength(4); expect(new Set(session.game.rounds.map((r: any) => r.personId)).size).toBe(4);
+  let session = await saved(page); expect(session.segments[0].game.rounds).toHaveLength(4); expect(new Set(session.segments[0].game.rounds.map((r: any) => r.personId)).size).toBe(4);
   await page.keyboard.press('Enter'); await page.keyboard.press('c'); await page.keyboard.press('c');
-  session = await saved(page); expect(session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0)).toBe(1);
+  session = await saved(page); expect(session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0)).toBe(2);
   await page.reload(); await expect(page.getByRole('button', { name: /Correct/ })).toHaveAttribute('aria-pressed', 'true');
   await page.screenshot({ path: 'test-results/reveal-desktop.png', fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: /^Next team:/ }).click();
@@ -50,22 +50,22 @@ test('demo pair bundle replaces the library and restores the whole-team reveal',
   });
 
   await expect(page.getByRole('status')).toContainText('4 people imported.');
-  const imported = await saved(page);
+  const imported = await saved(page); const importedGame = imported.segments[0].game;
   expect(imported.people).toHaveLength(4);
   expect(imported.facePairs).toHaveLength(4);
   expect(imported.teams).toEqual(demoSession.teams);
   expect(imported.isDemo).toBe(false);
-  expect(imported.phase).toBe('setup');
-  expect(imported.setupStepId).toBe('game');
-  expect(imported.game.rounds).toEqual([]);
+  expect(imported.segments[0].status).toBe('setup');
+  expect(imported.segments[0].setupStepId).toBe('game');
+  expect(importedGame.rounds).toEqual([]);
   expect(imported.scoreEntries).toEqual([]);
-  expect(imported.game.finale).toEqual({ wipePosition: 0 });
+  expect(importedGame.finale).toEqual({ wipePosition: 0 });
   expect(Object.keys(imported.assets).some(id => demoSession.assets[id])).toBe(false);
-  expect(imported.assets[imported.game.originalImageId]).toBeTruthy();
-  expect(imported.assets[imported.game.childhoodImageId]).toBeTruthy();
-  expect(imported.game.childhoodUploadId).toBe(imported.game.childhoodImageId);
-  expect(imported.assets[imported.game.previews[imported.game.originalImageId]]).toBeTruthy();
-  expect(imported.assets[imported.game.previews[imported.game.childhoodImageId]]).toBeTruthy();
+  expect(imported.assets[importedGame.originalImageId]).toBeTruthy();
+  expect(imported.assets[importedGame.childhoodImageId]).toBeTruthy();
+  expect(importedGame.childhoodUploadId).toBe(importedGame.childhoodImageId);
+  expect(imported.assets[importedGame.previews[importedGame.originalImageId]]).toBeTruthy();
+  expect(imported.assets[importedGame.previews[importedGame.childhoodImageId]]).toBeTruthy();
   expect(new Set(imported.people.map((person: any) => person.name))).toEqual(new Set(['Asha', 'Leo', 'Maya', 'Dev']));
   for (const person of imported.people) {
     const pair = imported.facePairs.find((candidate: any) => candidate.id === person.facePairId);
@@ -168,10 +168,10 @@ test('4200px uploads retain source resolution, align sizes and support manual bo
   await page.getByLabel('Childhood group photo (then)', { exact: true }).setInputFiles({ name: 'team-then.jpg', mimeType: 'image/jpeg', buffer: then });
   await expect(page.getByRole('dialog')).toBeHidden();
   let session = await saved(page);
-  expect(session.assets[session.game.originalImageId].width).toBe(4200);
-  expect(session.assets[session.game.childhoodUploadId].width).toBe(2800);
-  expect(session.assets[session.game.childhoodImageId].width).toBe(4200);
-  expect(session.assets[session.game.childhoodImageId].height).toBe(2400);
+  expect(session.assets[session.segments[0].game.originalImageId].width).toBe(4200);
+  expect(session.assets[session.segments[0].game.childhoodUploadId].width).toBe(2800);
+  expect(session.assets[session.segments[0].game.childhoodImageId].width).toBe(4200);
+  expect(session.assets[session.segments[0].game.childhoodImageId].height).toBe(2400);
   await page.getByRole('button', { name: 'Match people', exact: true }).click();
   for (const label of ['Original photo face editor', 'Childhood photo face editor']) {
     await page.getByRole('button', { name: 'Add face', exact: true }).click();

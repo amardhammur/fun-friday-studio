@@ -8,7 +8,9 @@ import '@fontsource/caveat/latin-500.css';
 import './theme/styles.css';
 import { App } from './app/App';
 import { discoverActivities, getActivities } from './core/registry';
-import { createSession, validateSession } from './core/session';
+import { createEvent, createSegment, foldSegmentView, segmentView } from './core/event';
+import { validateEvent } from './core/session';
+import type { EventSession } from './core/types';
 import { checkStorage, readSavedSession, saveSession, storageWarning } from './core/storage';
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error?: string }> {
   state: { error?: string } = {};
@@ -19,11 +21,12 @@ const root = createRoot(document.getElementById('root')!);
 root.render(<div className="boot-screen"><span>✦</span><h1>fun friday studio</h1><p>Opening the activity cupboard…</p></div>);
 async function boot() {
   await discoverActivities(); await checkStorage();
-  const saved = readSavedSession(); let session;
-  if (saved) { try { session = validateSession(saved); } catch { storageWarning('The saved session could not be restored. Import a session ZIP to recover it.'); } }
+  const saved = readSavedSession(); let session: EventSession | undefined;
+  if (saved) { try { session = validateEvent(saved); } catch (error) { storageWarning(`The saved session could not be restored. ${(error as Error).message}`); } }
   if (!session) {
-    const activity = getActivities()[0]; session = createSession(activity);
-    if (activity.createDemo) { try { session = await activity.createDemo(session); } catch (error) { storageWarning(`The demo could not load. You can still upload your own photos. ${(error as Error).message}`); } }
+    const activity = getActivities()[0];
+    session = createEvent(); session.segments = [createSegment(activity)]; session.phase = 'segment'; session.segments[0].status = 'setup';
+    if (activity.createDemo) { try { foldSegmentView(session, 0, await activity.createDemo(segmentView(session, 0))); } catch (error) { storageWarning(`The demo could not load. You can still upload your own photos. ${(error as Error).message}`); } }
     saveSession(session);
   }
   root.render(<ErrorBoundary><App initialSession={session}/></ErrorBoundary>);
