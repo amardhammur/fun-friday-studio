@@ -10,7 +10,7 @@ export function createSession(activity: Activity): AnySession {
 const rect = z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().positive().max(1), height: z.number().positive().max(1) }).refine(r => r.x + r.width <= 1.00001 && r.y + r.height <= 1.00001, 'Crop lies outside the image');
 const crop = z.object({ sourceImageId: z.string(), faceBox: rect, padding: z.object({ top: z.number().min(0).max(3), right: z.number().min(0).max(3), bottom: z.number().min(0).max(3), left: z.number().min(0).max(3) }), cropImageId: z.string().optional() });
 const schema = z.object({
-  formatVersion: z.literal(1), id: z.string(), title: z.string(), activityId: z.string(), activityVersion: z.number().int().positive(), segmentId: z.string(), createdAt: z.string(), updatedAt: z.string(), isDemo: z.boolean(), phase: z.enum(['setup', 'play', 'finale']), setupStepId: z.string(),
+  formatVersion: z.literal(1), id: z.string(), title: z.string(), activityId: z.string(), activityVersion: z.number().int().positive(), segmentId: z.string().default('default'), createdAt: z.string(), updatedAt: z.string(), isDemo: z.boolean(), phase: z.enum(['setup', 'play', 'finale']), setupStepId: z.string(),
   people: z.array(z.object({ id: z.string(), name: z.string(), funFact: z.string(), included: z.boolean(), facePairId: z.string() })).max(500),
   facePairs: z.array(z.object({ id: z.string(), number: z.number().int().positive(), color: z.string(), now: crop.optional(), then: crop.optional(), matchMethod: z.enum(['automatic', 'manual']), reviewStatus: z.enum(['suggested', 'confirmed', 'unmatched']) })).max(1000),
   teams: z.array(z.object({ id: z.string(), name: z.string().min(1), color: z.string().regex(/^#[0-9a-f]{6}$/i) })).min(1).max(8),
