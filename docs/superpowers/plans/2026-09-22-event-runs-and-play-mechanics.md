@@ -425,8 +425,8 @@ export function foldSegmentView(event: EventSession, index: number, view: AnySes
   const segment = event.segments[index];
   if (!segment) throw new Error('This event has no activity at that position.');
   segment.settings = view.settings; segment.game = view.game; segment.setupStepId = view.setupStepId;
-  // 'pending' and 'done' are event-owned; an activity writing 'setup' must not resurrect a
-  // finished segment, so only advance a segment that is already running.
+  // 'done' is terminal and event-owned: an activity writing 'setup' must never resurrect a
+  // finished segment. 'pending' is a starting state, so a first fold legitimately advances it.
   if (segment.status !== 'done') segment.status = view.phase;
   event.people = view.people; event.facePairs = view.facePairs; event.teams = view.teams;
   event.scoreEntries = view.scoreEntries; event.assets = view.assets;
