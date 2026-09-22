@@ -603,14 +603,21 @@ const schema = z.object({
 // opening; everything shared already sat at the top level and stays there.
 export function migrateV1(raw: unknown): unknown {
   const v1 = raw as Record<string, any>;
+  const segmentId = crypto.randomUUID();
   const segment = {
-    id: crypto.randomUUID(), activityId: v1.activityId, activityVersion: v1.activityVersion,
+    id: segmentId, activityId: v1.activityId, activityVersion: v1.activityVersion,
     title: getActivity(v1.activityId)?.name ?? v1.activityId,
     settings: v1.settings, game: v1.game,
     status: v1.phase, setupStepId: v1.setupStepId, weight: 1,
   };
+  // Legacy ledgers keyed awards as `award-${roundId}` with no segmentId. Rebase every round
+  // award onto the migrated segment so a later re-mark upserts the same entry instead of
+  // adding a second, double-counting one. Manual adjustments have no roundId; leave them.
+  const scoreEntries = (v1.scoreEntries ?? []).map((entry: any) => entry.kind === 'round-award' && entry.roundId
+    ? { ...entry, segmentId, id: `${segmentId}:award-${entry.roundId}` }
+    : entry);
   const { activityId, activityVersion, settings, game, phase, setupStepId, ...shared } = v1;
-  return { ...shared, formatVersion: 2, segments: [segment], currentSegmentIndex: 0, phase: 'segment', correctPoints: 2, stealPoints: 1 };
+  return { ...shared, scoreEntries, formatVersion: 2, segments: [segment], currentSegmentIndex: 0, phase: 'segment', correctPoints: 2, stealPoints: 1 };
 }
 export function validateEvent(raw: unknown): EventSession {
   const version = (raw as { formatVersion?: unknown })?.formatVersion;
