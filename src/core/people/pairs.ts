@@ -4,6 +4,10 @@ export interface ImportedPairFiles {
   nowFile: string;
 }
 
+export function hasJpegSignature(bytes: Uint8Array): boolean {
+  return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
+
 export function parseFacePairFiles(fileNames: string[]): ImportedPairFiles[] {
   const groups = new Map<string, { name: string; thenFile?: string; nowFile?: string }>();
   for (const file of fileNames) {

@@ -2,7 +2,7 @@ import { inspectImage, rpc } from './images/client';
 import { imageStore } from './storage';
 import { teamColors, validateSession } from './session';
 import { exportNames } from './people/csv';
-import { parseFacePairFiles } from './people/pairs';
+import { hasJpegSignature, parseFacePairFiles } from './people/pairs';
 import { getActivity } from './registry';
 import type { AnySession, Asset, FaceCrop, FacePair, Person } from './types';
 const archiveJob = rpc(() => new Worker(new URL('../workers/archive.worker.ts', import.meta.url), { type: 'module' }));
@@ -64,7 +64,9 @@ export async function importFacePairs(file: File, startNumber: number): Promise<
   }[] = [];
   for (const pair of pairs) {
     for (const fileName of [pair.thenFile, pair.nowFile]) {
-      const blob = new Blob([files[fileName] as BlobPart], { type: 'image/jpeg' });
+      const bytes = files[fileName];
+      if (!hasJpegSignature(bytes)) throw new Error(`${fileName} is not a JPEG image.`);
+      const blob = new Blob([bytes as BlobPart], { type: 'image/jpeg' });
       try {
         const { width, height } = await inspectImage(blob);
         images.push({ fileName, blob, width, height });

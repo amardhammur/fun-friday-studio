@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { parseFacePairFiles } from '../../src/core/people/pairs';
+import { hasJpegSignature, parseFacePairFiles } from '../../src/core/people/pairs';
+
+describe('face-pair JPEG bytes', () => {
+  it('accepts JPEG signatures and rejects renamed PNG and WebP bytes', () => {
+    expect(hasJpegSignature(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe(true);
+    expect(hasJpegSignature(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toBe(false);
+    expect(hasJpegSignature(new Uint8Array([0x52, 0x49, 0x46, 0x46]))).toBe(false);
+    expect(hasJpegSignature(new Uint8Array([0xff, 0xd8]))).toBe(false);
+  });
+});
 
 describe('face-pair ZIP filenames', () => {
   it('pairs then and now files for multiple people', () => {
