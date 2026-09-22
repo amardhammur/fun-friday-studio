@@ -113,6 +113,9 @@
   .category-tile small { color: var(--muted); }
   .category-check { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid #ffffff40; border-radius: 5px; margin-bottom: 4px; }
   .category-tile.on .category-check { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+  .aio-number { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 17px; margin-top: 11px; }
+  .aio-number span { display: grid; } .aio-number b { font-family: var(--heading); font-size: 16px; } .aio-number small { color: var(--muted); }
+  .aio-number input { width: 92px; text-align: center; font-variant-numeric: tabular-nums; }
 }
 
 @layer responsive {
