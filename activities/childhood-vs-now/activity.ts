@@ -34,7 +34,7 @@ export const childhoodVsNow: Activity<Settings, GameState> = {
   shortcuts: [
     { key: 'Enter', label: 'Reveal', run: ctx => { if (ctx.session.phase === 'play') ctx.update(reveal); } },
     { key: ' ', label: 'Reveal', run: ctx => { if (ctx.session.phase === 'play') ctx.update(reveal); } },
-    { key: 'c', label: 'Correct +1', run: ctx => { if (ctx.session.phase === 'play') ctx.update(s => markResult(s, 'correct')); } },
+    { key: 'c', label: 'Correct', run: ctx => { if (ctx.session.phase === 'play') ctx.update(s => markResult(s, 'correct')); } },
     { key: 'm', label: 'Missed', run: ctx => { if (ctx.session.phase === 'play') ctx.update(s => markResult(s, 'missed')); } },
     { key: 'ArrowLeft', label: 'Previous', run: ctx => { if (ctx.session.phase === 'play') ctx.update(s => moveRound(s, -1)); } },
     { key: 'ArrowRight', label: 'Next', run: ctx => { if (ctx.session.phase === 'play') ctx.update(s => moveRound(s, 1)); } },

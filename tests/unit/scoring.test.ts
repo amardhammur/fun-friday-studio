@@ -21,7 +21,7 @@ describe('single-point scoring', () => {
     expect(teamScore(entries, 't0')).toBe(1); expect(standings(teams, entries).map(t => t.score)).toEqual([1, 0, 0, 0]);
   });
   it('prevents scoring before reveal and only credits the assigned team', () => {
-    const s = { segmentId: 'seg-a', game: { rounds: allocateRounds(people, teams, false), currentRoundIndex: 0 }, scoreEntries: [] } as unknown as CVSession;
+    const s = { segmentId: 'seg-a', points: { correct: DEFAULT_CORRECT_POINTS, steal: 1 }, game: { rounds: allocateRounds(people, teams, false), currentRoundIndex: 0 }, scoreEntries: [] } as unknown as CVSession;
     markResult(s, 'correct'); expect(s.scoreEntries).toEqual([]);
     s.game.rounds[0].revealed = true; markResult(s, 'correct'); expect(teamScore(s.scoreEntries, 't0')).toBe(2); expect(teamScore(s.scoreEntries, 't1')).toBe(0);
   });

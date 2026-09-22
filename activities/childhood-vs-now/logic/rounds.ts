@@ -1,5 +1,6 @@
 import type { Person, Team } from '../../../src/core/types';
 import { setRoundAward } from '../../../src/core/scoring';
+import { retractSteal, setStealAward } from '../../../src/core/play/steal';
 import type { CVSession, GameState } from '../types';
 export function allocateRounds(people: Person[], teams: Team[], shuffle: boolean, random = Math.random): GameState['rounds'] {
   const pool = people.filter(p => p.included).map(p => p.id);
@@ -27,7 +28,13 @@ export function markResult(session: CVSession, result: 'correct' | 'missed') {
   const round = session.game.rounds[session.game.currentRoundIndex];
   if (!round?.revealed) return;
   round.result = result;
-  session.scoreEntries = setRoundAward(session.scoreEntries, session.segmentId, round.id, round.teamId, result === 'correct');
+  session.scoreEntries = setRoundAward(session.scoreEntries, session.segmentId, round.id, round.teamId, result === 'correct', session.points.correct);
+  if (result === 'correct') session.scoreEntries = retractSteal(session.scoreEntries, session.segmentId, round.id);
+}
+export function markSteal(session: CVSession, teamId: string | null) {
+  const round = session.game.rounds[session.game.currentRoundIndex];
+  if (!round?.revealed || round.result !== 'missed') return;
+  session.scoreEntries = setStealAward(session.scoreEntries, session.segmentId, round.id, round.teamId, teamId, session.points.steal);
 }
 export function moveRound(session: CVSession, delta: number) {
   const next = session.game.currentRoundIndex + delta;
