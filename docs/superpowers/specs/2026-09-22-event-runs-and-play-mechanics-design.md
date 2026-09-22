@@ -179,8 +179,13 @@ award. Entry `steal-${roundId}`, reassignable between teams, subject to the inva
 ### All-team round
 
 One toggle per team; the host taps whichever teams answered correctly. One entry per team per round,
-`award-${roundId}-${teamId}`. Number keys `1`–`8` toggle teams so the host stays on the keyboard;
-with four teams and 40 people, host clicking is the pacing bottleneck.
+`${segmentId}:award-${roundId}-${teamId}`. Number keys `1`–`8` toggle teams so the host stays on the
+keyboard; with four teams and 40 people, host clicking is the pacing bottleneck.
+
+**Deferred to the Office Trivia spec** (ruling by the human partner, 2026-09-22). Every activity in
+this project is turn-based, so building the control here would ship a component and a ledger helper
+with no consumer and no way to validate their shape. They land with the first activity that runs
+simultaneous rounds, which is also the first thing that can prove the interface is right.
 
 ### Final wager
 

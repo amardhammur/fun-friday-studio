@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let one host run five or six activities back to back with shared teams, a single running leaderboard, and shared play mechanics (timer, steal, all-team rounds, final wager).
+**Goal:** Let one host run five or six activities back to back with shared teams, a single running leaderboard, and shared play mechanics (timer, steal, final wager).
 
 **Architecture:** `Session` becomes the event and holds an ordered `Segment[]`; `people`, `facePairs`, `teams`, `scoreEntries`, and `assets` stay at the event level and are shared by every segment. Activities are *not* rewritten: core hands each one a shallow "segment view" that still exposes `game`/`settings`/`phase`/`setupStepId` at the top level, and folds writes back into the segment. New shared play primitives live in `src/core/play/`.
 
@@ -26,7 +26,13 @@
   file. Use theme variables from `src/theme/styles.css`; never hardcode colours.
 - Respect `prefers-reduced-motion` for any new animation.
 - Copy is British-inflected and warm ("colours", "Recognise"). Match it.
-- Every task ends green: `npm test` and `npx tsc -b` must pass before the commit step.
+- `npm test` must pass before **every** task's commit step, with no exceptions.
+- `npx tsc -b` must pass before the commit step from **Task 5 onward**. Tasks 1–4 move the session
+  model across four commits, so `App.tsx` and `transfer.ts` are knowingly red until Task 5 rewires
+  them. Each of those tasks names the files expected to fail and why; a failure anywhere else, or a
+  red `tsc` from Task 5 on, is a real break and must be fixed before committing.
+  (Ruling by the human partner, 2026-09-22: staged refactor beats throwaway shims. The trade
+  accepted is that commits for Tasks 1–4 do not compile and are not individually bisectable.)
 
 ## File Structure
 
@@ -39,7 +45,6 @@
 | `src/core/play/Timer.tsx` | Projector countdown display and host controls |
 | `src/core/play/steal.ts` | Steal award/retract ledger helpers |
 | `src/core/play/StealPanel.tsx` | Host steal UI |
-| `src/core/play/AllTeamRound.tsx` | Per-team correct toggles for simultaneous rounds |
 | `src/core/play/wager.ts` | Wager clamping and ledger helpers |
 | `src/core/play/Wager.tsx` | Final wager bet entry and marking screens |
 | `src/app/Lineup.tsx` | Lineup builder screen |
@@ -47,7 +52,7 @@
 | `src/app/EventFinale.tsx` | Overall winner screen |
 | `tests/unit/event.test.ts` | Segment view round-trips, `createEvent` |
 | `tests/unit/migration.test.ts` | v1 → v2 migration |
-| `tests/unit/play.test.ts` | Steal, all-team, wager, timer state |
+| `tests/unit/play.test.ts` | Steal, wager, timer state |
 | `tests/fixtures/session-v1.json` | Real v1 document for the migration test |
 
 **Modified:**
@@ -69,7 +74,7 @@
 
 ---
 
-### Task 1: Scoring ledger — segment scoping, steal, all-team, weights
+### Task 1: Scoring ledger — segment scoping and weights
 
 **Files:**
 - Modify: `src/core/types.ts:21` (`ScoreEntry`)
@@ -84,11 +89,11 @@
   - `standings(teams: Team[], entries: ScoreEntry[]): (Team & { score: number })[]` (unchanged)
   - `segmentScore(entries: ScoreEntry[], segmentId: string, teamId: string): number`
   - `setRoundAward(entries: ScoreEntry[], segmentId: string, roundId: string, teamId: string, correct: boolean, points?: number): ScoreEntry[]`
-  - `setTeamRoundAward(entries: ScoreEntry[], segmentId: string, roundId: string, teamId: string, correct: boolean, points?: number): ScoreEntry[]`
   - `DEFAULT_CORRECT_POINTS = 2`, `DEFAULT_STEAL_POINTS = 1`
 
 Note the **breaking signature change**: `setRoundAward` gains `segmentId` as its second parameter.
-Task 9 updates its only caller.
+Its only caller is `markResult` in `activities/childhood-vs-now/logic/rounds.ts`, updated in Step 5
+below and revisited in Task 7.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -98,7 +103,7 @@ duplicates:
 
 ```ts
 // add to the existing import from '../../src/core/scoring':
-//   segmentScore, setTeamRoundAward, DEFAULT_CORRECT_POINTS
+//   segmentScore, DEFAULT_CORRECT_POINTS
 
 describe('segment-scoped ledger', () => {
   it('namespaces entry ids so two segments can share a round id', () => {
@@ -135,31 +140,12 @@ describe('segment-scoped ledger', () => {
   });
 });
 
-describe('all-team simultaneous rounds', () => {
-  it('scores each team independently on the same round', () => {
-    let entries = setTeamRoundAward([], 'seg-a', 'q1', 't0', true);
-    entries = setTeamRoundAward(entries, 'seg-a', 'q1', 't1', true);
-    entries = setTeamRoundAward(entries, 'seg-a', 'q1', 't2', false);
-    expect(teamScore(entries, 't0')).toBe(2);
-    expect(teamScore(entries, 't1')).toBe(2);
-    expect(teamScore(entries, 't2')).toBe(0);
-    expect(entries).toHaveLength(3);
-  });
-  it('toggles one team off without disturbing the others', () => {
-    let entries = setTeamRoundAward([], 'seg-a', 'q1', 't0', true);
-    entries = setTeamRoundAward(entries, 'seg-a', 'q1', 't1', true);
-    entries = setTeamRoundAward(entries, 'seg-a', 'q1', 't0', false);
-    expect(teamScore(entries, 't0')).toBe(0);
-    expect(teamScore(entries, 't1')).toBe(2);
-    expect(entries).toHaveLength(2);
-  });
-});
 ```
 
 The existing tests in this file call `setRoundAward(entries, 'r1', 't0', true)` with the old
 signature and expect 1 point. Update every existing call to pass a segment id as the second argument,
 and change the expected totals from `1` to `2` (and the `-1` manual adjustment case from `0` to `1`).
-The `markResult` test at `tests/unit/scoring.test.ts:24` is updated in Task 9; leave it for now by
+The `markResult` test at `tests/unit/scoring.test.ts:24` is revisited in Task 7; leave it for now by
 giving its fake session a `segmentId: 'seg-a'` property:
 
 ```ts
@@ -171,7 +157,7 @@ and change its final expectation from `toBe(1)` to `toBe(2)`.
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run: `npx vitest run tests/unit/scoring.test.ts`
-Expected: FAIL. `segmentScore` and `setTeamRoundAward` are not exported, and `setRoundAward` receives
+Expected: FAIL. `segmentScore` is not exported, and `setRoundAward` receives
 the wrong argument count.
 
 - [ ] **Step 3: Extend `ScoreEntry`**
@@ -199,19 +185,15 @@ function upsert(entries: ScoreEntry[], entry: ScoreEntry): ScoreEntry[] {
 export function setRoundAward(entries: ScoreEntry[], segmentId: string, roundId: string, teamId: string, correct: boolean, points = DEFAULT_CORRECT_POINTS): ScoreEntry[] {
   return upsert(entries, { id: `${segmentId}:award-${roundId}`, teamId, segmentId, roundId, kind: 'round-award', points, active: correct });
 }
-export function setTeamRoundAward(entries: ScoreEntry[], segmentId: string, roundId: string, teamId: string, correct: boolean, points = DEFAULT_CORRECT_POINTS): ScoreEntry[] {
-  return upsert(entries, { id: `${segmentId}:award-${roundId}-${teamId}`, teamId, segmentId, roundId, kind: 'round-award', points, active: correct });
-}
 ```
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `npx vitest run tests/unit/scoring.test.ts && npx tsc -b`
-Expected: all scoring tests PASS. `tsc` will still report errors in `logic/rounds.ts` (old
-`setRoundAward` call) — that is expected and fixed in Task 9. Do not fix it here.
+Run: `npx vitest run tests/unit/scoring.test.ts`
+Expected: all scoring tests PASS.
 
-To get a clean `tsc` at this commit, make the one-line change now in
-`activities/childhood-vs-now/logic/rounds.ts:30`:
+`setRoundAward`'s only caller must be updated in this task, or the repo will not even typecheck the
+activity. Make the one-line change now in `activities/childhood-vs-now/logic/rounds.ts:30`:
 
 ```ts
 session.scoreEntries = setRoundAward(session.scoreEntries, session.segmentId, round.id, round.teamId, result === 'correct');
@@ -222,11 +204,15 @@ and add `segmentId: ID;` to the `Session` interface in `src/core/types.ts`, imme
 
 Task 7 revisits this same line to spend `session.points.correct` and retract steals.
 
+Then run `npx tsc -b`. Per the Global Constraints, `src/app/App.tsx` and `src/core/transfer.ts` are
+expected to be red from here until Task 5 — they still reference the pre-segment session shape.
+Errors in any other file are a real break: fix them before committing.
+
 - [ ] **Step 6: Commit**
 
 ```bash
 git add src/core/scoring.ts src/core/types.ts activities/childhood-vs-now/logic/rounds.ts tests/unit/scoring.test.ts
-git commit -m "feat: scope the score ledger to segments and add all-team awards"
+git commit -m "feat: scope the score ledger to segments"
 ```
 
 ---
@@ -1323,80 +1309,10 @@ git commit -m "feat: let other teams steal a missed round"
 
 ---
 
-### Task 8: All-team simultaneous round component
+### Task 8: Lineup builder
 
 **Files:**
-- Create: `src/core/play/AllTeamRound.tsx`
-- Modify: `src/theme/styles.css`
-- Test: covered by `setTeamRoundAward` tests in Task 1; this task adds no new logic.
-
-**Interfaces:**
-- Consumes: `setTeamRoundAward` (Task 1).
-- Produces: `<AllTeamRound teams segmentId roundId entries onToggle points />`, plus
-  `useAllTeamShortcuts(teams, onToggle, enabled)` binding keys `1`–`8`.
-
-This component has no activity consuming it until the Office Trivia spec. It ships now because it is
-part of the primitives contract and because the wager screen in Task 10 reuses its per-team row
-layout.
-
-- [ ] **Step 1: Create `src/core/play/AllTeamRound.tsx`**
-
-```tsx
-import { useEffect } from 'react';
-import { Check } from 'lucide-react';
-import type { ScoreEntry, Team } from '../types';
-export const teamAwarded = (entries: ScoreEntry[], segmentId: string, roundId: string, teamId: string) => entries.some(e => e.id === `${segmentId}:award-${roundId}-${teamId}` && e.active);
-export function useAllTeamShortcuts(teams: Team[], onToggle: (teamId: string) => void, enabled: boolean) {
-  useEffect(() => {
-    if (!enabled) return;
-    const listener = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
-      const index = Number(event.key) - 1;
-      if (Number.isInteger(index) && index >= 0 && index < teams.length) { event.preventDefault(); onToggle(teams[index].id); }
-    };
-    window.addEventListener('keydown', listener); return () => window.removeEventListener('keydown', listener);
-  }, [teams, onToggle, enabled]);
-}
-export function AllTeamRound({ teams, segmentId, roundId, entries, onToggle, points }: { teams: Team[]; segmentId: string; roundId: string; entries: ScoreEntry[]; onToggle: (teamId: string, correct: boolean) => void; points: number }) {
-  return <div className="all-team-round"><span className="eyebrow">WHO GOT IT? <small>+{points} each</small></span>
-    <div className="all-team-grid">{teams.map((team, i) => { const got = teamAwarded(entries, segmentId, roundId, team.id);
-      return <button key={team.id} className={`all-team-toggle ${got ? 'got' : ''}`} aria-pressed={got} style={{ '--team-color': team.color } as React.CSSProperties} onClick={() => onToggle(team.id, !got)}>
-        <kbd>{i + 1}</kbd><span className="team-dot" style={{ background: team.color }}/><strong>{team.name}</strong>{got && <Check size={19}/>}
-      </button>; })}</div>
-  </div>;
-}
-```
-
-- [ ] **Step 2: Add the styles**
-
-```css
-.all-team-round { display: flex; flex-direction: column; gap: var(--space-2); }
-.all-team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--space-2); }
-.all-team-toggle { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); border: 2px solid var(--color-line); background: var(--color-surface); }
-.all-team-toggle.got { border-color: var(--team-color); background: color-mix(in srgb, var(--team-color) 18%, var(--color-surface)); }
-```
-
-Substitute the real token names.
-
-- [ ] **Step 3: Verify it compiles**
-
-Run: `npx tsc -b && npm test`
-Expected: clean, all tests PASS.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/core/play/AllTeamRound.tsx src/theme/styles.css
-git commit -m "feat: add an all-team simultaneous round control"
-```
-
----
-
-### Task 9: Lineup builder
-
-**Files:**
-- Create: `src/app/Lineup.tsx`
+- Create: `src/app/Lineup.tsx`, `src/app/lineup-logic.ts`
 - Modify: `src/app/App.tsx`, `src/app/Home.tsx`, `src/theme/styles.css`
 - Test: `tests/unit/lineup.test.ts` (create)
 
@@ -1569,10 +1485,10 @@ git commit -m "feat: add the event line-up builder"
 
 ---
 
-### Task 10: Interstitial standings and event finale
+### Task 9: Interstitial standings and event finale
 
 **Files:**
-- Create: `src/app/Interstitial.tsx`, `src/app/EventFinale.tsx`
+- Create: `src/app/Interstitial.tsx`, `src/app/EventFinale.tsx`, `src/app/standings-logic.ts`
 - Modify: `src/app/App.tsx`, `src/theme/styles.css`
 - Test: `tests/unit/standings.test.ts` (create)
 
@@ -1774,7 +1690,7 @@ git commit -m "feat: show standings between activities and crown an overall winn
 
 ---
 
-### Task 11: Final wager
+### Task 10: Final wager
 
 **Files:**
 - Create: `src/core/play/wager.ts`, `src/core/play/Wager.tsx`
@@ -1920,7 +1836,7 @@ git commit -m "feat: add the final wager round"
 
 ---
 
-### Task 12: Full event browser test and documentation
+### Task 11: Full event browser test and documentation
 
 **Files:**
 - Modify: `tests/browser/app.spec.ts`
@@ -1928,7 +1844,7 @@ git commit -m "feat: add the final wager round"
 - Modify: `activities/childhood-vs-now/setup/GameSetupStep.tsx` (scoring copy)
 
 **Interfaces:**
-- Consumes: everything from Tasks 1–11.
+- Consumes: everything from Tasks 1–10.
 - Produces: no new code interfaces.
 
 - [ ] **Step 1: Fix the remaining scoring copy**
@@ -2085,7 +2001,7 @@ that got it from the steal panel.
 - `Finale` is optional and closes your activity before the leaderboard; omit it to go straight to the
   standings.
 - `estimatedMinutes` feeds the line-up builder's runtime estimate.
-- Shared play mechanics live in `src/core/play/`: `Timer`, `StealPanel`, `AllTeamRound`. Use them
+- Shared play mechanics live in `src/core/play/`: `Timer`, `StealPanel`, `Wager`. Use them
   rather than writing your own — they keep the score ledger idempotent and segment-scoped.
 - Write score entries through `src/core/scoring.ts`, passing `session.segmentId`, so two activities
   containing the same person cannot collide in the shared ledger.
@@ -2094,7 +2010,7 @@ that got it from the steal panel.
 - In **Architecture**, add to the tree:
 
 ```text
-src/core/play/              Timer, steal, all-team rounds, final wager
+src/core/play/              Timer, steal, final wager
 ```
 
 - In **Tests**, add to the Vitest sentence: "segment views, v1→v2 migration, steal and wager
@@ -2116,7 +2032,7 @@ git commit -m "test: cover a full event run and document the event format"
 
 ## Verification
 
-After Task 12, confirm by hand on a production build (`npm run build && npm run preview -- --port 4173`):
+After Task 11, confirm by hand on a production build (`npm run build && npm run preview -- --port 4173`):
 
 1. Home → **Build an event** → add two activities, name teams, write a wager → **Start the event**.
 2. Set up and play the first activity. Check that a missed round offers the steal, and that marking
