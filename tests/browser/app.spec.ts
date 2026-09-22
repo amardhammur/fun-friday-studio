@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 const key = 'fun-friday-studio.session.v1';
 const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key);
 async function home(page: Page) { await page.goto('/'); await expect(page.getByRole('heading', { name: 'What are we playing?' })).toBeVisible(); }
-test('full demo: unique sets, one-point scoring, refresh, finale and group wipe', async ({ page }) => {
+test('full demo: unique sets, two-point scoring, refresh, finale and group wipe', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await home(page); await page.screenshot({ path: 'test-results/home-desktop.png', fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Try the demo' }).click();
@@ -196,4 +196,61 @@ test('4200px uploads retain source resolution, align sizes and support manual bo
   for (const i of [4, 3, 2]) await page.getByRole('button', { name: `Remove team ${i}`, exact: true }).click();
   await page.getByRole('button', { name: 'Start new game' }).click();
   await expect(page.getByRole('img', { name: 'The childhood face to guess' })).toBeVisible();
+});
+
+test('stealing, retracting a steal, and reaching the event finale through the standings', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await home(page);
+  await page.getByRole('button', { name: 'Try the demo' }).click();
+  await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
+
+  await page.keyboard.press('Enter'); await page.keyboard.press('c');
+  await page.getByRole('button', { name: /^Next team:/ }).click();
+  await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+  await page.getByRole('button', { name: /^Missed/ }).click();
+  await page.locator('.steal-teams .button').first().click();
+  let session = await saved(page);
+  expect(session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0)).toBe(3);
+  expect(session.scoreEntries.some((e: any) => e.kind === 'steal-award' && e.active)).toBe(true);
+
+  await page.getByRole('button', { name: /^Correct/ }).click();
+  session = await saved(page);
+  expect(session.scoreEntries.filter((e: any) => e.kind === 'steal-award' && e.active)).toHaveLength(0);
+  expect(session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0)).toBe(4);
+  await page.getByRole('button', { name: /^Missed/ }).click();
+
+  await page.getByRole('button', { name: /^Next team:/ }).click();
+  await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+  await page.getByRole('button', { name: /^Missed/ }).click();
+  await page.getByRole('button', { name: /^Next team:/ }).click();
+  await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+  await page.getByRole('button', { name: /^Missed/ }).click();
+  await page.getByRole('button', { name: 'Final results' }).click();
+  await expect(page.getByRole('heading', { name: 'Team of the month!' })).toBeVisible();
+
+  await page.getByRole('button', { name: /^Leaderboard/ }).click();
+  await expect(page.getByText(/ROUND 1 OF 1/)).toBeVisible();
+  await page.getByRole('button', { name: /On to the finish/ }).click();
+  await expect(page.getByRole('heading', { name: /Champions of the Friday!|Sharing the trophy!/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('the line-up builder runs two activities on one leaderboard', async ({ page }) => {
+  await home(page);
+  await page.getByRole('button', { name: /^Build an event/ }).click();
+  await expect(page.getByRole('heading', { name: /Build your Friday/ })).toBeVisible();
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Your people library/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Activity library', exact: true }).click();
+  await page.getByRole('button', { name: /^Build an event/ }).click();
+  await page.getByRole('button', { name: 'Childhood vs Now' }).click();
+  await page.getByRole('button', { name: 'Childhood vs Now' }).click();
+  await page.getByRole('textbox', { name: 'Final wager question' }).fill('How many biscuits does this office get through a week?');
+  await page.getByRole('textbox', { name: 'Final wager answer' }).fill('Far too many');
+  await page.getByRole('button', { name: /Start the event/ }).click();
+  const session = await saved(page);
+  expect(session.segments).toHaveLength(2);
+  expect(session.phase).toBe('segment');
+  expect(session.segments[0].status).toBe('setup');
+  expect(session.wager.question).toContain('biscuits');
 });

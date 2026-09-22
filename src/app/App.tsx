@@ -55,7 +55,7 @@ export function App({ initialSession }: { initialSession: EventSession }) {
     setRoute('session');
   };
   const buildEvent = () => {
-    if ((session.segments.length || session.scoreEntries.length || session.wager) && !window.confirm('Start a fresh event? Your current activities and scores will be cleared, but your people and teams will stay.')) return;
+    if (!session.isDemo && (session.segments.length || session.scoreEntries.length || session.wager) && !window.confirm('Start a fresh event? Your current activities and scores will be cleared, but your people and teams will stay.')) return;
     updateEvent(s => { s.segments = []; s.scoreEntries = []; s.wager = undefined; s.currentSegmentIndex = 0; s.phase = 'lineup'; });
     setRoute('session');
   };
