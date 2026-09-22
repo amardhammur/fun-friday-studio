@@ -28,6 +28,28 @@ test('full demo: unique sets, one-point scoring, refresh, finale and group wipe'
   await page.screenshot({ path: 'test-results/group-desktop.png', fullPage: true, animations: 'disabled' });
   expect(errors).toEqual([]);
 });
+test('exports and imports reusable face pairs', async ({ page }) => {
+  await home(page);
+  await page.getByRole('button', { name: 'Try the demo' }).click();
+  await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Fun Friday Studio home' }).click();
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export pairs', exact: true }).click();
+  const pairsPath = await (await download).path();
+  expect(pairsPath).toBeTruthy();
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await home(page);
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+  await page.locator('input[aria-label="Import face pairs ZIP"]').setInputFiles(pairsPath!);
+
+  await expect.poll(async () => (await saved(page)).people.length).toBe(4);
+  await expect(page.getByRole('img', { name: 'Asha as a child' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Asha now' })).toBeVisible();
+});
 test('setup edits, CSV mapping, local detection, crops, export and import', async ({ page }) => {
   await home(page); await page.getByRole('button', { name: 'Set up your game' }).click();
   await page.getByRole('button', { name: 'Match people', exact: true }).click();
