@@ -20,9 +20,9 @@ test('full demo: unique sets, one-point scoring, refresh, finale and group wipe'
     await page.getByRole('button', { name: /^Missed/ }).click();
     await page.getByRole('button', { name: i < 3 ? /^Next team:/ : 'Final results' }).click();
   }
-  await expect(page.getByRole('heading', { name: 'Top of the class!' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Team of the month!' })).toBeVisible();
   await page.screenshot({ path: 'test-results/finale-desktop.png', fullPage: true, animations: 'disabled' });
-  await page.getByRole('button', { name: 'The whole class reveal' }).click();
+  await page.getByRole('button', { name: 'The whole team reveal' }).click();
   await page.getByRole('slider', { name: 'Reveal original group photo' }).fill('65');
   await page.getByRole('button', { name: 'Asha', exact: true }).click();
   await expect(page.locator('.spotlight-box')).toBeVisible();

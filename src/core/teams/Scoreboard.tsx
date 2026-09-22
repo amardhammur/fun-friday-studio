@@ -3,7 +3,7 @@ import type { ActivityContext } from '../types';
 import { teamScore } from '../scoring';
 export function Scoreboard({ session, update, activeTeamId, playedCounts = {} }: Pick<ActivityContext, 'session' | 'update'> & { activeTeamId?: string; playedCounts?: Record<string, number> }) {
   const scores = session.teams.map(t => teamScore(session.scoreEntries, t.id)), max = Math.max(1, ...scores), lead = Math.max(...scores);
-  return <aside className="scoreboard"><div className="scoreboard-title"><Trophy size={19}/><h3>Class leaderboard</h3></div><p className="muted small">A little friendly competition.</p>
+  return <aside className="scoreboard"><div className="scoreboard-title"><Trophy size={19}/><h3>Office leaderboard</h3></div><p className="muted small">A little friendly competition.</p>
     {session.teams.map((team, i) => <div className={`score-row ${team.id === activeTeamId ? 'active' : ''}`} key={team.id}>
       <div className="score-heading"><span className="team-dot" style={{ background: team.color }}/><strong>{team.name}</strong><b>{scores[i]}</b></div>
       <div className="score-bar"><span style={{ background: team.color, width: `${Math.max(0, scores[i]) / max * 100}%` }}/></div>

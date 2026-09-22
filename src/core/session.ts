@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { getActivity } from './registry';
 import type { Activity, AnySession } from './types';
 export const teamColors = ['#f7d873', '#eea7bb', '#8fcbe0', '#9edbbd', '#d2b5f2', '#f0b085', '#b8d685', '#c2c9ed'];
-export const newTeams = () => ['The Backbenchers', 'Pencil Pushers', 'Class Clowns', 'Gold Stars'].map((name, i) => ({ id: crypto.randomUUID(), name, color: teamColors[i] }));
+export const newTeams = () => ['Coffee Breakers', 'Reply-All Crew', 'Deadline Dodgers', 'Snack Drawer Squad'].map((name, i) => ({ id: crypto.randomUUID(), name, color: teamColors[i] }));
 export function createSession(activity: Activity): AnySession {
   const now = new Date().toISOString();
   return { formatVersion: 1, id: crypto.randomUUID(), title: 'Our Fun Friday', activityId: activity.id, activityVersion: activity.version, createdAt: now, updatedAt: now, isDemo: false, phase: 'setup', setupStepId: activity.setupSteps[0].id, people: [], facePairs: [], teams: newTeams(), scoreEntries: [], settings: activity.defaultSettings(), game: activity.createInitialState(), assets: {} };

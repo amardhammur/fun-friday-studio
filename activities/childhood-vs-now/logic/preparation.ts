@@ -58,7 +58,7 @@ export async function alignChildhood(session: CVSession) {
 }
 export async function loadDemo(session: CVSession): Promise<CVSession> {
   const demo = await demoJob<{ now: Blob; then: Blob; nowFaces: Rect[]; thenFaces: Rect[]; width: number; height: number }>({ type: 'demo' });
-  const now = await storePhoto(demo.now, 'Demo class - now.jpg'), then = await storePhoto(demo.then, 'Demo class - then.jpg');
+  const now = await storePhoto(demo.now, 'Demo team - now.jpg'), then = await storePhoto(demo.then, 'Demo team - then.jpg');
   const next = structuredClone(session);
   for (const a of [now.asset, now.preview, then.asset, then.preview]) next.assets[a.id] = a;
   next.game.originalImageId = now.asset.id; next.game.childhoodImageId = then.asset.id; next.game.childhoodUploadId = then.asset.id;

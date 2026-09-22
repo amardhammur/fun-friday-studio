@@ -1,6 +1,6 @@
 # Fun Friday Studio
 
-A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and a classroom chalkboard theme.
+A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and a chalkboard-style theme.
 
 The first activity is **Childhood vs Now**. Each team gets its own unique batch of childhood portraits and plays its batch in turn. The host reveals the current portrait and name, then marks **Correct (+1)** or **Missed (0)**. A person appears **only once in the entire game**. There are no hints, clarity levels, zoom puzzles, or timers.
 

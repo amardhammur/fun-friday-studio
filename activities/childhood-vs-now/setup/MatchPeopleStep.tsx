@@ -42,7 +42,7 @@ export function MatchPeopleStep({ session, update, runTask, notify }: Context) {
     update(s => { s.facePairs.push({ id, number, color: teamColors[(number - 1) % teamColors.length], [imageSide]: { sourceImageId: imageSide === 'now' ? nowId : thenId, faceBox: rect, padding: { ...defaultPadding } }, matchMethod: 'manual', reviewStatus: 'unmatched' }); syncPeople(s); });
     setSelected(id); setSide(imageSide); setMode('pair'); setPending({ id, side: imageSide });
   };
-  const detect = () => runTask('Finding the faces in your class…', async () => {
+  const detect = () => runTask('Finding the faces in your team…', async () => {
     try {
       setProgress('Loading the local face detector…');
       const nowFaces = await detectFaces(await imageStore.get(nowId), setProgress);

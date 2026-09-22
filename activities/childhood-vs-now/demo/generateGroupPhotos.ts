@@ -7,7 +7,7 @@ function photo(child: boolean) {
   c.fillStyle = '#e1d0b1'; for (let y = 0; y < 900; y += 70) for (let x = (y / 70 % 2) * -120; x < 1800; x += 240) { c.fillRect(x + 5, y + 5, 230, 60); }
   c.fillStyle = '#466e61'; c.fillRect(240, 85, 1320, 440);
   c.strokeStyle = '#a5784f'; c.lineWidth = 25; c.strokeRect(240, 85, 1320, 440);
-  c.fillStyle = '#e5ebd5'; c.font = 'bold 66px sans-serif'; c.textAlign = 'center'; c.fillText(child ? 'CLASS OF GOOD TIMES' : 'STILL THE SAME GANG', 900, 230);
+  c.fillStyle = '#e5ebd5'; c.font = 'bold 66px sans-serif'; c.textAlign = 'center'; c.fillText(child ? 'TINY TEAM, BIG DREAMS' : 'STILL THE SAME GANG', 900, 230);
   c.font = '32px sans-serif'; c.fillText('★   FRIDAY IS OUR FAVOURITE SUBJECT   ★', 900, 300);
   c.strokeStyle = '#a0b99c'; c.lineWidth = 3; c.beginPath(); c.moveTo(600, 345); c.lineTo(1200, 345); c.stroke();
   c.fillStyle = '#b79671'; c.fillRect(0, 970, 1800, 130);
