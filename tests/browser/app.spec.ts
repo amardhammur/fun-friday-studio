@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { test, expect, type Page } from '@playwright/test';
 const key = 'fun-friday-studio.session.v1';
 const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key);
@@ -39,14 +40,44 @@ test('exports and imports reusable face pairs', async ({ page }) => {
   await page.getByRole('button', { name: 'Export pairs', exact: true }).click();
   const pairsPath = await (await download).path();
   expect(pairsPath).toBeTruthy();
+  const pairsBytes = await readFile(pairsPath!);
 
-  await page.evaluate(() => localStorage.clear());
+  const demoSession = await saved(page);
+  await page.evaluate(({ key, session }) => {
+    localStorage.clear();
+    localStorage.setItem(key, JSON.stringify({
+      ...session,
+      id: crypto.randomUUID(),
+      isDemo: false,
+      phase: 'setup',
+      setupStepId: 'upload',
+      people: [],
+      facePairs: [],
+      assets: {},
+      game: { previews: {}, rounds: [], currentRoundIndex: 0, finale: { wipePosition: 0 } },
+    }));
+  }, { key, session: demoSession });
   await page.reload();
   await home(page);
   await page.getByRole('button', { name: 'People library', exact: true }).click();
-  await page.locator('input[aria-label="Import face pairs ZIP"]').setInputFiles(pairsPath!);
+  await page.locator('input[aria-label="Import face pairs ZIP"]').setInputFiles({
+    name: 'exported-face-pairs.zip',
+    mimeType: 'application/zip',
+    buffer: pairsBytes,
+  });
 
-  await expect.poll(async () => (await saved(page)).people.length).toBe(4);
+  await expect(page.getByRole('status')).toContainText('4 people imported.');
+  const imported = await saved(page);
+  expect(imported.people).toHaveLength(4);
+  expect(imported.facePairs).toHaveLength(4);
+  expect(Object.keys(imported.assets)).toHaveLength(8);
+  expect(new Set(imported.people.map((person: any) => person.name))).toEqual(new Set(['Asha', 'Leo', 'Maya', 'Dev']));
+  for (const person of imported.people) {
+    const pair = imported.facePairs.find((candidate: any) => candidate.id === person.facePairId);
+    expect(pair?.number).toBeGreaterThan(0);
+    expect(imported.assets[pair!.then.cropImageId]).toBeTruthy();
+    expect(imported.assets[pair!.now.cropImageId]).toBeTruthy();
+  }
   await expect(page.getByRole('img', { name: 'Asha as a child' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Asha now' })).toBeVisible();
 });

@@ -17,10 +17,16 @@ async function database() {
   });
   return db;
 }
+export interface ImagePutOptions {
+  durable?: boolean;
+}
 export const imageStore = {
-  async put(blob: Blob, id: string = crypto.randomUUID()): Promise<string> {
+  async put(blob: Blob, id: string = crypto.randomUUID(), options: ImagePutOptions = {}): Promise<string> {
     try { await (await database()).put('images', blob, id); }
-    catch { memory.set(id, blob); storageWarning('Temporary images — browser storage is unavailable or full. Export your session before closing this tab.'); }
+    catch {
+      if (options.durable) throw new Error('Persistent image storage is unavailable or full.');
+      memory.set(id, blob); storageWarning('Temporary images — browser storage is unavailable or full. Export your session before closing this tab.');
+    }
     return id;
   },
   async get(id: string): Promise<Blob> {

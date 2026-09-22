@@ -2,7 +2,7 @@ import { inspectImage, rpc } from './images/client';
 import { imageStore } from './storage';
 import { teamColors, validateSession } from './session';
 import { exportNames } from './people/csv';
-import { hasJpegSignature, parseFacePairFiles } from './people/pairs';
+import { assertFacePairImportCapacity, hasJpegSignature, parseFacePairFiles } from './people/pairs';
 import { getActivity } from './registry';
 import type { AnySession, Asset, FaceCrop, FacePair, Person } from './types';
 const archiveJob = rpc(() => new Worker(new URL('../workers/archive.worker.ts', import.meta.url), { type: 'module' }));
@@ -10,6 +10,11 @@ export interface ImportedFacePairs {
   assets: Record<string, Asset>;
   facePairs: FacePair[];
   people: Person[];
+}
+export interface FacePairImportOptions {
+  startNumber: number;
+  currentPeopleCount: number;
+  currentFacePairCount: number;
 }
 function download(bytes: Uint8Array, name: string) {
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/zip' }));
@@ -41,7 +46,7 @@ export async function importSession(file: File) {
   session.game = getActivity(session.activityId)!.remapImages(session.game, remap);
   return validateSession(session);
 }
-export async function importFacePairs(file: File, startNumber: number): Promise<ImportedFacePairs> {
+export async function importFacePairs(file: File, options: FacePairImportOptions): Promise<ImportedFacePairs> {
   const zipMime = !file.type || file.type === 'application/zip' || file.type === 'application/x-zip-compressed';
   if (!file.name.toLocaleLowerCase().endsWith('.zip') || !zipMime) {
     throw new Error('Please choose a ZIP file containing exported face pairs.');
@@ -56,6 +61,10 @@ export async function importFacePairs(file: File, startNumber: number): Promise<
   if (manifest !== undefined) throw new Error('This is a full session ZIP. Import it with Import session ZIP.');
 
   const pairs = parseFacePairFiles(Object.keys(files));
+  assertFacePairImportCapacity(pairs.length, {
+    people: options.currentPeopleCount,
+    facePairs: options.currentFacePairCount,
+  });
   const images: {
     fileName: string;
     blob: Blob;
@@ -79,42 +88,46 @@ export async function importFacePairs(file: File, startNumber: number): Promise<
   const assets: Record<string, Asset> = {};
   const assetsByFile = new Map<string, Asset>();
   const storedIds: string[] = [];
-  for (const image of images) {
-    try {
-      const id = await imageStore.put(image.blob);
-      const asset: Asset = { id, name: image.fileName, width: image.width, height: image.height, mime: 'image/jpeg' };
-      assets[id] = asset;
-      assetsByFile.set(image.fileName, asset);
-      storedIds.push(id);
-    } catch {
-      await Promise.allSettled(storedIds.map(id => imageStore.delete(id)));
-      throw new Error(`Could not store ${image.fileName}. Check browser storage and try again.`);
+  try {
+    for (const image of images) {
+      try {
+        const id = await imageStore.put(image.blob, undefined, { durable: true });
+        const asset: Asset = { id, name: image.fileName, width: image.width, height: image.height, mime: 'image/jpeg' };
+        assets[id] = asset;
+        assetsByFile.set(image.fileName, asset);
+        storedIds.push(id);
+      } catch {
+        throw new Error(`Could not store ${image.fileName}. Check browser storage and try again.`);
+      }
     }
-  }
 
-  const crop = (asset: Asset): FaceCrop => ({
-    sourceImageId: asset.id,
-    cropImageId: asset.id,
-    faceBox: { x: 0, y: 0, width: 1, height: 1 },
-    padding: { top: 0, right: 0, bottom: 0, left: 0 },
-  });
-  const facePairs: FacePair[] = [];
-  const people: Person[] = [];
-  for (let index = 0; index < pairs.length; index++) {
-    const imported = pairs[index];
-    const pairId = crypto.randomUUID();
-    facePairs.push({
-      id: pairId,
-      number: startNumber + index + 1,
-      color: teamColors[(startNumber + index) % teamColors.length],
-      then: crop(assetsByFile.get(imported.thenFile)!),
-      now: crop(assetsByFile.get(imported.nowFile)!),
-      matchMethod: 'manual',
-      reviewStatus: 'confirmed',
+    const crop = (asset: Asset): FaceCrop => ({
+      sourceImageId: asset.id,
+      cropImageId: asset.id,
+      faceBox: { x: 0, y: 0, width: 1, height: 1 },
+      padding: { top: 0, right: 0, bottom: 0, left: 0 },
     });
-    people.push({ id: crypto.randomUUID(), name: imported.name, funFact: '', included: true, facePairId: pairId });
+    const facePairs: FacePair[] = [];
+    const people: Person[] = [];
+    for (let index = 0; index < pairs.length; index++) {
+      const imported = pairs[index];
+      const pairId = crypto.randomUUID();
+      facePairs.push({
+        id: pairId,
+        number: options.startNumber + index + 1,
+        color: teamColors[(options.startNumber + index) % teamColors.length],
+        then: crop(assetsByFile.get(imported.thenFile)!),
+        now: crop(assetsByFile.get(imported.nowFile)!),
+        matchMethod: 'manual',
+        reviewStatus: 'confirmed',
+      });
+      people.push({ id: crypto.randomUUID(), name: imported.name, funFact: '', included: true, facePairId: pairId });
+    }
+    return { assets, facePairs, people };
+  } catch (error) {
+    await Promise.allSettled(storedIds.map(id => imageStore.delete(id)));
+    throw error instanceof Error ? error : new Error('Could not import face pairs.');
   }
-  return { assets, facePairs, people };
 }
 export async function exportFacePairs(session: AnySession) {
   const people = session.people.filter(p => session.facePairs.some(f => f.id === p.facePairId && f.now?.cropImageId && f.then?.cropImageId));

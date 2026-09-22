@@ -3,13 +3,18 @@ import { Users, Download, Upload, ArrowRight } from 'lucide-react';
 import type { ActivityContext } from '../types';
 import { StoredImage } from '../../components/Images';
 import { exportFacePairs, importFacePairs } from '../transfer';
+import { maxFacePairNumber } from './pairs';
 export function PeopleLibrary({ session, update, notify, runTask, onSetup }: ActivityContext & { onSetup: () => void }) {
   const importInput = useRef<HTMLInputElement>(null);
   return <main className="library-page"><div className="section-heading"><span className="eyebrow">THE FAMILIAR FACES</span><h1>Your people library<span className="accent">.</span></h1><p>One class register, ready for every activity. Names and face pairs travel with your session.</p></div><div className="names-toolbar"><span><Users size={18}/> {session.people.length} people in this session</span><div className="button-row"><button className="button secondary" disabled={!session.people.length} onClick={() => void runTask('Packing the face pairs…', () => exportFacePairs(session))}><Download size={16}/> Export pairs</button><button className="button secondary" onClick={() => importInput.current?.click()}><Upload size={16}/> Import pairs</button><input ref={importInput} type="file" accept=".zip,application/zip" className="visually-hidden" aria-label="Import face pairs ZIP" onChange={event => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (file) void runTask('Importing face pairs…', async () => {
-      const imported = await importFacePairs(file, session.facePairs.length);
+      const imported = await importFacePairs(file, {
+        startNumber: maxFacePairNumber(session.facePairs.map(pair => pair.number)),
+        currentPeopleCount: session.people.length,
+        currentFacePairCount: session.facePairs.length,
+      });
       update(s => {
         Object.assign(s.assets, imported.assets);
         s.facePairs.push(...imported.facePairs);

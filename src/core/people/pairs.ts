@@ -4,8 +4,26 @@ export interface ImportedPairFiles {
   nowFile: string;
 }
 
+export const MAX_PEOPLE = 500;
+export const MAX_FACE_PAIRS = 1000;
+
 export function hasJpegSignature(bytes: Uint8Array): boolean {
   return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
+
+export function assertFacePairImportCapacity(pairCount: number, current: { people: number; facePairs: number }) {
+  const peopleTotal = current.people + pairCount;
+  const facePairsTotal = current.facePairs + pairCount;
+  const exceeded: string[] = [];
+  if (peopleTotal > MAX_PEOPLE) exceeded.push(`${MAX_PEOPLE} people`);
+  if (facePairsTotal > MAX_FACE_PAIRS) exceeded.push(`${MAX_FACE_PAIRS} face pairs`);
+  if (exceeded.length) {
+    throw new Error(`Cannot import ${pairCount} face pairs: this session would exceed its limit of ${exceeded.join(' and ')}.`);
+  }
+}
+
+export function maxFacePairNumber(numbers: readonly number[]): number {
+  return numbers.reduce((max, number) => Math.max(max, number), 0);
 }
 
 export function parseFacePairFiles(fileNames: string[]): ImportedPairFiles[] {
