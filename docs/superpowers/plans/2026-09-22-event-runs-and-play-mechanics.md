@@ -546,11 +546,11 @@ git commit -m "feat: validate v2 event documents"
 ### Task 4: ZIP transfer per segment
 
 **Files:**
-- Modify: `src/core/transfer.ts:38` (`exportSession`), `:41` (`importSession`), `:231` (`exportFacePairs` preview lookup)
+- Modify: `src/core/transfer.ts:38` (`exportSession`), `:41` (`importSession`)
 - Test: `tests/unit/transfer-remap.test.ts` (create)
 
 **Interfaces:**
-- Consumes: `validateEvent` (Task 3), `segmentView` / `currentSegment` (Task 2).
+- Consumes: `validateEvent` (Task 3), `EventSession` (Task 2).
 - Produces: `exportSession(event: EventSession)`, `importSession(file: File): Promise<EventSession>` — same names, `EventSession` types.
 
 - [ ] **Step 1: Write the failing test**
@@ -604,7 +604,14 @@ Expected: FAIL — `remapEventImages` is not exported.
 
 Change the import line from `import { validateSession } from './session';` to
 `import { validateEvent } from './session';`, and change `AnySession` to `EventSession` in the
-`exportSession`, `importSession`, and `exportFacePairs` signatures.
+`exportSession` and `importSession` signatures only.
+
+**`exportFacePairs` keeps `AnySession` and is otherwise untouched.** All three of its call sites
+(`src/core/people/PeopleLibrary.tsx`, `activities/childhood-vs-now/setup/NamePeopleStep.tsx`,
+`tests/unit/pairs.test.ts`) pass a segment view, and the segment view already carries everything the
+function reads: `people`, `facePairs` and `assets` projected by reference from the event, alongside
+that segment's own `game.previews`. Widening it to `EventSession` would break those call sites for
+no gain.
 
 Add the exported helper (note: face pairs are shared at the event level, so they are remapped once,
 not per segment):
@@ -636,13 +643,8 @@ Replace the body of `importSession` from the `// Stage every asset` comment to t
 
 and change `const session = validateSession(manifest);` to `const session = validateEvent(manifest);`.
 
-In `exportFacePairs`, replace line 231:
-
-```ts
-  const previewIds = (currentSegment(session)?.game as { previews?: Record<string, string> } | undefined)?.previews ?? {};
-```
-
-importing `currentSegment` from `./event`.
+`exportFacePairs`'s preview lookup stays exactly as it is — the segment view's `game` is already the
+current segment's game state, so no `currentSegment` call is needed.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
