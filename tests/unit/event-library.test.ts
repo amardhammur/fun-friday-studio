@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import fixture from '../fixtures/event-v2.json';
 import { discoverActivities, getActivity } from '../../src/core/registry';
 import { createEvent, createSegment, foldSegmentView, segmentView } from '../../src/core/event';
-import { prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
+import { addEventPeople, leaveDemo, libraryLocked, prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
 import { validateEvent } from '../../src/core/session';
 import type { ImportedFacePairs } from '../../src/core/transfer';
 
@@ -53,5 +53,38 @@ describe('event people library', () => {
     expect(event.scoreEntries).toEqual(earlier);
     expect(view.game.rounds).toHaveLength(1);
     expect(validateEvent(event)).toEqual(event);
+  });
+});
+
+describe('adding to the people library', () => {
+  const extra = (): ImportedFacePairs => {
+    const source = imported();
+    const set = { ...source.photoSets[0], id: 'set-2', name: 'Design', order: 1 };
+    const pair = { ...source.facePairs[0], id: 'pair-2', number: 2, setId: 'set-2' };
+    return { assets: {}, photoSets: [set], facePairs: [pair], people: [{ ...source.people[0], id: 'person-2', facePairId: 'pair-2', name: 'Priya' }] };
+  };
+  it('appends sets, pairs and people and keeps progress on an unlocked event', () => {
+    const event = validateEvent(fixture); event.segments[0].status = 'setup';
+    const scores = structuredClone(event.scoreEntries);
+    addEventPeople(event, extra());
+    expect(event.photoSets.map(s => s.name)).toEqual(['Group 1', 'Design']);
+    expect(event.people.map(p => p.name)).toEqual(['Asha', 'Priya']);
+    expect(event.scoreEntries).toEqual(scores);
+    expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
+  });
+  it('refuses to add once an activity has started', () => {
+    const event = validateEvent(fixture);
+    expect(libraryLocked(event)).toBe(true);
+    expect(() => addEventPeople(event, extra())).toThrow(/locked/);
+  });
+  it('never locks the demo, and leaving the demo resets progress but keeps the people', () => {
+    const event = validateEvent(fixture); event.isDemo = true;
+    expect(libraryLocked(event)).toBe(false);
+    leaveDemo(event);
+    expect(event.isDemo).toBe(false);
+    expect(event.scoreEntries).toEqual([]);
+    expect(event.segments[0].status).toBe('setup');
+    expect(event.people).toHaveLength(1);
+    expect(libraryLocked(event)).toBe(false);
   });
 });

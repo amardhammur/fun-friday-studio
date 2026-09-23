@@ -13,7 +13,7 @@ import { EventFinale } from './EventFinale';
 import { advanceSegment } from './standings-logic';
 import { PeopleLibrary } from '../core/people/PeopleLibrary';
 import { Wager } from '../core/play/WagerView';
-import { prepareSegmentPeople } from '../core/people/event-library';
+import { libraryLocked, prepareSegmentPeople } from '../core/people/event-library';
 export function App({ initialSession }: { initialSession: EventSession }) {
   const [session, setSession] = useState(initialSession), sessionRef = useRef(initialSession);
   const [route, setRoute] = useState<'home' | 'session' | 'people'>(initialSession.phase === 'lineup' || currentSegment(initialSession)?.status === 'setup' ? 'home' : 'session');
@@ -90,7 +90,7 @@ export function App({ initialSession }: { initialSession: EventSession }) {
     {warnings.length > 0 && <div className="storage-warning" role="alert"><AlertTriangle size={19}/><div>{warnings.map(w => <p key={w}>{w}</p>)}</div><button className="button small-button secondary" onClick={() => void runTask('Exporting your temporary session…', () => exportSession(session))}>Export now</button></div>}
     {session.isDemo && session.phase === 'segment' && !rosterLocked && route !== 'home' && activity?.setupSteps.some(s => s.id === 'upload') && <div className="demo-banner"><span>✦ DEMO TEAM</span> These are locally generated cartoons. Upload your own photos to make it personal.<button onClick={() => { update(s => { s.phase = 'setup'; s.setupStepId = 'upload'; }); setRoute('session'); }}>Use my photos <ArrowLeft size={13} style={{ transform: 'rotate(180deg)' }}/></button></div>}
     {route === 'home' && <Home session={view} event={session} onSetup={beginSetup} onDemo={demo} onResume={() => setRoute('session')} onBuildEvent={buildEvent}/>}
-    {route === 'people' && <PeopleLibrary session={session} update={updateEvent} notify={notify} runTask={runTask} onSetup={() => {
+    {route === 'people' && <PeopleLibrary session={session} update={updateEvent} notify={notify} runTask={runTask} locked={libraryLocked(session)} onSetup={() => {
       if (rosterLocked || session.phase === 'wager' || session.phase === 'finale' || session.phase === 'interstitial') { notify('To change the roster after an activity, import a replacement library. This resets progress for the whole event.'); return; }
       updateEvent(s => { if (!s.segments.length) s.segments.push(createSegment(getActivities()[0])); prepareSegmentPeople(s, s.currentSegmentIndex); s.phase = 'segment'; const current = s.segments[s.currentSegmentIndex]; current.status = 'setup'; current.setupStepId = s.facePairs.length ? 'names' : 'upload'; }); setRoute('session');
     }}/>}
