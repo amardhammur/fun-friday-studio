@@ -38,3 +38,6 @@ const deck: Record<(typeof categories)[number], string[]> = {
 };
 export const bundledPrompts: Prompt[] = categories.flatMap(category => deck[category].map(text => ({ text, category })));
 export const promptsIn = (names: string[]) => bundledPrompts.filter(p => names.includes(p.category));
+export const isBuiltIn = (name: string): name is (typeof categories)[number] => (categories as readonly string[]).includes(name);
+export const builtInCategory = (name: (typeof categories)[number], on = true) => ({ id: `built-in:${name}`, name, on, builtIn: name, prompts: [...deck[name]] });
+export const defaultCategories = () => categories.map(name => builtInCategory(name));

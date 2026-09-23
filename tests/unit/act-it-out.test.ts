@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { bundledPrompts, categories, promptsIn } from '../../activities/act-it-out/prompts';
-import type { GameState, Settings, AIOSegment } from '../../activities/act-it-out/types';
-import { initialState, stateSchema } from '../../activities/act-it-out/types';
-import { allocateTurns, buildDeck, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, startNewGame, startTurn, undoLast } from '../../activities/act-it-out/logic/turns';
+import { builtInCategory, bundledPrompts, categories, defaultCategories, promptsIn } from '../../activities/act-it-out/prompts';
+import type { Category, GameState, Settings, AIOSegment } from '../../activities/act-it-out/types';
+import { initialState, settingsSchema, stateSchema } from '../../activities/act-it-out/types';
+import { migrate } from '../../activities/act-it-out/logic/migrate';
+import { allocateTurns, buildDeck, cardsNeeded, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, startNewGame, startTurn, undoLast } from '../../activities/act-it-out/logic/turns';
 import { loadDemo } from '../../activities/act-it-out/logic/demo';
 import { teamScore } from '../../src/core/scoring';
 import type { EventUpdate, Team } from '../../src/core/types';
@@ -56,7 +57,8 @@ describe('the game state schema', () => {
 });
 
 const teams: Team[] = [{ id: 'team-a', name: 'Coffee Breakers', color: '#f7d873' }, { id: 'team-b', name: 'Reply-All Crew', color: '#eea7bb' }];
-const settings = (over: Partial<Settings> = {}): Settings => ({ categories: ['Office Life'], customPrompts: [], turnSeconds: 90, roundsPerTeam: 1, ...over });
+const own = (prompts: string[], name = 'Your own'): Category => ({ id: `custom:${name}`, name, on: true, prompts });
+const settings = (over: Partial<Settings> = {}): Settings => ({ rule: 'act', categories: [builtInCategory('Office Life')], turnSeconds: 90, roundsPerTeam: 1, ...over });
 const anEvent = (over: Partial<EventUpdate> = {}): EventUpdate => ({ title: 'Event', isDemo: false, phase: 'segment', wager: undefined, correctPoints: 2, stealPoints: 1, people: [], facePairs: [], teams, scoreEntries: [], assets: {}, ...over });
 const aSegment = (over: Partial<Settings> = {}): AIOSegment => ({
   formatVersion: 1, id: 'e1', title: 'Event', activityId: 'act-it-out', activityVersion: 1, segmentId: 'seg-1',
@@ -74,14 +76,26 @@ describe('building the deck', () => {
     expect(eligiblePrompts(settings()).every(p => p.category === 'Office Life')).toBe(true);
   });
   it('puts the host own prompts in and trims blank lines', () => {
-    const prompts = eligiblePrompts(settings({ customPrompts: ['  The 4pm deploy  ', '', '   '] }));
+    const prompts = eligiblePrompts(settings({ categories: [builtInCategory('Office Life'), own(['  The 4pm deploy  ', '', '   '])] }));
     expect(prompts.map(p => p.text)).toContain('The 4pm deploy');
     expect(prompts.some(p => p.text === '')).toBe(false);
   });
   it('drops a custom prompt that repeats a bundled one, keeping the host wording', () => {
-    const prompts = eligiblePrompts(settings({ customPrompts: ['printer JAM'] }));
+    const prompts = eligiblePrompts(settings({ categories: [builtInCategory('Office Life'), own(['printer JAM'])] }));
     expect(prompts.filter(p => p.text.toLowerCase() === 'printer jam')).toHaveLength(1);
     expect(prompts.find(p => p.text.toLowerCase() === 'printer jam')!.text).toBe('printer JAM');
+  });
+  it('deals an edited built-in category exactly as the host left it', () => {
+    const office = { ...builtInCategory('Office Life'), prompts: ['Printer jam', 'The 4pm deploy'] };
+    expect(eligiblePrompts(settings({ categories: [office] })).map(p => p.text)).toEqual(['Printer jam', 'The 4pm deploy']);
+  });
+  it('skips categories that are switched off, built-in or custom', () => {
+    const prompts = eligiblePrompts(settings({ categories: [builtInCategory('Office Life', false), { ...own(['Kalaripayattu'], 'Kerala'), on: false }, own(['Onam'], 'Festivals')] }));
+    expect(prompts).toEqual([{ text: 'Onam', category: 'Festivals' }]);
+  });
+  it('labels a card with its custom category, falling back when the name is blank', () => {
+    const prompts = eligiblePrompts(settings({ categories: [own(['Kalaripayattu'], 'Kerala'), own(['Onam'], '  ')] }));
+    expect(prompts.map(p => p.category)).toEqual(['Kerala', 'Your own']);
   });
   it('shuffles without losing or duplicating a card', () => {
     const deck = buildDeck(settings(), () => 0.42), plain = eligiblePrompts(settings());
@@ -109,7 +123,7 @@ describe('starting a new game', () => {
     expect(segment.game.timer.durationMs).toBe(90_000);
   });
   it('refuses to start without enough prompts for every turn', () => {
-    const segment = aSegment({ categories: [], customPrompts: ['One', 'Two'] });
+    const segment = aSegment({ categories: [own(['One', 'Two'])] });
     expect(() => startNewGame(segment, anEvent())).toThrow(/not enough prompts/i);
   });
   it('refuses to start with an unnamed team', () => {
@@ -178,7 +192,7 @@ describe('playing a turn', () => {
     expect(segment.game.cursor).toBe(1);
   });
   it('stops dealing once the deck is spent', () => {
-    const segment = aSegment({ categories: [], customPrompts: ['One', 'Two', 'Three', 'Four', 'Five', 'Six'] }), event = anEvent();
+    const segment = aSegment({ categories: [own(['One', 'Two', 'Three', 'Four', 'Five', 'Six'])] }), event = anEvent();
     startNewGame(segment, event);
     startTurn(segment, '', 0);
     for (let i = 0; i < 10; i++) markGuessed(segment, event);
@@ -234,5 +248,58 @@ describe('the demo', () => {
     const prepared = await loadDemo(aSegment(), anEvent());
     expect(prepared.segment.game.deck).toEqual([]);
     expect(prepared.segment.phase).toBe('setup');
+  });
+});
+
+describe('the cards-per-turn floor', () => {
+  it('asks for three cards a turn, and never fewer than three', () => {
+    expect(cardsNeeded(2, 2)).toBe(12);
+    expect(cardsNeeded(0, 1)).toBe(3);
+  });
+  it('lets a game start at exactly the floor', () => {
+    const segment = aSegment({ categories: [own(['One', 'Two', 'Three', 'Four', 'Five', 'Six'])] });
+    expect(() => startNewGame(segment, anEvent())).not.toThrow();
+  });
+});
+
+describe('default settings', () => {
+  it('start with every built-in category on, unedited, and the classic rule', () => {
+    const defaults = defaultCategories();
+    expect(defaults.map(c => c.name)).toEqual([...categories]);
+    expect(defaults.every(c => c.on && c.builtIn === c.name && c.prompts.length === promptsIn([c.name]).length)).toBe(true);
+    expect(settingsSchema.safeParse(settings({ categories: defaults })).success).toBe(true);
+  });
+  it('hand out fresh copies, so editing one game never edits the next', () => {
+    const first = defaultCategories(); first[0].prompts.push('Leaked');
+    expect(defaultCategories()[0].prompts).not.toContain('Leaked');
+  });
+});
+
+describe('migrating a version 1 save', () => {
+  const v1 = { settings: { categories: ['Office Life', 'Actions'], customPrompts: ['The 4pm deploy', '  ', 'Kalaripayattu'], turnSeconds: 60, roundsPerTeam: 2 }, game: initialState() };
+  it('keeps the chosen built-ins on, the rest off, and the host prompts as their own category', () => {
+    const { settings: migrated } = migrate(v1, 1);
+    expect(settingsSchema.safeParse(migrated).success).toBe(true);
+    expect(migrated.rule).toBe('act');
+    expect(migrated.categories.filter(c => c.on).map(c => c.name)).toEqual(['Your own', 'Office Life', 'Actions']);
+    expect(migrated.categories.find(c => c.name === 'Your own')!.prompts).toEqual(['The 4pm deploy', 'Kalaripayattu']);
+    expect(migrated.turnSeconds).toBe(60);
+    expect(migrated.roundsPerTeam).toBe(2);
+  });
+  it('deals the same prompts after migrating as before', () => {
+    const { settings: migrated } = migrate(v1, 1);
+    const before = ['The 4pm deploy', 'Kalaripayattu', ...promptsIn(['Office Life', 'Actions']).map(p => p.text)];
+    expect(eligiblePrompts(migrated).map(p => p.text).sort()).toEqual(before.sort());
+  });
+  it('adds no empty category when there were no host prompts', () => {
+    const { settings: migrated } = migrate({ ...v1, settings: { ...v1.settings, customPrompts: [] } }, 1);
+    expect(migrated.categories.map(c => c.name)).toEqual([...categories]);
+  });
+  it('leaves a game in progress untouched', () => {
+    const game = { ...initialState(), deck: [{ text: 'Kettle', category: 'Around the House' }] };
+    expect(migrate({ ...v1, game }, 1).game).toBe(game);
+  });
+  it('refuses a version it does not know', () => {
+    expect(() => migrate(v1, 7)).toThrow(/not supported/);
   });
 });

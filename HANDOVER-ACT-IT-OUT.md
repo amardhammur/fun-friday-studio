@@ -56,6 +56,13 @@ Four changes to shared code, each forced by being the *second* activity. All wer
 
 ## 1. Customisable prompts for Act It Out — NOT designed yet
 
+> **Done since (2026-09-23).** The user chose: custom categories, editing/removing built-in prompts, and a
+> per-game rule — `rule: 'act' | 'describe'` (describe = talk freely, never say the words on the card).
+> Built-in categories are now editable copies in `settings.categories` (approach "A"); activity version 2
+> with `logic/migrate.ts` upgrading v1 saves. Rule copy lives in `activities/act-it-out/rules.ts`.
+> The cards-per-turn floor is `MIN_CARDS_PER_TURN` / `cardsNeeded()` in `logic/turns.ts`. The text below
+> is kept for context.
+
 The user wants this. It was explicitly deferred: **do not start coding it.** Run
 `superpowers:brainstorming` first — this is a design question, not a typing question.
 
@@ -112,6 +119,10 @@ Ask the user which of these they actually mean — they lead to very different w
 ---
 
 ## 2. BUG: the Childhood vs Now "whole team reveal" does nothing
+
+> **Fixed since (2026-09-23), commit `551b1e5`.** Root cause: `5fbf2c4` rewrote `Finale.tsx` and dropped the
+> render, including the podium order, overflow list and "Everyone" button. The pre-refactor render was
+> restored. Covered by a new browser test that reaches home via the header button.
 
 **Confirmed this session. Pre-existing — `git log` shows the `act-it-out` branch never touched
 `activities/childhood-vs-now/stage/Finale.tsx`.** This is not a regression from the new activity.

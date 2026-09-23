@@ -113,6 +113,15 @@
   .category-tile small { color: var(--muted); }
   .category-check { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid #ffffff40; border-radius: 5px; margin-bottom: 4px; }
   .category-tile.on .category-check { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+  .category-tile { position: relative; } .category-tile.selected { outline: 2px solid var(--chalk); outline-offset: 2px; }
+  .category-tile .category-check { padding: 0; background: transparent; color: inherit; cursor: pointer; }
+  .category-name { display: grid; gap: 4px; text-align: left; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+  .category-name::after { content: ''; position: absolute; inset: 0; } .category-tile .category-check { position: relative; z-index: 1; }
+  .category-new { border-style: dashed; color: var(--muted); cursor: pointer; } .category-new b { color: var(--chalk); }
+  .aio-category-name { display: grid; gap: 7px; margin: 16px 0 12px; } .aio-category-name input { font-size: 16px; }
+  .aio-rule { display: flex; width: 100%; margin: 16px 0 14px; } .aio-rule button { flex: 1; flex-direction: column; align-items: flex-start; gap: 2px; padding: 9px 13px; text-align: left; }
+  .aio-rule button b { font-family: var(--heading); font-size: 15px; } .aio-rule button small { font-size: 12px; opacity: .8; }
+  .prompt-card small { display: block; margin-top: 16px; font-size: clamp(14px, 1.6vw, 20px); color: #5d6f5a; letter-spacing: .02em; }
   .aio-number { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 17px; margin-top: 11px; }
   .aio-number span { display: grid; } .aio-number b { font-family: var(--heading); font-size: 16px; } .aio-number small { color: var(--muted); }
   .aio-number input { width: 92px; text-align: center; font-variant-numeric: tabular-nums; }

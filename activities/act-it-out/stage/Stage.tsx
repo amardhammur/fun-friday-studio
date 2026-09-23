@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check, EyeOff, Play, SkipForward, Trophy, Undo2 
 import { Timer } from '../../../src/core/play/TimerView';
 import { Scoreboard } from '../../../src/core/teams/Scoreboard';
 import { currentPrompt, currentTurn, endTurn, markGuessed, markSkipped, moveTurn, scoreChange, startTurn, turnScore, undoLast } from '../logic/turns';
+import { rules } from '../rules';
 import type { Context } from '../types';
 export function Stage(context: Context) {
   const { segment, event, update, updateEvent } = context, game = segment.game, turn = currentTurn(game);
@@ -21,12 +22,12 @@ export function Stage(context: Context) {
     </div>
 
     {turn.status === 'pending' && <div className="round-scene aio-ready">
-      <div className="question-intro"><span className="eyebrow">NEXT UP</span><h1>{team.name}, you’re on.</h1><p className="muted">Pick one teammate to sit with their back to the screen. Everyone else acts. No talking, no spelling, no pointing at the words.</p></div>
+      <div className="question-intro"><span className="eyebrow">NEXT UP</span><h1>{team.name}, you’re on.</h1><p className="muted">{rules[segment.settings.rule].stage}</p></div>
       <label className="aio-guesser"><span className="eyebrow">WHO’S GUESSING?</span><input aria-label="Name of the person guessing" maxLength={40} placeholder="Optional" value={guesser} onChange={e => setGuesser(e.target.value)}/></label>
     </div>}
 
     {turn.status === 'acting' && <div className="round-scene aio-acting" key={game.cursor}>
-      {spent ? <div className="prompt-card spent"><b>That’s the whole deck.</b><small>End the turn and the points are banked.</small></div> : <div className="prompt-card"><span className="eyebrow">{prompt!.category}</span><b>{prompt!.text}</b></div>}
+      {spent ? <div className="prompt-card spent"><b>That’s the whole deck.</b><small>End the turn and the points are banked.</small></div> : <div className="prompt-card"><span className="eyebrow">{prompt!.category}</span><b>{prompt!.text}</b>{rules[segment.settings.rule].card && <small>{rules[segment.settings.rule].card}</small>}</div>}
       <div className="aio-clock"><Timer state={game.timer} label="Turn timer" onChange={timer => update(s => { s.game.timer = timer; })}/></div>
       <div className="turn-tally"><span><Check size={16}/> {guessed} guessed</span><span><SkipForward size={16}/> {skipped} skipped</span><span className="turn-running"><b>+{turnScore(turn, event.correctPoints)}</b> this turn</span></div>
     </div>}

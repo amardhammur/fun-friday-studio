@@ -487,3 +487,46 @@ test('childhood vs now: the whole team reveal wipes between photos and spotlight
   await expect(page.locator('.spotlight-box')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('act it out: a custom category, an edited built-in and the describe-it rule', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await aioHome(page);
+  await page.getByRole('button', { name: /^Build an event/ }).click();
+  await page.getByRole('button', { name: 'Act It Out', exact: true }).click();
+  await page.getByRole('button', { name: 'Start the event' }).click();
+  await expect(page.getByRole('heading', { name: /What are we acting\?$/ })).toBeVisible();
+
+  // Editing a built-in marks it as edited and offers the way back.
+  await page.getByRole('button', { name: 'Edit Office Life' }).click();
+  const reset = page.getByRole('button', { name: 'Reset to original' });
+  await expect(reset).toBeDisabled();
+  await page.getByRole('textbox', { name: 'Prompts in Office Life, one per line' }).fill('Printer jam\nThe 4pm deploy');
+  await expect(page.getByRole('button', { name: 'Edit Office Life' })).toContainText('2 prompts · edited');
+  await reset.click();
+  await expect(reset).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Edit Office Life' })).toContainText('30 prompts');
+
+  // Deal only from a category of the host's own.
+  for (const name of ['Office Life', 'Movies & TV', 'Actions', 'Around the House']) await page.getByRole('button', { name: `Deal from ${name}` }).click();
+  await expect(page.getByRole('button', { name: 'Next: game setup' })).toBeDisabled();
+  await page.getByRole('button', { name: 'New category' }).click();
+  await page.getByRole('textbox', { name: 'Category name' }).fill('Kerala');
+  const kerala = Array.from({ length: 30 }, (_, i) => i ? `Kerala prompt ${i}` : 'Kalaripayattu');
+  await page.getByRole('textbox', { name: 'Prompts in Kerala, one per line' }).fill(kerala.join('\n'));
+  await expect(page.getByRole('button', { name: 'Edit Kerala' })).toContainText('30 prompts');
+  await page.getByRole('button', { name: 'Next: game setup' }).click();
+
+  await page.getByRole('button', { name: /^Describe it/ }).click();
+  await expect(page.getByText(/never say|except the words on the card/).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Start new game' }).click();
+  await expect(page.getByText(/Everyone else talks them to it/)).toBeVisible();
+  await page.getByRole('button', { name: 'Start the turn' }).click();
+  await expect(page.locator('.prompt-card .eyebrow')).toHaveText('Kerala');
+  await expect(page.locator('.prompt-card small')).toHaveText('Don’t say the words');
+  await page.screenshot({ path: 'test-results/aio-describe.png', fullPage: true, animations: 'disabled' });
+
+  const session = await saved(page);
+  expect(session.segments[0].settings.rule).toBe('describe');
+  expect(new Set(session.segments[0].game.deck.map((p: any) => p.category))).toEqual(new Set(['Kerala']));
+  expect(errors).toEqual([]);
+});

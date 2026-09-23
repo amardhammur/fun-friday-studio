@@ -1,17 +1,24 @@
 import type { EventUpdate, Team } from '../../../src/core/types';
 import { setRoundAward } from '../../../src/core/scoring';
 import { pauseTimer, startTimer } from '../../../src/core/play/timer';
-import { promptsIn, type Prompt } from '../prompts';
+import type { Prompt } from '../prompts';
 import type { AIOSegment, Context, GameState, Settings } from '../types';
 type Turn = GameState['turns'][number];
-// Custom prompts come first so a host who retypes a bundled prompt keeps their own wording.
+// Three cards a turn is the floor at which a fast team does not run the room dry mid-turn. The setup
+// steps, their validation and startNewGame all read it from here so they cannot drift apart.
+export const MIN_CARDS_PER_TURN = 3;
+export const cardsNeeded = (teamCount: number, roundsPerTeam: number) => Math.max(MIN_CARDS_PER_TURN, teamCount * roundsPerTeam * MIN_CARDS_PER_TURN);
+// The host's own categories come first so a host who retypes a bundled prompt keeps their own wording.
 export function eligiblePrompts(settings: Settings): Prompt[] {
-  const custom = settings.customPrompts.map(t => t.trim()).filter(Boolean).map(text => ({ text, category: 'Your own' }));
+  const on = settings.categories.filter(c => c.on), ordered = [...on.filter(c => !c.builtIn), ...on.filter(c => c.builtIn)];
   const prompts: Prompt[] = [], seen = new Set<string>();
-  for (const prompt of [...custom, ...promptsIn(settings.categories)]) {
-    const key = prompt.text.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key); prompts.push(prompt);
+  for (const c of ordered) {
+    const category = c.name.trim() || 'Your own';
+    for (const text of c.prompts.map(t => t.trim()).filter(Boolean)) {
+      const key = text.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key); prompts.push({ text, category });
+    }
   }
   return prompts;
 }
@@ -31,8 +38,7 @@ export function startNewGame(segment: AIOSegment, event?: EventUpdate) {
   if (!teams.length) throw new Error('Add at least one team before starting.');
   if (teams.some(t => !t.name.trim())) throw new Error('Give each team a name.');
   const deck = buildDeck(segment.settings), turns = allocateTurns(teams, segment.settings.roundsPerTeam);
-  // Three cards a turn is the floor at which a fast team does not run the room dry mid-turn.
-  if (deck.length < turns.length * 3) throw new Error('There are not enough prompts for every turn. Choose more categories or add your own.');
+  if (deck.length < cardsNeeded(teams.length, segment.settings.roundsPerTeam)) throw new Error('There are not enough prompts for every turn. Choose more categories or add your own.');
   segment.game = { deck, cursor: 0, turns, currentTurnIndex: 0, timer: { durationMs: segment.settings.turnSeconds * 1000 } };
   event.scoreEntries = event.scoreEntries.filter(e => e.segmentId !== segment.segmentId);
   segment.phase = 'play';

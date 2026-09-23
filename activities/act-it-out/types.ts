@@ -1,8 +1,14 @@
 import { z } from 'zod';
 import type { ActivityContext, ActivitySegment } from '../../src/core/types';
+// A category is the host's own copy: built-in ones start as the bundled list and can then be edited
+// freely. `builtIn` names the bundled list it came from, so it can be reset. Prompts are kept exactly
+// as typed, blank lines included, so the editor does not fight the host mid-edit; eligiblePrompts()
+// is where they get trimmed.
+export const categorySchema = z.object({ id: z.string().min(1), name: z.string(), on: z.boolean(), builtIn: z.string().optional(), prompts: z.array(z.string()) });
 export const settingsSchema = z.object({
-  categories: z.array(z.string()).min(1),
-  customPrompts: z.array(z.string()),
+  // 'act' is classic charades. 'describe' lets the team talk, as long as nobody says the words on the card.
+  rule: z.enum(['act', 'describe']),
+  categories: z.array(categorySchema),
   turnSeconds: z.number().int().min(15).max(300),
   roundsPerTeam: z.number().int().min(1).max(5),
 });
@@ -27,6 +33,7 @@ export const stateSchema = z.object({
   if (new Set(s.turns.map(t => t.id)).size !== s.turns.length) ctx.addIssue({ code: 'custom', message: 'The game contains duplicate turns.' });
 });
 export type Settings = z.infer<typeof settingsSchema>;
+export type Category = z.infer<typeof categorySchema>;
 export type GameState = z.infer<typeof stateSchema>;
 export type AIOSegment = ActivitySegment<Settings, GameState>;
 export type Context = ActivityContext<Settings, GameState>;
