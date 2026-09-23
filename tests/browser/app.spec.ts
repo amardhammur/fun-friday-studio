@@ -339,3 +339,126 @@ test('three activities carry scores through ZIP restore and a wager changes the 
   await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+// The boot session already lands on a running Childhood vs Now demo (main.tsx starts a game before
+// App ever mounts), so a fresh load never shows the home screen home() expects. Reach it via the
+// brand button instead, which is unaffected by whatever segment/status the boot demo left behind.
+async function aioHome(page: Page) {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Fun Friday Studio home' }).click();
+  await expect(page.getByRole('heading', { name: 'What are we playing?' })).toBeVisible();
+}
+// Cards are rendered in registration order, which is whatever import.meta.glob returns — do not
+// address them by index. Scope to the card that carries the heading instead.
+const activityCard = (page: Page, name: string) => page.locator('.activity-card', { has: page.getByRole('heading', { name, level: 2 }) });
+
+async function startDemo(page: Page, name: string) {
+  await activityCard(page, name).getByRole('button', { name: /Try the demo|Try demo separately/ }).click();
+}
+
+async function playTurn(page: Page, { got, skip }: { got: number; skip: number }) {
+  await page.getByRole('button', { name: 'Start the turn' }).click();
+  for (let i = 0; i < got; i++) await page.getByRole('button', { name: /^Got it/ }).click();
+  for (let i = 0; i < skip; i++) await page.getByRole('button', { name: 'Skip' }).click();
+  await page.getByRole('button', { name: 'End turn' }).click();
+}
+
+test('act it out: a full demo run, scoring, undo and the finale', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await aioHome(page);
+  await startDemo(page, 'Act It Out');
+  await expect(page.getByRole('heading', { name: /you’re on\.$/ })).toBeVisible();
+  await page.screenshot({ path: 'test-results/aio-ready.png', fullPage: true, animations: 'disabled' });
+
+  await page.getByRole('textbox', { name: 'Name of the person guessing' }).fill('Sam');
+  await page.getByRole('button', { name: 'Start the turn' }).click();
+  await expect(page.getByText('Sam is guessing')).toBeVisible();
+  await page.screenshot({ path: 'test-results/aio-acting.png', fullPage: true, animations: 'disabled' });
+
+  await page.getByRole('button', { name: /^Got it/ }).click();
+  await page.getByRole('button', { name: /^Got it/ }).click();
+  let session = await saved(page);
+  expect(session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0)).toBe(4);
+
+  // Undo is derived, not decremented: the ledger keeps one entry and it falls to 2.
+  await page.getByRole('button', { name: 'Undo' }).click();
+  session = await saved(page);
+  expect(session.scoreEntries).toHaveLength(1);
+  expect(session.scoreEntries[0].points).toBe(2);
+  expect(session.segments[0].game.cursor).toBe(1);
+
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await page.getByRole('button', { name: 'End turn' }).click();
+  await expect(page.getByRole('heading', { name: /got 1\.$/ })).toBeVisible();
+
+  const teams = (await saved(page)).teams.length;
+  await page.getByRole('button', { name: /^Next: / }).click();
+  for (let i = 1; i < teams; i++) {
+    await playTurn(page, { got: 1, skip: 1 });
+    await page.getByRole('button', { name: i < teams - 1 ? /^Next: / : 'Final results' }).click();
+  }
+  await expect(page.getByRole('heading', { name: 'That’s a wrap.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nobody got these' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/aio-finale.png', fullPage: true, animations: 'disabled' });
+  expect(errors).toEqual([]);
+});
+
+test('act it out: a refresh mid-turn restores the clock, the cursor and the tally', async ({ page }) => {
+  await aioHome(page);
+  await startDemo(page, 'Act It Out');
+  await page.getByRole('button', { name: 'Start the turn' }).click();
+  await page.getByRole('button', { name: /^Got it/ }).click();
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  const before = await saved(page);
+  const prompt = before.segments[0].game.deck[before.segments[0].game.cursor].text;
+  await page.reload();
+
+  await expect(page.getByText('1 guessed')).toBeVisible();
+  await expect(page.getByText('1 skipped')).toBeVisible();
+  await expect(page.getByText(prompt, { exact: true })).toBeVisible();
+  const after = await saved(page);
+  expect(after.segments[0].game.cursor).toBe(2);
+  // The timer persists a deadline, not a tick, so the clock does not restart on reload.
+  expect(after.segments[0].game.timer.deadlineAt).toBe(before.segments[0].game.timer.deadlineAt);
+});
+
+test('an event runs two different activities on one leaderboard', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await aioHome(page);
+  await page.getByRole('button', { name: /^Build an event/ }).click();
+  await expect(page.getByRole('heading', { name: 'Build your Friday.' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Act It Out', exact: true }).click();
+  await page.getByRole('button', { name: 'Childhood vs Now', exact: true }).click();
+  let session = await saved(page);
+  expect(session.segments.map((s: any) => s.activityId)).toEqual(['act-it-out', 'childhood-vs-now']);
+  await page.screenshot({ path: 'test-results/lineup-two-activities.png', fullPage: true, animations: 'disabled' });
+
+  await page.getByRole('button', { name: 'Start the event' }).click();
+  await expect(page.getByRole('heading', { name: /What are we acting\?$/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Next: game setup' }).click();
+  await page.getByRole('button', { name: 'Start new game' }).click();
+
+  const teams = (await saved(page)).teams.length;
+  for (let i = 0; i < teams; i++) {
+    await playTurn(page, { got: 2, skip: 0 });
+    await page.getByRole('button', { name: i < teams - 1 ? /^Next: / : 'Final results' }).click();
+  }
+  await page.getByRole('button', { name: /^Leaderboard/ }).click();
+  session = await saved(page);
+  const afterFirst = session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0);
+  expect(afterFirst).toBe(teams * 2 * session.correctPoints);
+  expect(new Set(session.scoreEntries.map((e: any) => e.segmentId))).toEqual(new Set([session.segments[0].id]));
+
+  // Moving on must reach Childhood vs Now's setup with the roster locked, not strand the host.
+  await page.getByRole('button', { name: /^Next activity/ }).click();
+  await expect(page.getByRole('button', { name: /Upload photos/ })).toBeDisabled();
+  await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
+  session = await saved(page);
+  expect(session.currentSegmentIndex).toBe(1);
+  expect(session.segments[0].status).toBe('done');
+  // The first activity's points survive the switch.
+  expect(session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0)).toBe(afterFirst);
+  expect(errors).toEqual([]);
+});
