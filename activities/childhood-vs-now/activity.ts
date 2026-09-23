@@ -11,7 +11,7 @@ import { settingsSchema, stateSchema, initialState, type Settings, type GameStat
 import { markResult, moveRound, reveal, startNewGame } from './logic/rounds';
 import { loadDemo } from './logic/preparation';
 export const childhoodVsNow: Activity<Settings, GameState> = {
-  id: 'childhood-vs-now', version: 1, name: 'Childhood vs Now', description: 'Tiny faces. Familiar people. Can your team recognise their colleagues before the big reveal?', icon: Images,
+  id: 'childhood-vs-now', version: 1, order: 0, name: 'Childhood vs Now', description: 'Tiny faces. Familiar people. Can your team recognise their colleagues before the big reveal?', icon: Images,
   card: { label: 'THE NOSTALGIA EDITION', eyebrow: 'A TRIP DOWN MEMORY LANE', tags: [{ icon: Users, text: '1–8 teams' }, { icon: Check, text: 'No repeated photos' }, { text: '2 base points per correct guess' }] },
   setupSteps: [
     { id: 'upload', title: 'Upload photos', View: UploadStep, validate: (s) => s.game.originalImageId && s.game.childhoodImageId ? [] : ['Upload both group photos first.'] },

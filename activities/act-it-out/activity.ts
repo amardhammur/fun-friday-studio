@@ -23,7 +23,7 @@ export const actItOut: Activity<Settings, GameState> = {
     { id: 'game', title: 'Game setup', View: GameSetupStep, validate: (_s, e) => e.teams.every(t => t.name.trim()) ? [] : ['Every team needs a name.'] },
   ],
   settingsSchema, stateSchema, settingsFields: [{ key: 'turnSeconds', label: 'Turn length', type: 'number' }, { key: 'roundsPerTeam', label: 'Turns per team', type: 'number' }],
-  Stage, Finale, Preview, createDemo: loadDemo, estimatedMinutes: 12,
+  Stage, Finale, Preview, createDemo: loadDemo, estimatedMinutes: 12, order: 1,
   validateSession: (s, e) => {
     if (s.phase === 'setup') return [];
     if (!s.game.turns.length) return ['The saved game has no turns.'];

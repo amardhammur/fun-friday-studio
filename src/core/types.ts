@@ -66,6 +66,9 @@ export interface Activity<S = any, G = any> {
   settingsSchema: z.ZodType<S>; stateSchema: z.ZodType<G>; settingsFields: SettingsField[];
   Stage: ComponentType<ActivityContext<S, G>>; Finale?: ComponentType<ActivityContext<S, G>>;
   estimatedMinutes?: number;
+  /** Running order in the activity cupboard, and which activity greets a first-time visitor.
+      Filename order must not decide this: discovery is alphabetical by path. */
+  order?: number;
   /** Home-screen card copy. Falls back to the original Childhood vs Now wording when omitted. */
   card?: { label: string; eyebrow: string; tags: { icon?: ComponentType<{ size?: number }>; text: string }[] };
   Preview?: ComponentType<{ session?: Session<S, G> }>;
