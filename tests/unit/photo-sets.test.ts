@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allPreviews, clearSetPairs, createPhotoSet, defaultIncluded, MAX_PHOTO_SETS, nextPairNumber, orderedSets, pairsInSet, peopleInSet, playerIssues, primaryGroupSet } from '../../src/core/people/photo-sets';
+import { allPreviews, clearSetPairs, createPhotoSet, defaultIncluded, MAX_PHOTO_SETS, nextPairNumber, orderedSets, pairsInSet, peopleInSet, playerIssues, primaryGroupSet, moveSet, removePhotoSet, renameSet, setIncluded } from '../../src/core/people/photo-sets';
 import type { FacePair, Person, PhotoSet } from '../../src/core/types';
 
 const pair = (id: string, setId: string, number: number): FacePair => ({ id, setId, number, color: '#f7d873', matchMethod: 'manual', reviewStatus: 'confirmed' });
@@ -70,5 +70,49 @@ describe('set clean-up and player checks', () => {
     expect(playerIssues(lib)).toEqual([]);
     lib.people.push({ ...person('q', 'b'), name: '', included: false });
     expect(playerIssues(lib)).toEqual([]);
+  });
+});
+
+describe('library set actions', () => {
+  const crop = (id: string) => ({ sourceImageId: 'src', faceBox: { x: 0, y: 0, width: .1, height: .1 }, padding: { top: 0, right: 0, bottom: 0, left: 0 }, cropImageId: id });
+  const build = () => {
+    const lib = { ...library(), assets: {} as Record<string, any> };
+    const a = createPhotoSet(lib, 'A', 'group'), single = createPhotoSet(lib, 'Priya', 'single'), b = createPhotoSet(lib, 'B', 'group');
+    a.nowImageId = 'a-now'; a.thenImageId = 'a-then'; a.previews = { 'a-now': 'a-now-preview' };
+    lib.facePairs.push({ ...pair('pa', a.id, 1), now: crop('pa-crop'), then: crop('pa-crop-then') }, { ...pair('pb', a.id, 2), now: crop('pb-crop') }, pair('pc', b.id, 3));
+    lib.people.push(person('A1', 'pa'), person('A2', 'pb'), person('B1', 'pc'));
+    for (const id of ['a-now', 'a-then', 'a-now-preview', 'pa-crop', 'pa-crop-then', 'pb-crop']) lib.assets[id] = { id };
+    return { lib, a, single, b };
+  };
+  it('switches a whole set in or out, but only people with both faces', () => {
+    const { lib, a } = build();
+    setIncluded(lib, a.id, false);
+    expect(lib.people.map(p => p.included)).toEqual([false, false, true]);
+    setIncluded(lib, a.id, true);
+    expect(lib.people.map(p => p.included)).toEqual([true, false, true]);
+  });
+  it('moves a group past the next group, skipping single sets', () => {
+    const { lib, a, b } = build();
+    moveSet(lib, a.id, 1);
+    expect(orderedSets(lib).filter(s => s.kind === 'group').map(s => s.name)).toEqual(['B', 'A']);
+    moveSet(lib, a.id, 1);
+    expect(orderedSets(lib).filter(s => s.kind === 'group').map(s => s.name)).toEqual(['B', 'A']);
+    expect(new Set(lib.photoSets.map(s => s.order)).size).toBe(3);
+    moveSet(lib, b.id, -1);
+    expect(orderedSets(lib).filter(s => s.kind === 'group').map(s => s.name)).toEqual(['B', 'A']);
+  });
+  it('renames only to a non-empty trimmed name', () => {
+    const { lib, a } = build();
+    expect(renameSet(lib, a.id, '   ')).toBe(false);
+    expect(a.name).toBe('A');
+    expect(renameSet(lib, a.id, '  Design offsite  ')).toBe(true);
+    expect(a.name).toBe('Design offsite');
+  });
+  it('removes a set with its people, faces and images, and closes the gap in the order', () => {
+    const { lib, a } = build();
+    expect(removePhotoSet(lib, a.id).sort()).toEqual(['a-now', 'a-now-preview', 'a-then', 'pa-crop', 'pa-crop-then', 'pb-crop']);
+    expect(lib.people.map(p => p.id)).toEqual(['B1']);
+    expect(lib.assets).toEqual({});
+    expect(orderedSets(lib).map(s => [s.name, s.order])).toEqual([['Priya', 0], ['B', 1]]);
   });
 });

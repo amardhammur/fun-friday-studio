@@ -35,6 +35,37 @@ export function clearSetPairs(library: Library, setId: string): string[] {
   for (const id of crops) delete library.assets[id];
   return crops;
 }
+export function setIncluded(library: Pick<Library, 'facePairs' | 'people'>, setId: string, included: boolean) {
+  const pairs = new Map(pairsInSet(library, setId).map(pair => [pair.id, pair]));
+  for (const person of library.people) {
+    const pair = pairs.get(person.facePairId);
+    if (pair) person.included = included && Boolean(pair.now && pair.then);
+  }
+}
+// Groups and single photos are listed separately, so a set only swaps places with its own kind.
+export function moveSet(library: Pick<Library, 'photoSets'>, setId: string, delta: -1 | 1) {
+  const set = library.photoSets.find(s => s.id === setId);
+  if (!set) return;
+  const same = orderedSets(library).filter(s => s.kind === set.kind), index = same.indexOf(set), other = same[index + delta];
+  if (other) [set.order, other.order] = [other.order, set.order];
+}
+// An empty name would make the saved session invalid, so it is refused rather than stored.
+export function renameSet(library: Pick<Library, 'photoSets'>, setId: string, name: string): boolean {
+  const set = library.photoSets.find(s => s.id === setId), clean = name.trim().slice(0, 80);
+  if (!set || !clean) return false;
+  set.name = clean;
+  return true;
+}
+export function removePhotoSet(library: Library, setId: string): string[] {
+  const set = library.photoSets.find(s => s.id === setId);
+  if (!set) return [];
+  const crops = clearSetPairs(library, setId);
+  const images = [set.nowImageId, set.thenImageId, ...Object.values(set.previews)].filter((id): id is string => Boolean(id));
+  for (const id of images) delete library.assets[id];
+  library.photoSets = library.photoSets.filter(s => s.id !== setId);
+  orderedSets(library).forEach((s, index) => { s.order = index; });
+  return [...crops, ...images];
+}
 export function playerIssues(library: { readonly people: readonly Person[] }): string[] {
   const players = library.people.filter(person => person.included);
   return players.length && players.every(person => person.name.trim()) ? [] : ['Include and name the people who will appear in the game.'];
