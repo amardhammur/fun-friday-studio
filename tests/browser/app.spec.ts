@@ -462,3 +462,28 @@ test('an event runs two different activities on one leaderboard', async ({ page 
   expect(session.scoreEntries.filter((e: any) => e.active).reduce((n: number, e: any) => n + e.points, 0)).toBe(afterFirst);
   expect(errors).toEqual([]);
 });
+
+test('childhood vs now: the whole team reveal wipes between photos and spotlights a person', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await aioHome(page);
+  await startDemo(page, 'Childhood vs Now');
+  for (let i = 0; i < 4; i++) {
+    await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+    await page.getByRole('button', { name: /^Missed/ }).click();
+    await page.getByRole('button', { name: /^(Next (?!photo)|Final results)/ }).click();
+  }
+  await page.getByRole('button', { name: 'The whole team reveal' }).click();
+  const slider = page.getByRole('slider', { name: 'Reveal original group photo' });
+  await slider.fill('30');
+  await expect(page.locator('.wipe-now')).toHaveCSS('clip-path', 'inset(0px 70% 0px 0px)');
+  await expect(page.locator('.wipe-line')).toHaveAttribute('style', /left: 30%/);
+  await expect(page.locator('.wipe-label.then')).toHaveText('THEN');
+  await expect(page.locator('.wipe-label.now')).toHaveText('NOW');
+  await expect(page.locator('.spotlight-box')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Asha', exact: true }).click();
+  await expect(page.locator('.spotlight-box')).toBeVisible();
+  await expect(page.locator('.spotlight-box')).toHaveText('Asha');
+  await page.getByRole('button', { name: 'Everyone', exact: true }).click();
+  await expect(page.locator('.spotlight-box')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
