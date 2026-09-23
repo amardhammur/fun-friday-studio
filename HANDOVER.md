@@ -423,3 +423,14 @@ idempotent and segment-scoped, and future activities do not need to understand s
 The first useful experiment is to build Act It Out using the current interface and record every shared
 mutation it needs; that will show whether a command API can stay small and general rather than being
 designed from Childhood vs Now's photo workflow alone.
+
+## Addendum — multi-group people library (2026-09-23)
+
+Spec: `docs/superpowers/specs/2026-09-23-multi-group-people-library-design.md`; plan: `docs/superpowers/plans/2026-09-23-multi-group-people-library.md`.
+
+- Group photos moved out of the Childhood vs Now game into `EventSession.photoSets`; every `FacePair` has a `setId`. Session format is 3; `migrateEventV2` (`src/core/migrate.ts`) upgrades saved sessions and session ZIPs on load.
+- Library helpers are pure functions in `src/core/people/photo-sets.ts`; image-side helpers in `src/core/people/photos.ts`; the set editors in `src/core/people/editor/`.
+- Face-pair bundles are version 2 (`sets/NN/...`); version 1 imports as one set.
+- `libraryLocked` (`event-library.ts`) never locks the demo; the first library change from the People library calls `leaveDemo`, which resets progress like Replace library but keeps the people.
+- Childhood vs Now setup is People → Game setup. Unknown saved setup-step ids fall back to the first step in `validateEvent`.
+- Known limit: replacing only a group's current photo after its childhood photo was aligned re-scales the aligned image rather than the original upload.
