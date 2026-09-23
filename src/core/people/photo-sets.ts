@@ -1,5 +1,6 @@
 import type { Asset, FaceCrop, FacePair, Person, PhotoSet, Rect } from '../types';
 import { teamColors } from '../event';
+import { MAX_FACE_PAIRS, MAX_PEOPLE } from './limits';
 
 export const MAX_PHOTO_SETS = 20;
 type SetList = { readonly photoSets: readonly PhotoSet[] };
@@ -26,6 +27,14 @@ export function createPhotoSet(library: { photoSets: PhotoSet[] }, name: string,
   return set;
 }
 type Library = { photoSets: PhotoSet[]; facePairs: FacePair[]; people: Person[]; assets: Record<string, Asset> };
+export function forgetUnusedImages(library: Pick<Library, 'photoSets' | 'facePairs' | 'assets'>, candidates: readonly string[]): string[] {
+  const referenced = new Set<string>();
+  for (const set of library.photoSets) for (const id of [set.nowImageId, set.thenImageId, ...Object.keys(set.previews), ...Object.values(set.previews)]) if (id) referenced.add(id);
+  for (const pair of library.facePairs) for (const face of [pair.now, pair.then]) if (face) { referenced.add(face.sourceImageId); if (face.cropImageId) referenced.add(face.cropImageId); }
+  const removed = [...new Set(candidates)].filter(id => !referenced.has(id));
+  for (const id of removed) delete library.assets[id];
+  return removed;
+}
 // Removes a set's face pairs and people, and forgets their crop images. Returns the crop ids so the
 // caller can delete the stored blobs.
 export function clearSetPairs(library: Library, setId: string): string[] {
@@ -33,8 +42,7 @@ export function clearSetPairs(library: Library, setId: string): string[] {
   library.facePairs = library.facePairs.filter(pair => !ids.has(pair.id));
   library.people = library.people.filter(person => !ids.has(person.facePairId));
   const crops = removed.flatMap(pair => [pair.now?.cropImageId, pair.then?.cropImageId]).filter((id): id is string => Boolean(id));
-  for (const id of crops) delete library.assets[id];
-  return crops;
+  return forgetUnusedImages(library, crops);
 }
 export function setIncluded(library: Pick<Library, 'facePairs' | 'people'>, setId: string, included: boolean) {
   const pairs = new Map(pairsInSet(library, setId).map(pair => [pair.id, pair]));
@@ -61,11 +69,10 @@ export function removePhotoSet(library: Library, setId: string): string[] {
   const set = library.photoSets.find(s => s.id === setId);
   if (!set) return [];
   const crops = clearSetPairs(library, setId);
-  const images = [set.nowImageId, set.thenImageId, ...Object.values(set.previews)].filter((id): id is string => Boolean(id));
-  for (const id of images) delete library.assets[id];
+  const images = [set.nowImageId, set.thenImageId, ...Object.keys(set.previews), ...Object.values(set.previews)].filter((id): id is string => Boolean(id));
   library.photoSets = library.photoSets.filter(s => s.id !== setId);
   orderedSets(library).forEach((s, index) => { s.order = index; });
-  return [...crops, ...images];
+  return forgetUnusedImages(library, [...crops, ...images]);
 }
 export function playerIssues(library: { readonly people: readonly Person[] }): string[] {
   const players = library.people.filter(person => person.included);
@@ -80,6 +87,8 @@ function attachSinglePhotos(library: Library, set: PhotoSet, now: SinglePhoto, t
   set.previews = { [now.asset.id]: now.preview.id, [then.asset.id]: then.preview.id };
 }
 export function addSinglePerson(library: Library, input: { name: string; funFact: string; now: SinglePhoto; then: SinglePhoto }): Person {
+  if (library.people.length >= MAX_PEOPLE) throw new Error(`A people library holds up to ${MAX_PEOPLE} people.`);
+  if (library.facePairs.length >= MAX_FACE_PAIRS) throw new Error(`A people library holds up to ${MAX_FACE_PAIRS} face pairs.`);
   const set = createPhotoSet(library, input.name, 'single');
   attachSinglePhotos(library, set, input.now, input.then);
   const number = nextPairNumber(library.facePairs);
@@ -93,8 +102,7 @@ export function replaceSinglePhotos(library: Library, setId: string, now: Single
   const set = library.photoSets.find(s => s.id === setId && s.kind === 'single'), pair = pairsInSet(library, setId)[0];
   if (!set || !pair) return [];
   const old = [set.nowImageId, set.thenImageId, ...Object.values(set.previews), pair.now?.cropImageId, pair.then?.cropImageId].filter((id): id is string => Boolean(id));
-  for (const id of old) delete library.assets[id];
   attachSinglePhotos(library, set, now, then);
   pair.now = { sourceImageId: now.asset.id, ...now.face }; pair.then = { sourceImageId: then.asset.id, ...then.face };
-  return old;
+  return forgetUnusedImages(library, old);
 }

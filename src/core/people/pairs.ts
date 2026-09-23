@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import type { Person, Rect } from '../types';
 import { MAX_PHOTO_SETS } from './photo-sets';
+import { MAX_FACE_PAIRS, MAX_PEOPLE } from './limits';
+export { MAX_FACE_PAIRS, MAX_PEOPLE } from './limits';
 
-export const MAX_PEOPLE = 500;
-export const MAX_FACE_PAIRS = 1000;
 export const FACE_PAIR_BUNDLE_VERSION = 2;
 
 export interface FacePairBundlePadding { top: number; right: number; bottom: number; left: number }

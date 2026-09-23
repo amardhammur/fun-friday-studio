@@ -4,6 +4,7 @@ import { activitySegment, activityEvent } from './event';
 import type { EventSession, Segment } from './types';
 import { migrateEventV2 } from './migrate';
 import { MAX_PHOTO_SETS } from './people/photo-sets';
+import { MAX_FACE_PAIRS, MAX_PEOPLE } from './people/limits';
 export { newTeams, teamColors } from './event';
 const rect = z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().positive().max(1), height: z.number().positive().max(1) }).refine(r => r.x + r.width <= 1.00001 && r.y + r.height <= 1.00001, 'Crop lies outside the image');
 const crop = z.object({ sourceImageId: z.string(), faceBox: rect, padding: z.object({ top: z.number().min(0).max(3), right: z.number().min(0).max(3), bottom: z.number().min(0).max(3), left: z.number().min(0).max(3) }), cropImageId: z.string().optional() });
@@ -20,8 +21,8 @@ const schema = z.object({
   phase: z.enum(['lineup', 'segment', 'interstitial', 'wager', 'finale']),
   wager: z.object({ question: z.string(), answer: z.string(), bets: z.record(z.string(), z.number().int().min(0)) }).optional(),
   correctPoints: z.number().int().min(1).max(10), stealPoints: z.number().int().min(0).max(10),
-  people: z.array(z.object({ id: z.string(), name: z.string(), funFact: z.string(), included: z.boolean(), facePairId: z.string() })).max(500),
-  facePairs: z.array(z.object({ id: z.string(), number: z.number().int().positive(), color: z.string(), setId: z.string(), now: crop.optional(), then: crop.optional(), matchMethod: z.enum(['automatic', 'manual']), reviewStatus: z.enum(['suggested', 'confirmed', 'unmatched']) })).max(1000),
+  people: z.array(z.object({ id: z.string(), name: z.string(), funFact: z.string(), included: z.boolean(), facePairId: z.string() })).max(MAX_PEOPLE),
+  facePairs: z.array(z.object({ id: z.string(), number: z.number().int().positive(), color: z.string(), setId: z.string(), now: crop.optional(), then: crop.optional(), matchMethod: z.enum(['automatic', 'manual']), reviewStatus: z.enum(['suggested', 'confirmed', 'unmatched']) })).max(MAX_FACE_PAIRS),
   teams: z.array(z.object({ id: z.string(), name: z.string().min(1), color: z.string().regex(/^#[0-9a-f]{6}$/i) })).min(1).max(8),
   scoreEntries: z.array(z.object({ id: z.string(), teamId: z.string(), segmentId: z.string().optional(), roundId: z.string().optional(), kind: z.enum(['round-award', 'steal-award', 'manual-adjustment', 'wager']), points: z.number().int(), active: z.boolean() })),
   assets: z.record(z.string(), z.object({ id: z.string(), name: z.string(), width: z.number().positive(), height: z.number().positive(), mime: z.string() })),
@@ -51,6 +52,7 @@ export function validateEvent(input: unknown): EventSession {
   if (session.people.some(p => !session.facePairs.some(f => f.id === p.facePairId))) throw new Error('A person references a missing face pair.');
   for (const set of session.photoSets) for (const id of [set.nowImageId, set.thenImageId, ...Object.keys(set.previews), ...Object.values(set.previews)]) if (id && !session.assets[id]) throw new Error('A photo set references a missing image.');
   if (new Set(session.photoSets.map(set => set.order)).size !== session.photoSets.length) throw new Error('Two photo sets share a position.');
+  if ([...session.photoSets].sort((a, b) => a.order - b.order).some((set, index) => set.order !== index)) throw new Error('Photo set positions must be contiguous.');
   for (const pair of session.facePairs) {
     const set = session.photoSets.find(s => s.id === pair.setId);
     if (!set) throw new Error('A face pair references an unknown photo set.');

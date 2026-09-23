@@ -63,6 +63,10 @@ describe('validateEvent', () => {
     const broken = v3(); broken.photoSets.push({ ...broken.photoSets[0], id: 'set-2' });
     expect(() => validateEvent(broken)).toThrow(/share a position/);
   });
+  it('rejects gaps in photo-set order', () => {
+    const broken = v3(); broken.photoSets.push({ ...broken.photoSets[0], id: 'set-2', name: 'Second group', order: 2 });
+    expect(() => validateEvent(broken)).toThrow(/contiguous/);
+  });
   it('rejects a photo set that references a missing image', () => {
     const broken = v3(); broken.photoSets[0].nowImageId = 'ghost-image';
     expect(() => validateEvent(broken)).toThrow(/missing image/);

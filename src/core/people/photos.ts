@@ -5,6 +5,7 @@ import { defaultPadding } from '../images/math';
 import { teamColors } from '../event';
 import { pairFaces } from './pairing';
 import { defaultIncluded, largestFace, wholeImageFace } from './photo-sets';
+import { MAX_FACE_PAIRS, MAX_PEOPLE } from './limits';
 
 export type LibraryDraft = Pick<EventUpdate, 'people' | 'facePairs' | 'photoSets' | 'assets' | 'isDemo'>;
 export async function storeAsset(blob: Blob, name: string, width: number, height: number): Promise<Asset> {
@@ -26,11 +27,15 @@ export function makePairs(now: Rect[], then: Rect[], set: PhotoSet, tolerance: n
   });
 }
 export function syncPeople(library: Pick<LibraryDraft, 'people' | 'facePairs' | 'photoSets'>) {
+  if (library.facePairs.length > MAX_FACE_PAIRS) throw new Error(`A people library holds up to ${MAX_FACE_PAIRS} face pairs.`);
+  if (library.facePairs.length > MAX_PEOPLE) throw new Error(`A people library holds up to ${MAX_PEOPLE} people.`);
   const fresh = defaultIncluded(library);
-  library.people = library.facePairs.map(pair => {
+  const people = library.facePairs.map(pair => {
     const existing = library.people.find(p => p.facePairId === pair.id);
     return existing ? { ...existing, included: Boolean(pair.now && pair.then && existing.included) } : { id: crypto.randomUUID(), facePairId: pair.id, name: '', funFact: '', included: fresh && Boolean(pair.now && pair.then) };
   });
+  if (people.length > MAX_PEOPLE) throw new Error(`A people library holds up to ${MAX_PEOPLE} people.`);
+  library.people = people;
 }
 export async function prepareCrops<T extends Pick<LibraryDraft, 'facePairs' | 'assets'>>(library: T, progress?: (s: string) => void): Promise<T> {
   const updated = structuredClone(library);

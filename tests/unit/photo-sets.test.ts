@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { addSinglePerson, allPreviews, clearSetPairs, createPhotoSet, defaultIncluded, largestFace, MAX_PHOTO_SETS, nextPairNumber, orderedSets, pairsInSet, peopleInSet, playerIssues, primaryGroupSet, moveSet, removePhotoSet, renameSet, replaceSinglePhotos, setIncluded, wholeImageFace } from '../../src/core/people/photo-sets';
 import { createEvent } from '../../src/core/event';
 import { validateEvent } from '../../src/core/session';
+import { MAX_FACE_PAIRS, MAX_PEOPLE } from '../../src/core/people/limits';
+import { syncPeople } from '../../src/core/people/photos';
 import type { FacePair, Person, PhotoSet } from '../../src/core/types';
 
 const pair = (id: string, setId: string, number: number): FacePair => ({ id, setId, number, color: '#f7d873', matchMethod: 'manual', reviewStatus: 'confirmed' });
@@ -117,6 +119,15 @@ describe('library set actions', () => {
     expect(lib.assets).toEqual({});
     expect(orderedSets(lib).map(s => [s.name, s.order])).toEqual([['Priya', 0], ['B', 1]]);
   });
+  it('keeps an image when another set still refers to it', () => {
+    const { lib, a, b } = build();
+    b.nowImageId = 'a-now'; b.previews = { 'a-now': 'a-now-preview' };
+    const removed = removePhotoSet(lib, a.id);
+    expect(removed).not.toContain('a-now');
+    expect(removed).not.toContain('a-now-preview');
+    expect(lib.assets['a-now']).toEqual({ id: 'a-now' });
+    expect(lib.assets['a-now-preview']).toEqual({ id: 'a-now-preview' });
+  });
 });
 
 describe('single-photo people', () => {
@@ -129,6 +140,22 @@ describe('single-photo people', () => {
     expect(event.facePairs[0]).toMatchObject({ number: 1, setId: event.photoSets[0].id, reviewStatus: 'confirmed', now: { sourceImageId: 'now' }, then: { sourceImageId: 'then' } });
     expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
   });
+  it('refuses additions that would exceed saved-session people or face-pair limits', () => {
+    const fullPeople = createEvent();
+    fullPeople.people = Array.from({ length: MAX_PEOPLE }, (_, i) => person(`person-${i}`, `pair-${i}`));
+    expect(() => addSinglePerson(fullPeople, { name: 'Priya', funFact: '', now: photo('now'), then: photo('then') })).toThrow(/500 people/);
+    expect(fullPeople.photoSets).toEqual([]);
+    const fullPairs = createEvent();
+    fullPairs.facePairs = Array.from({ length: MAX_FACE_PAIRS }, (_, i) => pair(`pair-${i}`, 'group', i + 1));
+    expect(() => addSinglePerson(fullPairs, { name: 'Priya', funFact: '', now: photo('now'), then: photo('then') })).toThrow(/1000 face pairs/);
+    expect(fullPairs.photoSets).toEqual([]);
+  });
+  it('does not replace people when syncing would exceed the people limit', () => {
+    const event = createEvent();
+    event.facePairs = Array.from({ length: MAX_PEOPLE + 1 }, (_, i) => pair(`pair-${i}`, 'group', i + 1));
+    expect(() => syncPeople(event)).toThrow(/500 people/);
+    expect(event.people).toEqual([]);
+  });
   it('replaces both photos in place and returns the old image ids', () => {
     const event = createEvent();
     const person = addSinglePerson(event, { name: 'Priya', funFact: '', now: photo('now'), then: photo('then') });
@@ -138,6 +165,17 @@ describe('single-photo people', () => {
     expect(event.people).toEqual([person]);
     expect(event.facePairs[0].now).toEqual({ sourceImageId: 'now2', faceBox: { x: .2, y: .1, width: .4, height: .3 }, padding: { top: .4, right: .32, bottom: .7, left: .32 } });
     expect(Object.keys(event.assets).sort()).toEqual(['now2', 'now2-preview', 'then2', 'then2-preview']);
+  });
+  it('keeps a replaced image while another set still refers to it', () => {
+    const event = createEvent();
+    const person = addSinglePerson(event, { name: 'Priya', funFact: '', now: photo('now'), then: photo('then') });
+    event.photoSets.push({ id: 'other-set', name: 'Other set', kind: 'group', order: 1, nowImageId: 'now', previews: { now: 'now-preview' } });
+    const removed = replaceSinglePhotos(event, event.photoSets[0].id, photo('now2'), photo('then2'));
+    expect(removed).not.toContain('now');
+    expect(removed).not.toContain('now-preview');
+    expect(event.assets.now).toBeTruthy();
+    expect(event.assets['now-preview']).toBeTruthy();
+    expect(event.people).toEqual([person]);
   });
   it('suggests the largest detected face, or the whole photo', () => {
     expect(largestFace([{ x: 0, y: 0, width: .1, height: .1 }, { x: .5, y: .5, width: .3, height: .2 }])).toEqual({ x: .5, y: .5, width: .3, height: .2 });

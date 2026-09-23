@@ -9,6 +9,7 @@ import type { Rect } from '../../types';
 import { intersectionOverUnion } from '../pairing';
 import { defaultIncluded, nextPairNumber } from '../photo-sets';
 import { makePairs, prepareCrops, syncPeople } from '../photos';
+import { MAX_FACE_PAIRS, MAX_PEOPLE } from '../limits';
 import { libraryDraft, type LibraryContext } from './context';
 type Props = { ctx: LibraryContext; setId: string; onBack: () => void; onNext: () => void; nextLabel: string };
 export function SetMatch({ ctx, setId, onBack, onNext, nextLabel }: Props) {
@@ -42,6 +43,8 @@ export function SetMatch({ ctx, setId, onBack, onNext, nextLabel }: Props) {
     f.faceBox = clampRect(rect); f.cropImageId = undefined; p.matchMethod = 'manual';
   });
   const add = (imageSide: 'now' | 'then', rect: Rect) => {
+    if (event.people.length >= MAX_PEOPLE || event.facePairs.length >= MAX_PEOPLE) { notify(`A people library holds up to ${MAX_PEOPLE} people.`); return; }
+    if (event.facePairs.length >= MAX_FACE_PAIRS) { notify(`A people library holds up to ${MAX_FACE_PAIRS} face pairs.`); return; }
     const id = crypto.randomUUID(), number = nextPairNumber(event.facePairs);
     updateEvent(s => { s.facePairs.push({ id, number, color: teamColors[(number - 1) % teamColors.length], setId, [imageSide]: { sourceImageId: imageSide === 'now' ? nowId : thenId, faceBox: rect, padding: { ...defaultPadding } }, matchMethod: 'manual', reviewStatus: 'unmatched' }); syncPeople(s); });
     setSelected(id); setSide(imageSide); setMode('pair'); setPending({ id, side: imageSide });
@@ -55,7 +58,10 @@ export function SetMatch({ ctx, setId, onBack, onNext, nextLabel }: Props) {
       const newNow = nowFaces.filter(r => !locked.some(p => p.now && intersectionOverUnion(p.now.faceBox, r) > .2));
       const newThen = thenFaces.filter(r => !locked.some(p => p.then && intersectionOverUnion(p.then.faceBox, r) > .2));
       const added = makePairs(newNow, newThen, set, tolerance, nextPairNumber([...others, ...locked]));
-      updateEvent(s => { s.facePairs = [...others, ...locked, ...added]; syncPeople(s); });
+      const nextPairs = [...others, ...locked, ...added];
+      if (nextPairs.length > MAX_PEOPLE) throw new Error(`A people library holds up to ${MAX_PEOPLE} people.`);
+      if (nextPairs.length > MAX_FACE_PAIRS) throw new Error(`A people library holds up to ${MAX_FACE_PAIRS} face pairs.`);
+      updateEvent(s => { s.facePairs = nextPairs; syncPeople(s); });
       notify(added.length ? `Found ${nowFaces.length} current and ${thenFaces.length} childhood faces. Review the suggested matches.` : 'No new faces found. Use “Add face” to draw any missed faces.');
     } finally { setProgress(''); }
   });

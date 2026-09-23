@@ -2,6 +2,7 @@ import { activitySegment } from '../event';
 import { getActivity } from '../registry';
 import type { EventSession, EventUpdate } from '../types';
 import type { ImportedFacePairs } from '../transfer';
+import { assertLibraryCapacity } from './pairs';
 
 export function prepareSegmentPeople(event: EventSession, index = 0) {
   const segment = event.segments[index], status = segment.status;
@@ -35,11 +36,13 @@ export function leaveDemo(event: EventSession) { if (event.isDemo) resetEventPro
 
 // Replacing shared identities invalidates every activity, including completed ones.
 export function replaceEventPeople(event: EventSession, imported: ImportedFacePairs) {
+  assertLibraryCapacity({ pairs: imported.facePairs.length, sets: imported.photoSets.length }, { people: 0, facePairs: 0, photoSets: 0 });
   event.assets = imported.assets; event.photoSets = imported.photoSets; event.facePairs = imported.facePairs; event.people = imported.people;
   resetEventProgress(event);
 }
 export function addEventPeople(event: EventSession, imported: ImportedFacePairs) {
   if (libraryLocked(event)) throw new Error('The roster is locked after an activity starts. Replace the library to start over.');
+  assertLibraryCapacity({ pairs: imported.facePairs.length, sets: imported.photoSets.length }, { people: event.people.length, facePairs: event.facePairs.length, photoSets: event.photoSets.length });
   const wasDemo = event.isDemo;
   Object.assign(event.assets, imported.assets);
   event.photoSets.push(...imported.photoSets); event.facePairs.push(...imported.facePairs); event.people.push(...imported.people);
