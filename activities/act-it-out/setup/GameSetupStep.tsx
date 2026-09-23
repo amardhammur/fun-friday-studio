@@ -2,13 +2,17 @@ import { Check, Flag, Play, Users } from 'lucide-react';
 import { TeamEditor } from '../../../src/core/teams/TeamEditor';
 import { eligiblePrompts, startNewGame } from '../logic/turns';
 import type { Context } from '../types';
-export function GameSetupStep({ segment, event, update, updateEvent, notify, rosterLocked }: Context) {
+export function GameSetupStep({ segment, event, update, updateEvent, rosterLocked }: Context) {
   const { settings } = segment, turns = event.teams.length * settings.roundsPerTeam;
   const valid = event.teams.length > 0 && event.teams.every(t => t.name.trim()) && eligiblePrompts(settings).length >= turns * 3;
   const start = () => {
     const staged = { ...event, people: [...event.people], facePairs: [...event.facePairs], teams: [...event.teams], scoreEntries: [...event.scoreEntries], assets: { ...event.assets } };
-    try { update(s => startNewGame(s, staged)); updateEvent(d => { d.scoreEntries = staged.scoreEntries; }); }
-    catch (error) { notify(error instanceof Error ? error.message : 'This game could not be started.'); }
+    // update() reports a throw itself instead of rethrowing, so a rejected start is only visible from
+    // inside the callback. Without this flag the scoreEntries write below would run anyway, and its
+    // safety would rest on startNewGame's statement order rather than on anything here.
+    let started = false;
+    update(s => { startNewGame(s, staged); started = true; });
+    if (started) updateEvent(d => { d.scoreEntries = staged.scoreEntries; });
   };
   return <div className="setup-content"><div className="section-heading"><span className="eyebrow">02 / SET THE CLOCK</span><h1>How long have they got<span className="accent">?</span></h1><p>{event.correctPoints} points for every prompt the guesser gets. Skips cost nothing, so keep moving.</p></div>
     <div className="aio-setup-grid">
