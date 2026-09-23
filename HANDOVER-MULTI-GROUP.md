@@ -1,4 +1,4 @@
-# Handover — multi-group people library (Tasks 5–8 left)
+# Handover — multi-group people library (implementation complete)
 
 Written 2026-09-23 for a Codex agent picking this up cold. Read `HANDOVER.md` first for the event
 architecture (events, segments, activities, the shared people library).
@@ -21,10 +21,11 @@ that had players, then an "Also in the game" slide for single-photo people.
 The plan gives complete code and tests for every task. Follow it. Where it disagrees with the spec,
 the spec wins.
 
-## Where the branch is
+## Current status
 
-Branch `feat/multi-group-people-library`, 7 commits on top of `main` (`37b4480`, which holds the
-spec and plan). `main` has not been touched. Nothing is pushed.
+Branch `feat/multi-group-people-library`, 14 commits on top of `main` (`37b4480`, which holds the
+spec and plan). All eight plan tasks are complete and reviewed. `main` has not been touched, and
+nothing is pushed.
 
 | Plan task | Status | Commits |
 |---|---|---|
@@ -33,31 +34,29 @@ spec and plan). `main` has not been touched. Nothing is pushed.
 | 2 Face-pair bundle version 2 | done, reviewed | `24d3621` |
 | 3 Add to library (import menu, duplicates dialog) | done, reviewed | `c9135e5`, fix `df4abce` |
 | 4 Set-scoped editor screens + Childhood vs Now People step | done, reviewed | `faa2bfd` |
-| **5 The People library screen** | **not started** | |
-| **6 Add a person with two single photos** | **not started** | |
-| **7 A reveal slide for every group with players** | **not started** | |
-| **8 End-to-end browser coverage and docs** | **not started** | |
+| **5 The People library screen** | **done** | `0e3788f` |
+| **6 Add a person with two single photos** | **done** | `9f6da71` |
+| **7 A reveal slide for every group with players** | **done** | `17c2905` |
+| **8 End-to-end browser coverage and docs** | **done** | `0cea506` |
+| Broad review fixes | **done** | `dd9698b` |
+| Add a group host-flow browser regression | **done** | `4a47528` |
 
-After Task 8, the whole branch still needs one broad review (see "Before you call it done").
+The broad review added library-capacity guards across add, sync, import, and matching paths; validated
+contiguous set order; and tightened photo cleanup when replacing photos, including aligned uploads
+that no longer have a face-pair reference. Cleanup now preserves any image still referenced elsewhere.
 
-State at `faa2bfd`: `npm test` 191/191, `npx tsc -b` clean, `npm run build` passes.
+On this branch, `npm test` passes 207 tests, `npx tsc -b` is clean, and `npm run build` passes. All
+four new browser scenarios pass, including the focused host workflow: create a group, manually draw
+and pair two faces, switch both people into play, add a single-photo person, play, and verify the two
+group slides and final singles slide. The full Playwright suite has the same ten known startup helper
+failures recorded below; no new failure was introduced.
 
-## How to do Tasks 5–8
+## Completed work
 
-Do them in order; each builds on the previous one's exports. For each task:
-
-1. Read the task's section in the plan (`## Task 5` starts around line 1929, `## Task 6` ~2116,
-   `## Task 7` ~2302, `## Task 8` ~2456). The **Interfaces** block lists what it consumes and produces.
-2. Follow its steps in order: write the failing test, run it and see it fail, implement, run it and see
-   it pass. The plan's code is meant to be used verbatim.
-3. Run the task's verify step, then `npx tsc -b` and `npm test`.
-4. Commit with the message the plan gives. **Leave out the plan's `Co-Authored-By: Claude …` trailer**
-   and use your own attribution convention.
-5. Read your own diff against the task text before moving on.
-
-Plan line numbers and quoted "before" text were written before Tasks 1–4 were implemented. Match edits
-by the quoted text, not by line number. The files Tasks 5–8 touch were left as the plan expects;
-the two fixes below changed functions that Tasks 5–8 only call.
+Tasks 5–8 were implemented in plan order and committed separately. Task 8 adds browser coverage for
+version 1 partial-group import and reveal, single-photo people through the final reveal slide, and
+version 2 session migration. README and the main handover were updated. A follow-up browser test
+covers creating a group in the library and playing it alongside a single-photo person.
 
 ## Deviations from the plan already in the code
 
@@ -110,17 +109,17 @@ a running demo game (`src/main.tsx`). The tests that pass use `aioHome()`, which
 - stealing, retracting a steal, and reaching the event finale through the standings
 - three activities carry scores through ZIP restore and a wager changes the winner
 
-The bar for this branch is **no new failures**, plus Task 8's three new tests passing. Those three use
-`aioHome()`. Fixing `home()` is a separate, worthwhile change. Don't fold it into these tasks unless
-asked.
+In the final full run, 9 of 19 tests passed and 10 failed; those failures are the same ten baseline
+failures listed above. All three Task 8 tests and the added Add a group host workflow passed. The bar
+for this branch is **no new failures**, plus the Task 8 browser tests passing. Those tests use
+`aioHome()`. Fixing `home()` is a separate change.
 
 Run Playwright against the build: `npm run build && npx playwright test --reporter=line`. It serves
 `npm run preview` on port 4173. Filter one test with `-g "<name>"`.
 
 ## Things to check while doing Tasks 5–8
 
-These are the plan's "review focus" items. Each already has a test in the plan, so make sure those
-tests exist and pass:
+These were the plan's "review focus" items. The implementation and tests were checked against them:
 
 1. **Clearing a group's name** in the rename field must not save an empty name. The session schema
    requires 1–80 characters, and a saved empty name would make the whole session fail to load and fall
@@ -142,29 +141,25 @@ tests exist and pass:
   exist. This came from the plan; `startNewGame` still enforces names.
 - A half-finished v2 upload (one photo, no pairs) creates no set on migration, and that photo is
   orphaned. This came from the plan.
-- Replaced photos can linger in `set.previews` and `assets`, so storage grows. Tasks 5 and 6 delete
-  images on remove and replace.
 - `SetUpload` no longer resets `game.rounds` on a photo replace. This is harmless: `startNewGame`
   overwrites the rounds, and validation ignores rounds during setup.
 
-## Before you call it done
+## Completion checklist
 
-1. `npx tsc -b`, `npm test`, `npm run build`, and full Playwright: no new failures, and Task 8's three
-   pass.
-2. Review the whole branch diff (`git diff main...HEAD`) against the spec, section by section. Look
-   hardest at:
+1. `npx tsc -b`, `npm test`, `npm run build`, and full Playwright were run. TypeScript, unit tests,
+   and build pass. The 10 Playwright failures match the baseline; Task 8's three and the focused host
+   workflow pass.
+2. The whole branch diff (`git diff main...HEAD`) was reviewed against the spec, with attention to:
    - saved-data safety: migration, `validateEvent`, and anything that could make a saved session fail
      to load;
    - image cleanup on every failure path;
    - the roster lock;
    - the deferred list above.
-3. Run the app (`npm run dev`, open `http://127.0.0.1:5173`) and try it as a host would:
-   - from the demo, add a group through Add a group;
-   - switch on two of its people;
-   - add a person from two photos;
-   - play a game and step through the reveal slides;
-   - Export pairs, then Add to library with that same file.
-4. Don't merge or push without the user's go-ahead.
+3. The host flow was exercised in the browser: added a group from the library, drew and paired two
+   faces, switched both into play, added a person from two photos, played a game, and stepped through
+   the group and singles reveal slides. Existing browser coverage exercises pair export/import,
+   duplicate handling, and library replacement.
+4. Nothing has been merged or pushed. Wait for the user's go-ahead before either action.
 
 ## Files worth knowing
 
