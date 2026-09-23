@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { allPreviews, clearSetPairs, createPhotoSet, defaultIncluded, MAX_PHOTO_SETS, nextPairNumber, orderedSets, pairsInSet, peopleInSet, playerIssues, primaryGroupSet, moveSet, removePhotoSet, renameSet, setIncluded } from '../../src/core/people/photo-sets';
+import { addSinglePerson, allPreviews, clearSetPairs, createPhotoSet, defaultIncluded, largestFace, MAX_PHOTO_SETS, nextPairNumber, orderedSets, pairsInSet, peopleInSet, playerIssues, primaryGroupSet, moveSet, removePhotoSet, renameSet, replaceSinglePhotos, setIncluded, wholeImageFace } from '../../src/core/people/photo-sets';
+import { createEvent } from '../../src/core/event';
+import { validateEvent } from '../../src/core/session';
 import type { FacePair, Person, PhotoSet } from '../../src/core/types';
 
 const pair = (id: string, setId: string, number: number): FacePair => ({ id, setId, number, color: '#f7d873', matchMethod: 'manual', reviewStatus: 'confirmed' });
@@ -114,5 +116,32 @@ describe('library set actions', () => {
     expect(lib.people.map(p => p.id)).toEqual(['B1']);
     expect(lib.assets).toEqual({});
     expect(orderedSets(lib).map(s => [s.name, s.order])).toEqual([['Priya', 0], ['B', 1]]);
+  });
+});
+
+describe('single-photo people', () => {
+  const photo = (id: string) => ({ asset: { id, name: `${id}.jpg`, width: 600, height: 800, mime: 'image/jpeg' }, preview: { id: `${id}-preview`, name: 'p.jpg', width: 300, height: 400, mime: 'image/jpeg' }, face: { faceBox: { x: .2, y: .1, width: .4, height: .3 }, padding: { top: .4, right: .32, bottom: .7, left: .32 } } });
+  it('adds a playing person in their own single set', () => {
+    const event = createEvent();
+    const person = addSinglePerson(event, { name: ' Priya ', funFact: 'Plays the tabla', now: photo('now'), then: photo('then') });
+    expect(person).toMatchObject({ name: 'Priya', funFact: 'Plays the tabla', included: true });
+    expect(event.photoSets).toEqual([{ id: expect.any(String), name: 'Priya', kind: 'single', nowImageId: 'now', thenImageId: 'then', previews: { now: 'now-preview', then: 'then-preview' }, order: 0 }]);
+    expect(event.facePairs[0]).toMatchObject({ number: 1, setId: event.photoSets[0].id, reviewStatus: 'confirmed', now: { sourceImageId: 'now' }, then: { sourceImageId: 'then' } });
+    expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
+  });
+  it('replaces both photos in place and returns the old image ids', () => {
+    const event = createEvent();
+    const person = addSinglePerson(event, { name: 'Priya', funFact: '', now: photo('now'), then: photo('then') });
+    event.facePairs[0].now!.cropImageId = 'old-crop'; event.assets['old-crop'] = { id: 'old-crop', name: 'c', width: 1, height: 1, mime: 'image/jpeg' };
+    const removed = replaceSinglePhotos(event, event.photoSets[0].id, photo('now2'), photo('then2'));
+    expect(removed.sort()).toEqual(['now', 'now-preview', 'old-crop', 'then', 'then-preview']);
+    expect(event.people).toEqual([person]);
+    expect(event.facePairs[0].now).toEqual({ sourceImageId: 'now2', faceBox: { x: .2, y: .1, width: .4, height: .3 }, padding: { top: .4, right: .32, bottom: .7, left: .32 } });
+    expect(Object.keys(event.assets).sort()).toEqual(['now2', 'now2-preview', 'then2', 'then2-preview']);
+  });
+  it('suggests the largest detected face, or the whole photo', () => {
+    expect(largestFace([{ x: 0, y: 0, width: .1, height: .1 }, { x: .5, y: .5, width: .3, height: .2 }])).toEqual({ x: .5, y: .5, width: .3, height: .2 });
+    expect(largestFace([])).toBeUndefined();
+    expect(wholeImageFace()).toEqual({ faceBox: { x: 0, y: 0, width: 1, height: 1 }, padding: { top: 0, right: 0, bottom: 0, left: 0 } });
   });
 });

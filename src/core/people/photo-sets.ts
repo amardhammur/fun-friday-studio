@@ -1,4 +1,5 @@
-import type { Asset, FacePair, Person, PhotoSet } from '../types';
+import type { Asset, FaceCrop, FacePair, Person, PhotoSet, Rect } from '../types';
+import { teamColors } from '../event';
 
 export const MAX_PHOTO_SETS = 20;
 type SetList = { readonly photoSets: readonly PhotoSet[] };
@@ -69,4 +70,31 @@ export function removePhotoSet(library: Library, setId: string): string[] {
 export function playerIssues(library: { readonly people: readonly Person[] }): string[] {
   const players = library.people.filter(person => person.included);
   return players.length && players.every(person => person.name.trim()) ? [] : ['Include and name the people who will appear in the game.'];
+}
+export interface SinglePhoto { asset: Asset; preview: Asset; face: Pick<FaceCrop, 'faceBox' | 'padding'> }
+export const largestFace = (faces: readonly Rect[]): Rect | undefined => [...faces].sort((a, b) => b.width * b.height - a.width * a.height)[0];
+export const wholeImageFace = (): Pick<FaceCrop, 'faceBox' | 'padding'> => ({ faceBox: { x: 0, y: 0, width: 1, height: 1 }, padding: { top: 0, right: 0, bottom: 0, left: 0 } });
+function attachSinglePhotos(library: Library, set: PhotoSet, now: SinglePhoto, then: SinglePhoto) {
+  for (const photo of [now, then]) { library.assets[photo.asset.id] = photo.asset; library.assets[photo.preview.id] = photo.preview; }
+  set.nowImageId = now.asset.id; set.thenImageId = then.asset.id;
+  set.previews = { [now.asset.id]: now.preview.id, [then.asset.id]: then.preview.id };
+}
+export function addSinglePerson(library: Library, input: { name: string; funFact: string; now: SinglePhoto; then: SinglePhoto }): Person {
+  const set = createPhotoSet(library, input.name, 'single');
+  attachSinglePhotos(library, set, input.now, input.then);
+  const number = nextPairNumber(library.facePairs);
+  const pair: FacePair = { id: crypto.randomUUID(), number, color: teamColors[(number - 1) % teamColors.length], setId: set.id, now: { sourceImageId: input.now.asset.id, ...input.now.face }, then: { sourceImageId: input.then.asset.id, ...input.then.face }, matchMethod: 'manual', reviewStatus: 'confirmed' };
+  const person: Person = { id: crypto.randomUUID(), name: input.name.trim(), funFact: input.funFact.trim(), included: true, facePairId: pair.id };
+  library.facePairs.push(pair); library.people.push(person);
+  return person;
+}
+// Swaps a single person's photos, keeping their name, fun fact and place in any game.
+export function replaceSinglePhotos(library: Library, setId: string, now: SinglePhoto, then: SinglePhoto): string[] {
+  const set = library.photoSets.find(s => s.id === setId && s.kind === 'single'), pair = pairsInSet(library, setId)[0];
+  if (!set || !pair) return [];
+  const old = [set.nowImageId, set.thenImageId, ...Object.values(set.previews), pair.now?.cropImageId, pair.then?.cropImageId].filter((id): id is string => Boolean(id));
+  for (const id of old) delete library.assets[id];
+  attachSinglePhotos(library, set, now, then);
+  pair.now = { sourceImageId: now.asset.id, ...now.face }; pair.then = { sourceImageId: then.asset.id, ...then.face };
+  return old;
 }
