@@ -17,7 +17,7 @@ function beep(frequency: number) {
 }
 export function Timer({ state, onChange, label = 'Round timer' }: { state: TimerState; onChange: (next: TimerState) => void; label?: string }) {
   const remaining = useCountdown(state), seconds = Math.ceil(remaining / 1000), running = isRunning(state);
-  const lastBeep = useRef<number>();
+  const lastBeep = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!running || seconds > 5 || seconds < 0 || lastBeep.current === seconds) return;
     lastBeep.current = seconds; beep(seconds === 0 ? 420 : 880);

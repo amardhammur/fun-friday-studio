@@ -116,6 +116,21 @@
   .aio-number { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); border-radius: var(--radius); padding: 13px 17px; margin-top: 11px; }
   .aio-number span { display: grid; } .aio-number b { font-family: var(--heading); font-size: 16px; } .aio-number small { color: var(--muted); }
   .aio-number input { width: 92px; text-align: center; font-variant-numeric: tabular-nums; }
+  .aio-ready, .aio-acting, .aio-summary { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; text-align: center; }
+  .aio-guesser { display: grid; gap: 8px; width: min(340px, 80vw); text-align: left; }
+  .prompt-card { background: #f4ecd4; color: var(--ink); border-radius: 6px; padding: clamp(28px, 5vh, 58px) clamp(30px, 6vw, 80px); box-shadow: 0 14px 0 #071f1926; max-width: min(1000px, 88vw); }
+  .prompt-card .eyebrow { color: #5d6f5a; }
+  .prompt-card b { display: block; margin-top: 14px; font-family: var(--heading); font-weight: 600; letter-spacing: -.035em; line-height: 1.05; font-size: clamp(38px, 7.4vw, 108px); }
+  .prompt-card.spent { background: #ffffff08; color: var(--chalk); box-shadow: none; border: 1px dashed #ffffff35; }
+  .prompt-card.spent b { font-size: clamp(24px, 3.4vw, 40px); } .prompt-card.spent small { color: var(--muted); }
+  .aio-clock { display: flex; justify-content: center; }
+  .turn-tally { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: 15px; }
+  .turn-tally span { display: inline-flex; align-items: center; gap: 8px; } .turn-running { color: var(--chalk); } .turn-running b { color: var(--yellow); font-family: var(--heading); font-size: 21px; }
+  .turn-summary { display: flex; gap: 40px; } .turn-summary > div { display: grid; gap: 3px; } .turn-summary b { font-family: var(--heading); font-size: clamp(38px, 5vw, 62px); line-height: 1; } .turn-summary small { color: var(--muted); letter-spacing: .1em; font-size: 11px; text-transform: uppercase; } .turn-summary-points b { color: var(--yellow); }
+  .turn-results { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; max-width: 860px; }
+  .turn-results li { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 30px; padding: 6px 14px; font-size: 13px; }
+  .turn-results li.guessed { color: var(--mint); border-color: #9edbbd44; } .turn-results li.skipped { color: var(--muted); }
+  @media (max-width: 760px) { .prompt-card { padding: 26px 22px; } .turn-summary { gap: 24px; } .turn-tally { flex-wrap: wrap; justify-content: center; gap: 12px; } }
 }
 
 @layer responsive {
