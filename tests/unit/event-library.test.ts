@@ -29,7 +29,7 @@ describe('event people library', () => {
     event.segments.forEach((_, i) => {
       const view = segmentView(event, i);
       expect(view.game.rounds).toEqual([]);
-      expect(view.game.finale).toEqual({ wipePosition: 0 });
+      expect(view.game.finale).toEqual({ wipePosition: 0, slideIndex: 0 });
     });
     expect(event.segments[0].game).not.toBe(event.segments[1].game);
     expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);

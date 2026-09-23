@@ -60,7 +60,7 @@ test('demo pair bundle replaces the library and restores the whole-team reveal',
   expect(imported.segments[0].setupStepId).toBe('game');
   expect(importedGame.rounds).toEqual([]);
   expect(imported.scoreEntries).toEqual([]);
-  expect(importedGame.finale).toEqual({ wipePosition: 0 });
+  expect(importedGame.finale).toEqual({ wipePosition: 0, slideIndex: 0 });
   expect(Object.keys(imported.assets).some(id => demoSession.assets[id])).toBe(false);
   const set = imported.photoSets[0];
   expect(imported.assets[set.nowImageId]).toBeTruthy();
