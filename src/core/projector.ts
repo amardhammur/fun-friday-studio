@@ -18,3 +18,7 @@ export async function toggleFullscreen() {
   else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
   else throw new Error('Full-screen is not available in this browser. Use your browser’s full-screen option.');
 }
+// The stage footer and the shortcuts modal both render activity-supplied keys, so the naming lives
+// in one place rather than being spelled out per activity in App.tsx.
+const keyNames: Record<string, string> = { ' ': 'Space', Enter: '↵', ArrowLeft: '←', ArrowRight: '→' };
+export const shortcutKeyLabel = (key: string) => keyNames[key] ?? (key.length === 1 ? key.toUpperCase() : key);
