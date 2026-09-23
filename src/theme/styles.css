@@ -131,6 +131,11 @@
   .turn-results li { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 30px; padding: 6px 14px; font-size: 13px; }
   .turn-results li.guessed { color: var(--mint); border-color: #9edbbd44; } .turn-results li.skipped { color: var(--muted); }
   @media (max-width: 760px) { .prompt-card { padding: 26px 22px; } .turn-summary { gap: 24px; } .turn-tally { flex-wrap: wrap; justify-content: center; gap: 12px; } }
+  .aio-finale { display: flex; flex-direction: column; gap: 30px; align-items: center; padding: 40px 25px; }
+  .aio-finale-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 23px; width: min(1100px, 100%); align-items: start; }
+  .aio-total { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .aio-total strong { font-family: var(--heading); font-size: 19px; } .aio-total .muted { margin-left: auto; font-size: 13px; }
+  .aio-total b { font-family: var(--heading); font-size: 25px; color: var(--yellow); min-width: 56px; text-align: right; }
 }
 
 @layer responsive {
