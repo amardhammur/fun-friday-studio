@@ -13,10 +13,7 @@ export function PeopleLibrary({ session, update, notify, runTask, onSetup }: Peo
     if (file && (session.people.length > 0 || session.segments.length > 0) && !window.confirm('Replace the people library for this whole event? All activity progress, scores, and wager bets will be reset. Your line-up, activity settings, teams, and wager question will be kept.')) return;
     if (file) void runTask('Importing face pairs…', async () => {
       const imported = await importFacePairs(file, {
-        startNumber: 0,
-        currentPeopleCount: session.people.length,
-        currentFacePairCount: session.facePairs.length,
-        replaceExisting: true,
+        startNumber: 0, startOrder: 0, current: { people: 0, facePairs: 0, photoSets: 0 },
       });
       update(s => replaceEventPeople(s, imported));
       notify(`${imported.people.length} people imported.`);

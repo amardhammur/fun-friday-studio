@@ -2,13 +2,23 @@ import { inspectImage, rpc } from './images/client';
 import { imageStore } from './storage';
 import { validateEvent } from './session';
 import {
-  assertFacePairImportCapacity,
+  assertLibraryCapacity,
+  bundlePaths,
+  bundleSetName,
   FACE_PAIR_BUNDLE_VERSION,
   hasJpegSignature,
+  normalizeName,
+  pairCropPath,
   parseFacePairsBundleManifest,
-  type FacePairBundleGroupImage,
+  SET_IMAGE_FIELDS,
+  setImagePath,
+  setKey,
+  type FacePairBundleEntry,
+  type FacePairBundleImage,
+  type FacePairBundleSet,
   type FacePairsBundleManifest,
 } from './people/pairs';
+import { orderedSets } from './people/photo-sets';
 import { getActivity } from './registry';
 import type { Asset, EventSession, FacePair, Person, PhotoSet } from './types';
 const archiveJob = rpc(() => new Worker(new URL('../workers/archive.worker.ts', import.meta.url), { type: 'module' }));
@@ -17,12 +27,6 @@ export interface ImportedFacePairs {
   photoSets: PhotoSet[];
   facePairs: FacePair[];
   people: Person[];
-}
-export interface FacePairImportOptions {
-  startNumber: number;
-  currentPeopleCount: number;
-  currentFacePairCount: number;
-  replaceExisting?: boolean;
 }
 function download(bytes: Uint8Array, name: string) {
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/zip' }));
@@ -67,227 +71,130 @@ export function remapEventImages(event: EventSession, remap: Record<string, stri
     segment.game = activity.remapImages(segment.game, remap);
   }
 }
-export async function importFacePairs(file: File, options: FacePairImportOptions): Promise<ImportedFacePairs> {
+export interface BundleImage { blob: Blob; name: string; mime: string; width: number; height: number }
+export interface FacePairsBundle { manifest: FacePairsBundleManifest; images: Map<string, BundleImage> }
+export interface StoreBundleOptions {
+  startNumber: number;
+  startOrder: number;
+  current: { people: number; facePairs: number; photoSets: number };
+  skipNames?: ReadonlySet<string>;
+}
+
+// Validates the ZIP and decodes every image without storing anything, so the host can still cancel.
+export async function readFacePairsBundle(file: File): Promise<FacePairsBundle> {
   const zipMime = !file.type || file.type === 'application/zip' || file.type === 'application/x-zip-compressed';
-  if (!file.name.toLocaleLowerCase().endsWith('.zip') || !zipMime) {
-    throw new Error('Please choose a ZIP file containing exported face pairs.');
-  }
+  if (!file.name.toLocaleLowerCase().endsWith('.zip') || !zipMime) throw new Error('Please choose a ZIP file containing exported face pairs.');
   if (file.size > 512 * 1024 * 1024) throw new Error('Please use a face pair ZIP smaller than 512 MB.');
-
-  const { manifest, files } = await archiveJob<{ manifest?: unknown; files: Record<string, Uint8Array> }>({
-    type: 'unzip',
-    bytes: new Uint8Array(await file.arrayBuffer()),
-    allowMissingManifest: true,
-  });
-  if (manifest !== undefined) throw new Error('This is a full session ZIP. Import it with Import session ZIP.');
-
+  const { manifest: sessionManifest, files } = await archiveJob<{ manifest?: unknown; files: Record<string, Uint8Array> }>({ type: 'unzip', bytes: new Uint8Array(await file.arrayBuffer()), allowMissingManifest: true });
+  if (sessionManifest !== undefined) throw new Error('This is a full session ZIP. Import it with Import session ZIP.');
   const manifestBytes = files['face-pairs.json'];
   if (!manifestBytes) throw new Error('The face pair ZIP is missing face-pairs.json.');
-  let bundle: FacePairsBundleManifest;
-  try {
-    bundle = parseFacePairsBundleManifest(JSON.parse(new TextDecoder().decode(manifestBytes)));
-  } catch (error) {
-    if (error instanceof SyntaxError) throw new Error('face-pairs.json is not valid JSON.');
-    throw error;
-  }
-
-  const referencedPaths = [
-    bundle.groups.now.path,
-    bundle.groups.then.path,
-    ...(bundle.groups.nowPreview ? [bundle.groups.nowPreview.path] : []),
-    ...(bundle.groups.thenPreview ? [bundle.groups.thenPreview.path] : []),
-    ...bundle.pairs.flatMap(pair => [pair.now.cropPath, pair.then.cropPath]),
-  ];
-  const expectedPaths = new Set(['face-pairs.json', ...referencedPaths]);
+  let manifest: FacePairsBundleManifest;
+  try { manifest = parseFacePairsBundleManifest(JSON.parse(new TextDecoder().decode(manifestBytes)), bundleSetName(file.name)); }
+  catch (error) { if (error instanceof SyntaxError) throw new Error('face-pairs.json is not valid JSON.'); throw error; }
+  const expected = new Set(['face-pairs.json', ...bundlePaths(manifest)]);
   const archivePaths = Object.keys(files).filter(path => !path.endsWith('/'));
-  const missing = [...expectedPaths].filter(path => !files[path]);
-  const unknown = archivePaths.filter(path => !expectedPaths.has(path));
+  const missing = [...expected].filter(path => !files[path]), unknown = archivePaths.filter(path => !expected.has(path));
   if (missing.length || unknown.length) {
-    const details = [
-      missing.length ? `missing ${missing.join(', ')}` : '',
-      unknown.length ? `unexpected ${unknown.join(', ')}` : '',
-    ].filter(Boolean).join('; ');
+    const details = [missing.length ? `missing ${missing.join(', ')}` : '', unknown.length ? `unexpected ${unknown.join(', ')}` : ''].filter(Boolean).join('; ');
     throw new Error(`The face pair ZIP files do not exactly match face-pairs.json (${details}).`);
   }
-
-  const current = options.replaceExisting
-    ? { people: 0, facePairs: 0 }
-    : { people: options.currentPeopleCount, facePairs: options.currentFacePairCount };
-  assertFacePairImportCapacity(bundle.pairs.length, current);
-
-  const imageSpecs: {
-    path: string;
-    name: string;
-    mime: string;
-    expectedSize?: { width: number; height: number };
-    crop: boolean;
-  }[] = [
-    groupSpec(bundle.groups.now),
-    groupSpec(bundle.groups.then),
-    ...(bundle.groups.nowPreview ? [groupSpec(bundle.groups.nowPreview)] : []),
-    ...(bundle.groups.thenPreview ? [groupSpec(bundle.groups.thenPreview)] : []),
-    ...bundle.pairs.flatMap(pair => [
-      { path: pair.now.cropPath, name: `Face ${pair.number} - now.jpg`, mime: 'image/jpeg', crop: true },
-      { path: pair.then.cropPath, name: `Face ${pair.number} - then.jpg`, mime: 'image/jpeg', crop: true },
-    ]),
+  const specs: { path: string; name: string; mime: string; size?: { width: number; height: number }; crop: boolean }[] = [
+    ...manifest.sets.flatMap(set => SET_IMAGE_FIELDS.flatMap(field => { const image = set[field]; return image ? [{ path: image.path, name: image.name, mime: image.mime, size: { width: image.width, height: image.height }, crop: false }] : []; })),
+    ...manifest.pairs.flatMap(pair => (['now', 'then'] as const).map(side => ({ path: pair[side].cropPath, name: `Face ${pair.number} - ${side}.jpg`, mime: 'image/jpeg', crop: true }))),
   ];
-  for (const spec of imageSpecs) {
-    if (spec.crop && !hasJpegSignature(files[spec.path])) throw new Error(`${spec.path} is not a JPEG image.`);
+  for (const spec of specs) if (spec.crop && !hasJpegSignature(files[spec.path])) throw new Error(`${spec.path} is not a JPEG image.`);
+  const images = new Map<string, BundleImage>();
+  for (const spec of specs) {
+    const blob = new Blob([files[spec.path] as BlobPart], { type: spec.mime });
+    let width: number, height: number;
+    try { ({ width, height } = await inspectImage(blob)); } catch { throw new Error(`Could not read ${spec.path} as an image.`); }
+    if (spec.size && (width !== spec.size.width || height !== spec.size.height)) throw new Error(`${spec.path} dimensions do not match face-pairs.json.`);
+    images.set(spec.path, { blob, name: spec.name, mime: spec.mime, width, height });
   }
-  const images: {
-    path: string;
-    name: string;
-    mime: string;
-    blob: Blob;
-    width: number;
-    height: number;
-  }[] = [];
-  for (const spec of imageSpecs) {
-    const bytes = files[spec.path];
-    const blob = new Blob([bytes as BlobPart], { type: spec.mime });
-    try {
-      const { width, height } = await inspectImage(blob);
-      if (spec.expectedSize && (width !== spec.expectedSize.width || height !== spec.expectedSize.height)) {
-        throw new Error(`${spec.path} dimensions do not match face-pairs.json.`);
-      }
-      images.push({ path: spec.path, name: spec.name, mime: spec.mime, blob, width, height });
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('dimensions do not match')) throw error;
-      throw new Error(`Could not read ${spec.path} as an image.`);
-    }
-  }
+  return { manifest, images };
+}
 
-  const assets: Record<string, Asset> = {};
-  const assetsByPath = new Map<string, Asset>();
-  const storedIds: string[] = [];
+export async function storeFacePairsBundle(bundle: FacePairsBundle, options: StoreBundleOptions): Promise<ImportedFacePairs> {
+  const skip = options.skipNames ?? new Set<string>();
+  const pairs = bundle.manifest.pairs.filter(pair => !skip.has(normalizeName(pair.name)));
+  if (!pairs.length) throw new Error('Everyone in this file is already in your library.');
+  const sets = bundle.manifest.sets.filter(set => pairs.some(pair => pair.set === set.key));
+  assertLibraryCapacity({ pairs: pairs.length, sets: sets.length }, options.current);
+  const paths = [...sets.flatMap(set => SET_IMAGE_FIELDS.flatMap(field => set[field] ? [set[field]!.path] : [])), ...pairs.flatMap(pair => [pair.now.cropPath, pair.then.cropPath])];
+  const assets: Record<string, Asset> = {}, byPath = new Map<string, Asset>(), stored: string[] = [];
   try {
-    for (const image of images) {
-      try {
-        const id = await imageStore.put(image.blob, undefined, { durable: true });
-        const asset: Asset = {
-          id,
-          name: image.name,
-          width: image.width,
-          height: image.height,
-          mime: image.mime,
-        };
-        assets[id] = asset;
-        assetsByPath.set(image.path, asset);
-        storedIds.push(id);
-      } catch {
-        throw new Error(`Could not store ${image.path}. Check browser storage and try again.`);
-      }
+    for (const path of paths) {
+      const image = bundle.images.get(path)!;
+      let id: string;
+      try { id = await imageStore.put(image.blob, undefined, { durable: true }); } catch { throw new Error(`Could not store ${path}. Check browser storage and try again.`); }
+      stored.push(id);
+      const asset: Asset = { id, name: image.name, width: image.width, height: image.height, mime: image.mime };
+      assets[id] = asset; byPath.set(path, asset);
     }
-
-    const nowSource = assetsByPath.get(bundle.groups.now.path)!;
-    const thenSource = assetsByPath.get(bundle.groups.then.path)!;
-    const previews: Record<string, string> = {};
-    if (bundle.groups.nowPreview) previews[nowSource.id] = assetsByPath.get(bundle.groups.nowPreview.path)!.id;
-    if (bundle.groups.thenPreview) previews[thenSource.id] = assetsByPath.get(bundle.groups.thenPreview.path)!.id;
-    const set: PhotoSet = { id: crypto.randomUUID(), name: file.name.replace(/\.zip$/i, '').trim().slice(0, 80) || 'Imported group', kind: 'group', nowImageId: nowSource.id, thenImageId: thenSource.id, previews, order: 0 };
-    const facePairs: FacePair[] = bundle.pairs.map((imported, index) => ({
-      id: crypto.randomUUID(),
-      number: options.startNumber + index + 1,
-      color: imported.color,
-      setId: set.id,
-      now: { sourceImageId: nowSource.id, cropImageId: assetsByPath.get(imported.now.cropPath)!.id, faceBox: imported.now.faceBox, padding: imported.now.padding },
-      then: { sourceImageId: thenSource.id, cropImageId: assetsByPath.get(imported.then.cropPath)!.id, faceBox: imported.then.faceBox, padding: imported.then.padding },
-      matchMethod: 'manual',
-      reviewStatus: 'confirmed',
-    }));
-    const people: Person[] = bundle.pairs.map((imported, index) => ({ id: crypto.randomUUID(), name: imported.name, funFact: imported.funFact, included: imported.included, facePairId: facePairs[index].id }));
-    return { assets, photoSets: [set], facePairs, people };
+    const idOf = (path: string) => byPath.get(path)!.id;
+    const photoSets: PhotoSet[] = sets.map((set, index) => {
+      const nowImageId = idOf(set.now.path), thenImageId = idOf(set.then.path), previews: Record<string, string> = {};
+      if (set.nowPreview) previews[nowImageId] = idOf(set.nowPreview.path);
+      if (set.thenPreview) previews[thenImageId] = idOf(set.thenPreview.path);
+      return { id: crypto.randomUUID(), name: set.name, kind: set.kind, nowImageId, thenImageId, previews, order: options.startOrder + index };
+    });
+    const byKey = new Map(sets.map((set, index) => [set.key, photoSets[index]]));
+    const facePairs: FacePair[] = pairs.map((pair, index) => {
+      const set = byKey.get(pair.set)!;
+      return {
+        id: crypto.randomUUID(), number: options.startNumber + index + 1, color: pair.color, setId: set.id,
+        now: { sourceImageId: set.nowImageId!, cropImageId: idOf(pair.now.cropPath), faceBox: pair.now.faceBox, padding: pair.now.padding },
+        then: { sourceImageId: set.thenImageId!, cropImageId: idOf(pair.then.cropPath), faceBox: pair.then.faceBox, padding: pair.then.padding },
+        matchMethod: 'manual', reviewStatus: 'confirmed',
+      };
+    });
+    const people: Person[] = pairs.map((pair, index) => ({ id: crypto.randomUUID(), name: pair.name, funFact: pair.funFact, included: pair.included, facePairId: facePairs[index].id }));
+    return { assets, photoSets, facePairs, people };
   } catch (error) {
-    await Promise.allSettled(storedIds.map(id => imageStore.delete(id)));
+    await Promise.allSettled(stored.map(id => imageStore.delete(id)));
     throw error instanceof Error ? error : new Error('Could not import face pairs.');
   }
 }
-export async function exportFacePairs(session: EventSession) {
-  const people = session.people.filter(p => session.facePairs.some(f => f.id === p.facePairId && f.now?.cropImageId && f.then?.cropImageId));
-  if (!people.length) throw new Error('Finish matching at least one person before exporting face pairs.');
-  const pairs = people.map(person => session.facePairs.find(pair => pair.id === person.facePairId)!);
-  const nowSourceId = pairs[0].now!.sourceImageId;
-  const thenSourceId = pairs[0].then!.sourceImageId;
-  if (pairs.some(pair => pair.now!.sourceImageId !== nowSourceId || pair.then!.sourceImageId !== thenSourceId)) {
-    throw new Error('All exported face pairs must reference the same two group photos.');
-  }
-  const nowSource = requireAsset(session, nowSourceId, 'current group photo');
-  const thenSource = requireAsset(session, thenSourceId, 'childhood group photo');
-  const previewIds = session.photoSets.find(set => set.id === pairs[0].setId)?.previews ?? {};
-  const nowPreview = optionalAsset(session, previewIds[nowSourceId]);
-  const thenPreview = optionalAsset(session, previewIds[thenSourceId]);
 
-  const manifest = parseFacePairsBundleManifest({
-    version: FACE_PAIR_BUNDLE_VERSION,
-    groups: {
-      now: manifestGroup('groups/now', nowSource),
-      then: manifestGroup('groups/then', thenSource),
-      ...(nowPreview ? { nowPreview: manifestGroup('groups/now-preview', nowPreview) } : {}),
-      ...(thenPreview ? { thenPreview: manifestGroup('groups/then-preview', thenPreview) } : {}),
-    },
-    pairs: people.map((person, index) => {
-      const pair = pairs[index];
-      return {
-        number: pair.number,
-        color: pair.color,
-        name: person.name,
-        funFact: person.funFact,
-        included: person.included,
-        now: {
-          cropPath: cropPath(pair.number, 'now'),
-          faceBox: pair.now!.faceBox,
-          padding: pair.now!.padding,
-        },
-        then: {
-          cropPath: cropPath(pair.number, 'then'),
-          faceBox: pair.then!.faceBox,
-          padding: pair.then!.padding,
-        },
-      };
-    }),
-  });
+export async function importFacePairs(file: File, options: StoreBundleOptions): Promise<ImportedFacePairs> {
+  return storeFacePairsBundle(await readFacePairsBundle(file), options);
+}
 
-  const files: Record<string, Uint8Array> = {
-    'face-pairs.json': new TextEncoder().encode(JSON.stringify(manifest)),
-    [manifest.groups.now.path]: await assetBytes(nowSource.id),
-    [manifest.groups.then.path]: await assetBytes(thenSource.id),
+// Exports every set with at least one finished person. Pair numbers restart at 1 in export order.
+export async function exportFacePairs(event: EventSession) {
+  const finished = (pair: FacePair) => Boolean(pair.now?.cropImageId && pair.then?.cropImageId && event.people.some(p => p.facePairId === pair.id));
+  const sets = orderedSets(event).filter(set => set.nowImageId && set.thenImageId && event.facePairs.some(pair => pair.setId === set.id && finished(pair)));
+  if (!sets.length) throw new Error('Finish matching at least one person before exporting face pairs.');
+  const files: Record<string, Uint8Array> = {}, manifestSets: FacePairBundleSet[] = [], manifestPairs: FacePairBundleEntry[] = [];
+  const addImage = async (id: string, path: string): Promise<FacePairBundleImage> => {
+    const asset = requireAsset(event, id, 'photo');
+    files[path] = await assetBytes(id);
+    return { path, name: asset.name, width: asset.width, height: asset.height, mime: asset.mime };
   };
-  if (manifest.groups.nowPreview && nowPreview) files[manifest.groups.nowPreview.path] = await assetBytes(nowPreview.id);
-  if (manifest.groups.thenPreview && thenPreview) files[manifest.groups.thenPreview.path] = await assetBytes(thenPreview.id);
-  for (let index = 0; index < manifest.pairs.length; index++) {
-    const pair = pairs[index];
-    files[manifest.pairs[index].now.cropPath] = await assetBytes(pair.now!.cropImageId!);
-    files[manifest.pairs[index].then.cropPath] = await assetBytes(pair.then!.cropImageId!);
+  for (const [index, set] of sets.entries()) {
+    const key = setKey(index), nowPreview = set.previews[set.nowImageId!], thenPreview = set.previews[set.thenImageId!];
+    const entry: FacePairBundleSet = { key, name: set.name, kind: set.kind, now: await addImage(set.nowImageId!, setImagePath(key, 'now')), then: await addImage(set.thenImageId!, setImagePath(key, 'then')) };
+    if (nowPreview) entry.nowPreview = await addImage(nowPreview, setImagePath(key, 'nowPreview'));
+    if (thenPreview) entry.thenPreview = await addImage(thenPreview, setImagePath(key, 'thenPreview'));
+    manifestSets.push(entry);
+    for (const pair of event.facePairs.filter(p => p.setId === set.id && finished(p)).sort((a, b) => a.number - b.number)) {
+      const person = event.people.find(p => p.facePairId === pair.id)!, number = manifestPairs.length + 1;
+      const side = (s: 'now' | 'then') => ({ cropPath: pairCropPath(number, s), faceBox: pair[s]!.faceBox, padding: pair[s]!.padding });
+      manifestPairs.push({ number, set: key, color: pair.color, name: person.name.trim() || `Person ${number}`, funFact: person.funFact, included: person.included, now: side('now'), then: side('then') });
+      files[pairCropPath(number, 'now')] = await assetBytes(pair.now!.cropImageId!);
+      files[pairCropPath(number, 'then')] = await assetBytes(pair.then!.cropImageId!);
+    }
   }
+  const manifest = parseFacePairsBundleManifest({ version: FACE_PAIR_BUNDLE_VERSION, sets: manifestSets, pairs: manifestPairs });
+  files['face-pairs.json'] = new TextEncoder().encode(JSON.stringify(manifest));
   download(await archiveJob<Uint8Array>({ type: 'zip', files }), 'Childhood vs Now - face pairs.zip');
-}
-
-function groupSpec(group: FacePairBundleGroupImage) {
-  return {
-    path: group.path,
-    name: group.name,
-    mime: group.mime,
-    expectedSize: { width: group.width, height: group.height },
-    crop: false,
-  };
-}
-
-function cropPath(number: number, side: 'now' | 'then') {
-  return `pairs/${String(number).padStart(3, '0')}-${side}.jpg`;
 }
 
 function requireAsset(session: EventSession, id: string, label: string): Asset {
   const asset = session.assets[id];
   if (!asset) throw new Error(`The ${label} is missing from this session.`);
   return asset;
-}
-
-function optionalAsset(session: EventSession, id: string | undefined): Asset | undefined {
-  return id ? requireAsset(session, id, 'group preview') : undefined;
-}
-
-function manifestGroup(path: string, asset: Asset): FacePairBundleGroupImage {
-  return { path, name: asset.name, width: asset.width, height: asset.height, mime: asset.mime };
 }
 
 async function assetBytes(id: string) {
