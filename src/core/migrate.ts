@@ -10,8 +10,12 @@ export function migrateEventV2(raw: Record<string, any>): Record<string, any> {
   const segments: any[] = Array.isArray(event.segments) ? event.segments : [];
   const facePairs: any[] = Array.isArray(event.facePairs) ? event.facePairs : [];
   const people: any[] = Array.isArray(event.people) ? event.people : [];
-  const source = segments.filter(s => s?.activityId === CHILDHOOD).map(s => s.game).find(g => g?.originalImageId && g?.childhoodImageId);
+  const games = segments.filter(s => s?.activityId === CHILDHOOD).map(s => s.game).filter(g => g?.originalImageId && g?.childhoodImageId);
   const complete = facePairs.find(p => p?.now?.sourceImageId && p?.then?.sourceImageId);
+  // Prefer the game whose photos the face pairs actually reference: a stale earlier segment's
+  // game (e.g. the host re-uploaded in a later segment) must not steal the group photo identity.
+  const matching = complete && games.find(g => g.originalImageId === complete.now.sourceImageId && g.childhoodImageId === complete.then.sourceImageId);
+  const source = matching ?? games[0];
   const nowImageId: string | undefined = source?.originalImageId ?? complete?.now.sourceImageId;
   const thenImageId: string | undefined = source?.childhoodImageId ?? complete?.then.sourceImageId;
   const photoSets: PhotoSet[] = [];

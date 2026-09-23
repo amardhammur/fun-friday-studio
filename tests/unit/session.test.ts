@@ -1,12 +1,14 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import eventV2 from '../fixtures/event-v2.json';
-import { discoverActivities } from '../../src/core/registry';
+import { discoverActivities, getActivity } from '../../src/core/registry';
 import { validateEvent } from '../../src/core/session';
 
 beforeAll(async () => { await discoverActivities(); });
+// A valid version 3 session to mutate for the rejection tests below.
+const v3 = () => structuredClone(validateEvent(eventV2));
 
 describe('validateEvent', () => {
-  it('accepts a valid v2 document and round-trips it unchanged', () => {
+  it('migrates a valid v2 document to v3 and round-trips it unchanged', () => {
     const once = validateEvent(eventV2);
     expect(once.formatVersion).toBe(3);
     expect(once.photoSets).toHaveLength(1);
@@ -48,5 +50,30 @@ describe('validateEvent', () => {
   it('rejects a formatVersion 1 document, pointing the host at Export pairs', () => {
     const v1 = { ...eventV2, formatVersion: 1 };
     expect(() => validateEvent(v1)).toThrow(/Export pairs/);
+  });
+  it('rejects a face pair naming an unknown photo set', () => {
+    const broken = v3(); broken.facePairs[0].setId = 'ghost-set';
+    expect(() => validateEvent(broken)).toThrow(/unknown photo set/);
+  });
+  it('rejects a face pair whose photo belongs to a different photo set', () => {
+    const broken = v3(); broken.facePairs[0].now!.sourceImageId = broken.photoSets[0].thenImageId!;
+    expect(() => validateEvent(broken)).toThrow(/different photo set/);
+  });
+  it('rejects two photo sets that share a position', () => {
+    const broken = v3(); broken.photoSets.push({ ...broken.photoSets[0], id: 'set-2' });
+    expect(() => validateEvent(broken)).toThrow(/share a position/);
+  });
+  it('rejects a photo set that references a missing image', () => {
+    const broken = v3(); broken.photoSets[0].nowImageId = 'ghost-image';
+    expect(() => validateEvent(broken)).toThrow(/missing image/);
+  });
+  it('rejects a single-photo set that does not hold exactly one person', () => {
+    const broken = v3(); broken.photoSets.push({ id: 'solo', name: 'Priya', kind: 'single', previews: {}, order: 1 });
+    expect(() => validateEvent(broken)).toThrow(/exactly one person/);
+  });
+  it('falls back an unknown setupStepId to the activity\'s first setup step', () => {
+    const broken = v3(); broken.segments[0].setupStepId = 'not-a-real-step';
+    const loaded = validateEvent(broken);
+    expect(loaded.segments[0].setupStepId).toBe(getActivity('childhood-vs-now')!.setupSteps[0].id);
   });
 });

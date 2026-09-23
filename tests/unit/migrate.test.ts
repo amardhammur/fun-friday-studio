@@ -26,6 +26,22 @@ describe('migrateEventV2', () => {
     delete raw.segments[0].game.originalImageId; delete raw.segments[0].game.childhoodImageId;
     expect(migrateEventV2(raw).photoSets[0]).toMatchObject({ nowImageId: 'img-now', thenImageId: 'img-then' });
   });
+  it('prefers the game whose photos match the face pairs over an earlier stale game', () => {
+    const raw = v2();
+    const second = { ...raw.segments[0], id: 'seg-2', game: { ...raw.segments[0].game, originalImageId: 'img-now-2', childhoodImageId: 'img-then-2' } };
+    raw.segments.push(second);
+    // The host re-uploaded in the second segment; the face pairs already point at its photos while
+    // the first segment's game still holds the stale ones.
+    raw.facePairs[0].now.sourceImageId = 'img-now-2';
+    raw.facePairs[0].then.sourceImageId = 'img-then-2';
+    const migrated = migrateEventV2(raw);
+    expect(migrated.photoSets).toHaveLength(1);
+    expect(migrated.photoSets[0]).toMatchObject({ nowImageId: 'img-now-2', thenImageId: 'img-then-2' });
+    expect(migrated.facePairs).toHaveLength(1);
+    expect(migrated.facePairs[0].id).toBe('f1');
+    expect(migrated.facePairs[0].setId).toBe(migrated.photoSets[0].id);
+    expect(migrated.people.map((p: any) => p.id)).toEqual(['p1']);
+  });
   it('drops face pairs and people whose photos belong to neither group photo', () => {
     const raw = v2();
     raw.facePairs.push({ ...raw.facePairs[0], id: 'stray', now: { ...raw.facePairs[0].now, sourceImageId: 'elsewhere' } });
