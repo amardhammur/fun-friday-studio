@@ -267,7 +267,7 @@ test('three activities carry scores through ZIP restore and a wager changes the 
     await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
     await expect(page.getByText(`Correct = ${segment === 1 ? 4 : 2} points. Stolen = ${segment === 1 ? 2 : 1}. Missed = 0.`)).toBeVisible();
     if (segment > 0) {
-      await expect(page.getByRole('button', { name: 'Upload photos', exact: false })).toBeDisabled();
+      await expect(page.locator('.setup-steps').getByRole('button', { name: /People/ })).toBeDisabled();
       await expect(page.getByLabel('Team 1 name', { exact: true })).toBeDisabled();
     }
     await page.getByRole('button', { name: 'Start new game' }).click();
@@ -452,7 +452,7 @@ test('an event runs two different activities on one leaderboard', async ({ page 
 
   // Moving on must reach Childhood vs Now's setup with the roster locked, not strand the host.
   await page.getByRole('button', { name: /^Next activity/ }).click();
-  await expect(page.getByRole('button', { name: /Upload photos/ })).toBeDisabled();
+  await expect(page.locator('.setup-steps').getByRole('button', { name: /People/ })).toBeDisabled();
   await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
   session = await saved(page);
   expect(session.currentSegmentIndex).toBe(1);

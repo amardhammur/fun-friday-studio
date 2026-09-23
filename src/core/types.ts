@@ -65,6 +65,7 @@ export interface ActivityContext<S = any, G = any> {
   notify: (message: string) => void;
   runTask: (label: string, task: () => Promise<void>) => Promise<void>;
   goHome: () => void;
+  openPeople?: () => void;
 }
 export interface SettingsField { key: string; label: string; type: 'boolean' | 'number' | 'select'; options?: { label: string; value: string | number }[] }
 export interface Activity<S = any, G = any> {

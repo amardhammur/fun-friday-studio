@@ -18,6 +18,6 @@ export async function loadDemo(segment: CVSession, event: CVEventUpdate): Promis
   const names = ['Asha', 'Leo', 'Maya', 'Dev']; const facts = ['Still the first one on the dance floor.', 'Has never met a puzzle he could resist.', 'The unofficial keeper of the snack drawer.', 'Always has a good story for the lunch table.'];
   nextEvent.people.forEach((p, i) => { p.name = names[i]; p.funFact = facts[i]; });
   nextEvent.isDemo = true;
-  nextEvent.phase = 'segment'; next.setupStepId = 'upload'; next.game.rounds = []; next.game.currentRoundIndex = 0; nextEvent.scoreEntries = [];
+  nextEvent.phase = 'segment'; next.setupStepId = 'people'; next.game.rounds = []; next.game.currentRoundIndex = 0; nextEvent.scoreEntries = [];
   return { segment: next, event: await prepareCrops(nextEvent) };
 }

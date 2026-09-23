@@ -1,4 +1,4 @@
-import type { FacePair, Person, PhotoSet } from '../types';
+import type { Asset, FacePair, Person, PhotoSet } from '../types';
 
 export const MAX_PHOTO_SETS = 20;
 type SetList = { readonly photoSets: readonly PhotoSet[] };
@@ -23,4 +23,19 @@ export function createPhotoSet(library: { photoSets: PhotoSet[] }, name: string,
   const set: PhotoSet = { id: crypto.randomUUID(), name: name.trim().slice(0, 80) || fallback, kind, previews: {}, order: Math.max(-1, ...library.photoSets.map(s => s.order)) + 1 };
   library.photoSets.push(set);
   return set;
+}
+type Library = { photoSets: PhotoSet[]; facePairs: FacePair[]; people: Person[]; assets: Record<string, Asset> };
+// Removes a set's face pairs and people, and forgets their crop images. Returns the crop ids so the
+// caller can delete the stored blobs.
+export function clearSetPairs(library: Library, setId: string): string[] {
+  const removed = pairsInSet(library, setId), ids = new Set(removed.map(pair => pair.id));
+  library.facePairs = library.facePairs.filter(pair => !ids.has(pair.id));
+  library.people = library.people.filter(person => !ids.has(person.facePairId));
+  const crops = removed.flatMap(pair => [pair.now?.cropImageId, pair.then?.cropImageId]).filter((id): id is string => Boolean(id));
+  for (const id of crops) delete library.assets[id];
+  return crops;
+}
+export function playerIssues(library: { readonly people: readonly Person[] }): string[] {
+  const players = library.people.filter(person => person.included);
+  return players.length && players.every(person => person.name.trim()) ? [] : ['Include and name the people who will appear in the game.'];
 }
