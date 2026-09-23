@@ -12,7 +12,7 @@ import { settingsSchema, stateSchema, initialState, type GameState, type Setting
 import { cardsNeeded, currentTurn, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, scoreChange, startNewGame, undoLast } from './logic/turns';
 const acting = (ctx: { segment: { phase: string; game: GameState } }) => ctx.segment.phase === 'play' && currentTurn(ctx.segment.game)?.status === 'acting';
 export const actItOut: Activity<Settings, GameState> = {
-  id: 'act-it-out', version: 2, name: 'Act It Out', description: 'No props, no prep. One teammate faces away while the rest of the team acts the screen out, in silence or talking around it without saying the word.', icon: Drama,
+  id: 'act-it-out', version: 2, name: 'Act It Out', description: 'No props, no prep. One teammate faces away while the team acts out or describes what is on screen, without ever saying the words.', icon: Drama,
   card: { label: 'THE NO-PREP ONE', eyebrow: 'EVERYBODY OUT OF THEIR SEATS', tags: [{ icon: Users, text: '1–8 teams' }, { icon: Check, text: 'Nothing to prepare' }, { text: '2 base points per prompt' }] },
   setupSteps: [
     { id: 'prompts', title: 'Choose prompts', View: PromptsStep, validate: (s, e) => {
