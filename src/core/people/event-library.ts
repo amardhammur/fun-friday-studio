@@ -40,7 +40,8 @@ export function replaceEventPeople(event: EventSession, imported: ImportedFacePa
 }
 export function addEventPeople(event: EventSession, imported: ImportedFacePairs) {
   if (libraryLocked(event)) throw new Error('The roster is locked after an activity starts. Replace the library to start over.');
-  leaveDemo(event);
+  const wasDemo = event.isDemo;
   Object.assign(event.assets, imported.assets);
   event.photoSets.push(...imported.photoSets); event.facePairs.push(...imported.facePairs); event.people.push(...imported.people);
+  if (wasDemo) resetEventProgress(event);
 }

@@ -77,6 +77,15 @@ describe('adding to the people library', () => {
     expect(libraryLocked(event)).toBe(true);
     expect(() => addEventPeople(event, extra())).toThrow(/locked/);
   });
+  it('adding to a demo event keeps both the old and new people and leaves the demo', () => {
+    const event = validateEvent(fixture); event.isDemo = true;
+    addEventPeople(event, extra());
+    expect(event.people.map(p => p.name)).toEqual(['Asha', 'Priya']);
+    expect(event.photoSets.map(s => s.name)).toEqual(['Group 1', 'Design']);
+    expect(event.isDemo).toBe(false);
+    expect(event.scoreEntries).toEqual([]);
+    expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
+  });
   it('never locks the demo, and leaving the demo resets progress but keeps the people', () => {
     const event = validateEvent(fixture); event.isDemo = true;
     expect(libraryLocked(event)).toBe(false);
