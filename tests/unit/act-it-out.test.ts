@@ -3,6 +3,7 @@ import { bundledPrompts, categories, promptsIn } from '../../activities/act-it-o
 import type { GameState, Settings, AIOSegment } from '../../activities/act-it-out/types';
 import { initialState, stateSchema } from '../../activities/act-it-out/types';
 import { allocateTurns, buildDeck, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, startNewGame, startTurn, undoLast } from '../../activities/act-it-out/logic/turns';
+import { loadDemo } from '../../activities/act-it-out/logic/demo';
 import { teamScore } from '../../src/core/scoring';
 import type { EventUpdate, Team } from '../../src/core/types';
 
@@ -215,5 +216,23 @@ describe('moving between turns', () => {
     const { segment } = started();
     moveTurn(segment, -1);
     expect(segment.game.currentTurnIndex).toBe(0);
+  });
+});
+
+describe('the demo', () => {
+  it('prepares a playable game with no images and no async work', async () => {
+    const prepared = await loadDemo(aSegment(), anEvent());
+    expect(prepared.event.isDemo).toBe(true);
+    expect(prepared.event.assets).toEqual({});
+    expect(prepared.event.teams.length).toBeGreaterThanOrEqual(2);
+    startNewGame(prepared.segment, prepared.event);
+    expect(prepared.segment.phase).toBe('play');
+    expect(prepared.segment.game.turns.length).toBe(prepared.event.teams.length);
+    expect(stateSchema.safeParse(prepared.segment.game).success).toBe(true);
+  });
+  it('leaves dealing the deck to startNewGame, as App.tsx expects', async () => {
+    const prepared = await loadDemo(aSegment(), anEvent());
+    expect(prepared.segment.game.deck).toEqual([]);
+    expect(prepared.segment.phase).toBe('setup');
   });
 });

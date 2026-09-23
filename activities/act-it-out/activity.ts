@@ -6,6 +6,7 @@ import { Stage } from './stage/Stage';
 import { Finale } from './stage/Finale';
 import { Preview } from './Preview';
 import { categories } from './prompts';
+import { loadDemo } from './logic/demo';
 import { settingsSchema, stateSchema, initialState, type GameState, type Settings } from './types';
 import { currentTurn, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, scoreChange, startNewGame, undoLast } from './logic/turns';
 const acting = (ctx: { segment: { phase: string; game: GameState } }) => ctx.segment.phase === 'play' && currentTurn(ctx.segment.game)?.status === 'acting';
@@ -22,7 +23,7 @@ export const actItOut: Activity<Settings, GameState> = {
     { id: 'game', title: 'Game setup', View: GameSetupStep, validate: (_s, e) => e.teams.every(t => t.name.trim()) ? [] : ['Every team needs a name.'] },
   ],
   settingsSchema, stateSchema, settingsFields: [{ key: 'turnSeconds', label: 'Turn length', type: 'number' }, { key: 'roundsPerTeam', label: 'Turns per team', type: 'number' }],
-  Stage, Finale, Preview, estimatedMinutes: 12,
+  Stage, Finale, Preview, createDemo: loadDemo, estimatedMinutes: 12,
   validateSession: (s, e) => {
     if (s.phase === 'setup') return [];
     if (!s.game.turns.length) return ['The saved game has no turns.'];
