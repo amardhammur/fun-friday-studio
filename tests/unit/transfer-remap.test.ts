@@ -12,11 +12,8 @@ describe('per-segment image remapping', () => {
     event.segments.push({ ...event.segments[0], id: 'seg-b' });
     const remap = { 'img-now': 'new-now', 'img-then': 'new-then', 'img-now-crop': 'new-now-crop', 'img-then-crop': 'new-then-crop' };
     remapEventImages(event, remap);
-    for (const segment of event.segments) {
-      const game = segment.game as { originalImageId: string; childhoodImageId: string };
-      expect(game.originalImageId).toBe('new-now');
-      expect(game.childhoodImageId).toBe('new-then');
-    }
+    expect(event.photoSets[0].nowImageId).toBe('new-now');
+    expect(event.photoSets[0].thenImageId).toBe('new-then');
     expect(event.people[0].funFact).toBe('Keeper of the snack drawer');
   });
   it('rewrites face crops on the shared face pairs exactly once', () => {

@@ -59,7 +59,7 @@ describe('the game state schema', () => {
 const teams: Team[] = [{ id: 'team-a', name: 'Coffee Breakers', color: '#f7d873' }, { id: 'team-b', name: 'Reply-All Crew', color: '#eea7bb' }];
 const own = (prompts: string[], name = 'Your own'): Category => ({ id: `custom:${name}`, name, on: true, prompts });
 const settings = (over: Partial<Settings> = {}): Settings => ({ rule: 'act', categories: [builtInCategory('Office Life')], turnSeconds: 90, roundsPerTeam: 1, ...over });
-const anEvent = (over: Partial<EventUpdate> = {}): EventUpdate => ({ title: 'Event', isDemo: false, phase: 'segment', wager: undefined, correctPoints: 2, stealPoints: 1, people: [], facePairs: [], teams, scoreEntries: [], assets: {}, ...over });
+const anEvent = (over: Partial<EventUpdate> = {}): EventUpdate => ({ title: 'Event', isDemo: false, phase: 'segment', wager: undefined, correctPoints: 2, stealPoints: 1, people: [], facePairs: [], teams, scoreEntries: [], assets: {}, photoSets: [], ...over });
 const aSegment = (over: Partial<Settings> = {}): AIOSegment => ({
   formatVersion: 1, id: 'e1', title: 'Event', activityId: 'act-it-out', activityVersion: 1, segmentId: 'seg-1',
   points: { correct: 2, steal: 1 }, createdAt: '', updatedAt: '', isDemo: false, phase: 'setup', setupStepId: 'game',

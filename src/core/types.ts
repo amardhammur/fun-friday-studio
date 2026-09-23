@@ -11,8 +11,14 @@ export interface FaceCrop {
   padding: { top: number; right: number; bottom: number; left: number };
   cropImageId?: ID;
 }
+export interface PhotoSet {
+  id: ID; name: string; kind: 'group' | 'single';
+  nowImageId?: ID; thenImageId?: ID;
+  previews: Record<ID, ID>;
+  order: number;
+}
 export interface FacePair {
-  id: ID; number: number; color: string;
+  id: ID; number: number; color: string; setId: ID;
   now?: FaceCrop; then?: FaceCrop;
   matchMethod: 'automatic' | 'manual';
   reviewStatus: 'suggested' | 'confirmed' | 'unmatched';
@@ -46,8 +52,9 @@ export interface ActivityEvent {
   readonly people: readonly Person[]; readonly facePairs: readonly FacePair[];
   readonly teams: readonly Team[]; readonly scoreEntries: readonly ScoreEntry[];
   readonly assets: Readonly<Record<ID, Asset>>;
+  readonly photoSets: readonly PhotoSet[];
 }
-export type EventUpdate = Pick<EventSession, 'title' | 'isDemo' | 'phase' | 'wager' | 'correctPoints' | 'stealPoints' | 'people' | 'facePairs' | 'teams' | 'scoreEntries' | 'assets'>;
+export type EventUpdate = Pick<EventSession, 'title' | 'isDemo' | 'phase' | 'wager' | 'correctPoints' | 'stealPoints' | 'people' | 'facePairs' | 'teams' | 'scoreEntries' | 'assets' | 'photoSets'>;
 export interface PreparedActivity<S = unknown, G = unknown> { segment: ActivitySegment<S, G>; event: EventUpdate }
 export interface ActivityContext<S = any, G = any> {
   rosterLocked?: boolean;
@@ -77,7 +84,7 @@ export interface Activity<S = any, G = any> {
   remapImages: (game: G, ids: Record<string, string>) => G;
   shortcuts: { key: string; label: string; run: (ctx: ActivityContext<S, G>) => void }[];
   createInitialState: () => G; defaultSettings: () => S;
-  preparePeople?: (segment: ActivitySegment<S, G>, event: EventUpdate, previews?: Record<string, string>) => void;
+  preparePeople?: (segment: ActivitySegment<S, G>, event: EventUpdate) => void;
   startNewGame: (segment: ActivitySegment<S, G>, event?: EventUpdate) => void;
   migrate: (saved: unknown, fromVersion: number) => { settings: S; game: G };
 }
@@ -89,11 +96,12 @@ export interface Segment {
 }
 export interface EventWager { question: string; answer: string; bets: Record<ID, number> }
 export interface EventSession {
-  formatVersion: 2; id: ID; title: string; createdAt: string; updatedAt: string; isDemo: boolean;
+  formatVersion: 3; id: ID; title: string; createdAt: string; updatedAt: string; isDemo: boolean;
   segments: Segment[]; currentSegmentIndex: number;
   phase: 'lineup' | 'segment' | 'interstitial' | 'wager' | 'finale';
   wager?: EventWager;
   correctPoints: number; stealPoints: number;
   people: Person[]; facePairs: FacePair[]; teams: Team[]; scoreEntries: ScoreEntry[];
   assets: Record<ID, Asset>;
+  photoSets: PhotoSet[];
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, Download, Upload, Maximize, Home as HomeIcon, Users, ArrowLeft, ArrowRight, Check, ShieldCheck, X, AlertTriangle, LoaderCircle, Settings, Keyboard, WifiOff } from 'lucide-react';
 import type { Activity, ActivityContext, EventSession, EventUpdate } from '../core/types';
 import { getActivities, getActivity } from '../core/registry';
-import { activityEvent, activitySegment, applyActivitySegment, applyEventUpdate, createEvent, createSegment, currentSegment, defaultEventTitle, foldSegmentView, segmentView } from '../core/event';
+import { activityEvent, activitySegment, applyActivitySegment, applyEventUpdate, createEvent, createSegment, currentSegment, defaultEventTitle, eventDraft, foldSegmentView, segmentView } from '../core/event';
 import { getStorageWarnings, saveSession } from '../core/storage';
 import { exportSession, importSession } from '../core/transfer';
 import { shortcutKeyLabel, toggleFullscreen, useShortcuts } from '../core/projector';
@@ -52,7 +52,7 @@ export function App({ initialSession }: { initialSession: EventSession }) {
   useEffect(() => { window.scrollTo(0, 0); }, [route, session.phase, segment?.status, segment?.setupStepId]);
   const rosterLocked = session.segments.some((s, i) => i !== session.currentSegmentIndex && ['play', 'finale', 'done'].includes(s.status));
   const hasSavedEvent = !session.isDemo && (session.segments.length > 0 || session.scoreEntries.length > 0 || session.phase !== 'lineup');
-  const updateActivityEvent = useCallback((change: (draft: EventUpdate) => void) => updateEvent(next => { const draft: EventUpdate = { title: next.title, isDemo: next.isDemo, phase: next.phase, wager: next.wager, correctPoints: next.correctPoints, stealPoints: next.stealPoints, people: next.people, facePairs: next.facePairs, teams: next.teams, scoreEntries: next.scoreEntries, assets: next.assets }; change(draft); applyEventUpdate(next, draft); }), [updateEvent]);
+  const updateActivityEvent = useCallback((change: (draft: EventUpdate) => void) => updateEvent(next => { const draft: EventUpdate = eventDraft(next); change(draft); applyEventUpdate(next, draft); }), [updateEvent]);
   const context: ActivityContext | undefined = activitySegmentView && { rosterLocked, segment: activitySegmentView, event: activityEventView, update, updateEvent: updateActivityEvent, notify, runTask, goHome: () => setRoute('home') };
   useShortcuts(activity, context, !!activity && !!context && route === 'session' && segment?.status === 'play' && !busy);
   const beginSetup = (chosen: Activity) => {
@@ -72,7 +72,7 @@ export function App({ initialSession }: { initialSession: EventSession }) {
     if (!chosen.createDemo) throw new Error('This activity does not include a demo.');
     const next = createEvent(); next.segments = [createSegment(chosen)]; next.phase = 'segment';
     const seg = activitySegment(next, 0);
-    const evt: EventUpdate = { title: next.title, isDemo: next.isDemo, phase: next.phase, wager: next.wager, correctPoints: next.correctPoints, stealPoints: next.stealPoints, people: next.people, facePairs: next.facePairs, teams: next.teams, scoreEntries: next.scoreEntries, assets: next.assets };
+    const evt: EventUpdate = eventDraft(next);
     const prepared = await chosen.createDemo(seg, evt); chosen.startNewGame(prepared.segment, prepared.event); applyActivitySegment(next, 0, prepared.segment); applyEventUpdate(next, prepared.event);
     install(next); setRoute('session');
   });

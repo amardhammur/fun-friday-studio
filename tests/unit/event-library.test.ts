@@ -8,8 +8,8 @@ import type { ImportedFacePairs } from '../../src/core/transfer';
 
 beforeAll(discoverActivities);
 function imported(): ImportedFacePairs {
-  const event = validateEvent(fixture), game = segmentView(event, 0).game;
-  return { people: event.people, facePairs: event.facePairs, assets: event.assets, originalImageId: game.originalImageId, childhoodImageId: game.childhoodImageId, childhoodUploadId: game.childhoodUploadId, previews: game.previews };
+  const event = validateEvent(fixture);
+  return { people: event.people, facePairs: event.facePairs, assets: event.assets, photoSets: event.photoSets };
 }
 
 describe('event people library', () => {
@@ -19,7 +19,6 @@ describe('event people library', () => {
     event.segments[0].status = 'done'; event.currentSegmentIndex = 1; event.phase = phase;
     event.wager = { question: 'Question', answer: 'Answer', bets: { [event.teams[0].id]: 5 } };
     const teams = structuredClone(event.teams), settings = structuredClone(second.settings);
-    for (const s of event.segments) (s.game as any).originalImageId = 'obsolete';
     replaceEventPeople(event, imported());
     expect(event.currentSegmentIndex).toBe(0);
     expect(event.phase).toBe(phase === 'lineup' ? 'lineup' : 'segment');
@@ -30,7 +29,6 @@ describe('event people library', () => {
     event.segments.forEach((_, i) => {
       const view = segmentView(event, i);
       expect(view.game.rounds).toEqual([]);
-      expect(view.game.originalImageId).not.toBe('obsolete');
       expect(view.game.finale).toEqual({ wipePosition: 0 });
     });
     expect(event.segments[0].game).not.toBe(event.segments[1].game);
@@ -42,7 +40,7 @@ describe('event people library', () => {
     event.segments.push(createSegment(getActivity('childhood-vs-now')!));
     prepareSegmentPeople(event, 0);
     expect(event.segments[0].status).toBe('pending');
-    expect(segmentView(event, 0).game.originalImageId).toBe(event.facePairs[0].now!.sourceImageId);
+    expect(event.photoSets[0].nowImageId).toBe(event.facePairs[0].now!.sourceImageId);
     expect(validateEvent(event)).toEqual(event);
   });
   it('starting and restarting a segment keeps earlier awards and clears only its own awards', () => {

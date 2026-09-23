@@ -10,16 +10,13 @@ import {
   type FacePairsBundleManifest,
 } from './people/pairs';
 import { getActivity } from './registry';
-import type { AnySession, Asset, EventSession, FacePair, Person } from './types';
+import type { Asset, EventSession, FacePair, Person, PhotoSet } from './types';
 const archiveJob = rpc(() => new Worker(new URL('../workers/archive.worker.ts', import.meta.url), { type: 'module' }));
 export interface ImportedFacePairs {
   assets: Record<string, Asset>;
+  photoSets: PhotoSet[];
   facePairs: FacePair[];
   people: Person[];
-  originalImageId: string;
-  childhoodImageId: string;
-  childhoodUploadId: string;
-  previews: Record<string, string>;
 }
 export interface FacePairImportOptions {
   startNumber: number;
@@ -58,6 +55,11 @@ export function remapEventImages(event: EventSession, remap: Record<string, stri
   for (const pair of event.facePairs) for (const face of [pair.now, pair.then]) if (face) {
     face.sourceImageId = remap[face.sourceImageId] ?? face.sourceImageId;
     if (face.cropImageId) face.cropImageId = remap[face.cropImageId] ?? face.cropImageId;
+  }
+  for (const set of event.photoSets) {
+    if (set.nowImageId) set.nowImageId = remap[set.nowImageId] ?? set.nowImageId;
+    if (set.thenImageId) set.thenImageId = remap[set.thenImageId] ?? set.thenImageId;
+    set.previews = Object.fromEntries(Object.entries(set.previews).map(([source, preview]) => [remap[source] ?? source, remap[preview] ?? preview]));
   }
   for (const segment of event.segments) {
     const activity = getActivity(segment.activityId);
@@ -179,53 +181,28 @@ export async function importFacePairs(file: File, options: FacePairImportOptions
 
     const nowSource = assetsByPath.get(bundle.groups.now.path)!;
     const thenSource = assetsByPath.get(bundle.groups.then.path)!;
-    const facePairs: FacePair[] = bundle.pairs.map((imported, index) => {
-      const pairId = crypto.randomUUID();
-      return {
-        id: pairId,
-        number: options.startNumber + index + 1,
-        color: imported.color,
-        now: {
-          sourceImageId: nowSource.id,
-          cropImageId: assetsByPath.get(imported.now.cropPath)!.id,
-          faceBox: imported.now.faceBox,
-          padding: imported.now.padding,
-        },
-        then: {
-          sourceImageId: thenSource.id,
-          cropImageId: assetsByPath.get(imported.then.cropPath)!.id,
-          faceBox: imported.then.faceBox,
-          padding: imported.then.padding,
-        },
-        matchMethod: 'manual',
-        reviewStatus: 'confirmed',
-      };
-    });
-    const people: Person[] = bundle.pairs.map((imported, index) => ({
-      id: crypto.randomUUID(),
-      name: imported.name,
-      funFact: imported.funFact,
-      included: imported.included,
-      facePairId: facePairs[index].id,
-    }));
     const previews: Record<string, string> = {};
     if (bundle.groups.nowPreview) previews[nowSource.id] = assetsByPath.get(bundle.groups.nowPreview.path)!.id;
     if (bundle.groups.thenPreview) previews[thenSource.id] = assetsByPath.get(bundle.groups.thenPreview.path)!.id;
-    return {
-      assets,
-      facePairs,
-      people,
-      originalImageId: nowSource.id,
-      childhoodImageId: thenSource.id,
-      childhoodUploadId: thenSource.id,
-      previews,
-    };
+    const set: PhotoSet = { id: crypto.randomUUID(), name: file.name.replace(/\.zip$/i, '').trim().slice(0, 80) || 'Imported group', kind: 'group', nowImageId: nowSource.id, thenImageId: thenSource.id, previews, order: 0 };
+    const facePairs: FacePair[] = bundle.pairs.map((imported, index) => ({
+      id: crypto.randomUUID(),
+      number: options.startNumber + index + 1,
+      color: imported.color,
+      setId: set.id,
+      now: { sourceImageId: nowSource.id, cropImageId: assetsByPath.get(imported.now.cropPath)!.id, faceBox: imported.now.faceBox, padding: imported.now.padding },
+      then: { sourceImageId: thenSource.id, cropImageId: assetsByPath.get(imported.then.cropPath)!.id, faceBox: imported.then.faceBox, padding: imported.then.padding },
+      matchMethod: 'manual',
+      reviewStatus: 'confirmed',
+    }));
+    const people: Person[] = bundle.pairs.map((imported, index) => ({ id: crypto.randomUUID(), name: imported.name, funFact: imported.funFact, included: imported.included, facePairId: facePairs[index].id }));
+    return { assets, photoSets: [set], facePairs, people };
   } catch (error) {
     await Promise.allSettled(storedIds.map(id => imageStore.delete(id)));
     throw error instanceof Error ? error : new Error('Could not import face pairs.');
   }
 }
-export async function exportFacePairs(session: AnySession | EventSession) {
+export async function exportFacePairs(session: EventSession) {
   const people = session.people.filter(p => session.facePairs.some(f => f.id === p.facePairId && f.now?.cropImageId && f.then?.cropImageId));
   if (!people.length) throw new Error('Finish matching at least one person before exporting face pairs.');
   const pairs = people.map(person => session.facePairs.find(pair => pair.id === person.facePairId)!);
@@ -236,7 +213,7 @@ export async function exportFacePairs(session: AnySession | EventSession) {
   }
   const nowSource = requireAsset(session, nowSourceId, 'current group photo');
   const thenSource = requireAsset(session, thenSourceId, 'childhood group photo');
-  const previewIds = ('game' in session ? (session.game as { previews?: Record<string, string> }).previews : session.segments.map(s => (s.game as { previews?: Record<string, string> }).previews).find(p => p?.[nowSourceId] && p?.[thenSourceId])) ?? {};
+  const previewIds = session.photoSets.find(set => set.id === pairs[0].setId)?.previews ?? {};
   const nowPreview = optionalAsset(session, previewIds[nowSourceId]);
   const thenPreview = optionalAsset(session, previewIds[thenSourceId]);
 
@@ -299,13 +276,13 @@ function cropPath(number: number, side: 'now' | 'then') {
   return `pairs/${String(number).padStart(3, '0')}-${side}.jpg`;
 }
 
-function requireAsset(session: AnySession | EventSession, id: string, label: string): Asset {
+function requireAsset(session: EventSession, id: string, label: string): Asset {
   const asset = session.assets[id];
   if (!asset) throw new Error(`The ${label} is missing from this session.`);
   return asset;
 }
 
-function optionalAsset(session: AnySession | EventSession, id: string | undefined): Asset | undefined {
+function optionalAsset(session: EventSession, id: string | undefined): Asset | undefined {
   return id ? requireAsset(session, id, 'group preview') : undefined;
 }
 

@@ -1,5 +1,6 @@
 import { Check, Flag, Play, Users } from 'lucide-react';
 import { TeamEditor } from '../../../src/core/teams/TeamEditor';
+import { eventDraft } from '../../../src/core/event';
 import { cardsNeeded, eligiblePrompts, startNewGame } from '../logic/turns';
 import { rules } from '../rules';
 import type { Context } from '../types';
@@ -7,7 +8,7 @@ export function GameSetupStep({ segment, event, update, updateEvent, rosterLocke
   const { settings } = segment, turns = event.teams.length * settings.roundsPerTeam;
   const valid = event.teams.length > 0 && event.teams.every(t => t.name.trim()) && eligiblePrompts(settings).length >= cardsNeeded(event.teams.length, settings.roundsPerTeam);
   const start = () => {
-    const staged = { ...event, people: [...event.people], facePairs: [...event.facePairs], teams: [...event.teams], scoreEntries: [...event.scoreEntries], assets: { ...event.assets } };
+    const staged = eventDraft(event);
     // update() reports a throw itself instead of rethrowing, so a rejected start is only visible from
     // inside the callback. Without this flag the scoreEntries write below would run anyway, and its
     // safety would rest on startNewGame's statement order rather than on anything here.

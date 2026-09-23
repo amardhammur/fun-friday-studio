@@ -2,8 +2,6 @@ import { z } from 'zod';
 import type { ActivityContext, ActivityEvent, ActivitySegment, EventUpdate } from '../../src/core/types';
 export const settingsSchema = z.object({ shuffle: z.boolean(), matchingTolerance: z.number().min(.01).max(.4) });
 export const stateSchema = z.object({
-  originalImageId: z.string().optional(), childhoodImageId: z.string().optional(), childhoodUploadId: z.string().optional(),
-  previews: z.record(z.string(), z.string()),
   rounds: z.array(z.object({ id: z.string(), personId: z.string(), teamId: z.string(), revealed: z.boolean(), result: z.enum(['correct', 'missed']).nullable() })),
   currentRoundIndex: z.number().int().min(0),
   finale: z.object({ wipePosition: z.number().min(0).max(100), spotlightPersonId: z.string().optional() }),
@@ -17,4 +15,4 @@ export type CVSession = ActivitySegment<Settings, GameState>;
 export type CVEvent = ActivityEvent;
 export type CVEventUpdate = EventUpdate;
 export type Context = ActivityContext<Settings, GameState>;
-export const initialState = (): GameState => ({ previews: {}, rounds: [], currentRoundIndex: 0, finale: { wipePosition: 0 } });
+export const initialState = (): GameState => ({ rounds: [], currentRoundIndex: 0, finale: { wipePosition: 0 } });

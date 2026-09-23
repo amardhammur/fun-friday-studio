@@ -62,11 +62,11 @@ test('demo pair bundle replaces the library and restores the whole-team reveal',
   expect(imported.scoreEntries).toEqual([]);
   expect(importedGame.finale).toEqual({ wipePosition: 0 });
   expect(Object.keys(imported.assets).some(id => demoSession.assets[id])).toBe(false);
-  expect(imported.assets[importedGame.originalImageId]).toBeTruthy();
-  expect(imported.assets[importedGame.childhoodImageId]).toBeTruthy();
-  expect(importedGame.childhoodUploadId).toBe(importedGame.childhoodImageId);
-  expect(imported.assets[importedGame.previews[importedGame.originalImageId]]).toBeTruthy();
-  expect(imported.assets[importedGame.previews[importedGame.childhoodImageId]]).toBeTruthy();
+  const set = imported.photoSets[0];
+  expect(imported.assets[set.nowImageId]).toBeTruthy();
+  expect(imported.assets[set.thenImageId]).toBeTruthy();
+  expect(imported.assets[set.previews[set.nowImageId]]).toBeTruthy();
+  expect(imported.assets[set.previews[set.thenImageId]]).toBeTruthy();
   expect(new Set(imported.people.map((person: any) => person.name))).toEqual(new Set(['Asha', 'Leo', 'Maya', 'Dev']));
   for (const person of imported.people) {
     const pair = imported.facePairs.find((candidate: any) => candidate.id === person.facePairId);
@@ -169,10 +169,9 @@ test('4200px uploads retain source resolution, align sizes and support manual bo
   await page.getByLabel('Childhood group photo (then)', { exact: true }).setInputFiles({ name: 'team-then.jpg', mimeType: 'image/jpeg', buffer: then });
   await expect(page.getByRole('dialog')).toBeHidden();
   let session = await saved(page);
-  expect(session.assets[session.segments[0].game.originalImageId].width).toBe(4200);
-  expect(session.assets[session.segments[0].game.childhoodUploadId].width).toBe(2800);
-  expect(session.assets[session.segments[0].game.childhoodImageId].width).toBe(4200);
-  expect(session.assets[session.segments[0].game.childhoodImageId].height).toBe(2400);
+  expect(session.assets[session.photoSets[0].nowImageId].width).toBe(4200);
+  expect(session.assets[session.photoSets[0].thenImageId].width).toBe(4200);
+  expect(session.assets[session.photoSets[0].thenImageId].height).toBe(2400);
   await page.getByRole('button', { name: 'Match people', exact: true }).click();
   for (const label of ['Original photo face editor', 'Childhood photo face editor']) {
     await page.getByRole('button', { name: 'Add face', exact: true }).click();
@@ -330,9 +329,9 @@ test('three activities carry scores through ZIP restore and a wager changes the 
   expect(replaced.segments.map((s: any) => s.status)).toEqual(['setup', 'pending', 'pending']);
   for (const segment of replaced.segments) {
     expect(segment.game.rounds).toEqual([]);
-    expect(replaced.assets[segment.game.originalImageId]).toBeTruthy();
-    expect(beforeReplace.assets[segment.game.originalImageId]).toBeUndefined();
   }
+  expect(replaced.assets[replaced.photoSets[0].nowImageId]).toBeTruthy();
+  expect(beforeReplace.assets[replaced.photoSets[0].nowImageId]).toBeUndefined();
   await page.reload();
   await expect(page.locator('.storage-warning')).toHaveCount(0);
   await page.getByRole('button', { name: 'Continue event', exact: true }).click();

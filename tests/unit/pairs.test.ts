@@ -7,7 +7,7 @@ import {
   parseFacePairsBundleManifest,
   type FacePairsBundleManifest,
 } from '../../src/core/people/pairs';
-import type { AnySession } from '../../src/core/types';
+import type { EventSession } from '../../src/core/types';
 
 const archiveJob = vi.fn();
 const inspectImage = vi.fn();
@@ -297,14 +297,14 @@ describe('face-pair import limits', () => {
   });
 });
 
-function demoSession(): AnySession {
+function demoSession(): EventSession {
   const nowBox = { x: 0.1, y: 0.2, width: 0.2, height: 0.3 };
   const thenBox = { x: 0.3, y: 0.1, width: 0.25, height: 0.35 };
   const padding = { top: 0.4, right: 0.3, bottom: 0.7, left: 0.3 };
   return {
-    formatVersion: 1, id: 'session-id', title: 'Demo', activityId: 'childhood-vs-now',
-    activityVersion: 1, segmentId: 'default', points: { correct: 2, steal: 1 }, createdAt: '', updatedAt: '', isDemo: false, phase: 'setup',
-    setupStepId: 'people', teams: [], scoreEntries: [], settings: {}, assets: {
+    formatVersion: 3, id: 'session-id', title: 'Demo', createdAt: '', updatedAt: '', isDemo: false,
+    segments: [], currentSegmentIndex: 0, phase: 'lineup', correctPoints: 2, stealPoints: 1, teams: [], scoreEntries: [],
+    assets: {
       'now-source': { id: 'now-source', name: 'Today.png', width: 1000, height: 800, mime: 'image/png' },
       'then-source': { id: 'then-source', name: 'Childhood.webp', width: 1000, height: 800, mime: 'image/webp' },
       'now-preview': { id: 'now-preview', name: 'Today preview.jpg', width: 500, height: 400, mime: 'image/jpeg' },
@@ -312,16 +312,13 @@ function demoSession(): AnySession {
       'now-crop': { id: 'now-crop', name: 'Now crop.jpg', width: 200, height: 240, mime: 'image/jpeg' },
       'then-crop': { id: 'then-crop', name: 'Then crop.jpg', width: 210, height: 250, mime: 'image/jpeg' },
     },
+    photoSets: [{ id: 'set-id', name: 'Engineering', kind: 'group', nowImageId: 'now-source', thenImageId: 'then-source', previews: { 'now-source': 'now-preview', 'then-source': 'then-preview' }, order: 0 }],
     facePairs: [{
-      id: 'pair-id', number: 7, color: '#f7d873', matchMethod: 'manual', reviewStatus: 'confirmed',
+      id: 'pair-id', number: 7, color: '#f7d873', setId: 'set-id', matchMethod: 'manual', reviewStatus: 'confirmed',
       now: { sourceImageId: 'now-source', cropImageId: 'now-crop', faceBox: nowBox, padding },
       then: { sourceImageId: 'then-source', cropImageId: 'then-crop', faceBox: thenBox, padding },
     }],
     people: [{ id: 'person-id', facePairId: 'pair-id', name: 'Asha', funFact: 'Loves chai', included: false }],
-    game: {
-      originalImageId: 'now-source', childhoodImageId: 'then-source', childhoodUploadId: 'then-source',
-      previews: { 'now-source': 'now-preview', 'then-source': 'then-preview' },
-    },
   };
 }
 
@@ -408,10 +405,8 @@ describe('face-pair bundle transfer', () => {
 
     expect(inspectImage).toHaveBeenCalledTimes(5);
     expect(putImage).toHaveBeenCalledTimes(5);
-    expect(imported.originalImageId).toBe('fresh-1');
-    expect(imported.childhoodImageId).toBe('fresh-2');
-    expect(imported.childhoodUploadId).toBe('fresh-2');
-    expect(imported.previews).toEqual({ 'fresh-1': 'fresh-3' });
+    expect(imported.photoSets).toEqual([{ id: expect.any(String), name: 'pairs', kind: 'group', nowImageId: 'fresh-1', thenImageId: 'fresh-2', previews: { 'fresh-1': 'fresh-3' }, order: 0 }]);
+    expect(imported.facePairs[0].setId).toBe(imported.photoSets[0].id);
     expect(imported.facePairs[0]).toMatchObject({
       number: 6, color: '#f7d873', matchMethod: 'manual', reviewStatus: 'confirmed',
       now: { sourceImageId: 'fresh-1', cropImageId: 'fresh-4', faceBox: defaultFaceBox, padding: defaultPadding },

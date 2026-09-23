@@ -8,7 +8,8 @@ beforeAll(async () => { await discoverActivities(); });
 describe('validateEvent', () => {
   it('accepts a valid v2 document and round-trips it unchanged', () => {
     const once = validateEvent(eventV2);
-    expect(once.formatVersion).toBe(2);
+    expect(once.formatVersion).toBe(3);
+    expect(once.photoSets).toHaveLength(1);
     expect(once.segments).toHaveLength(1);
     expect(once.segments[0].activityId).toBe('childhood-vs-now');
     expect(validateEvent(JSON.parse(JSON.stringify(once)))).toEqual(once);

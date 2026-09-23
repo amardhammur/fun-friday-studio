@@ -13,7 +13,7 @@ export function createSegment(activity: Activity): Segment {
 }
 export function createEvent(): EventSession {
   const now = new Date().toISOString();
-  return { formatVersion: 2, id: crypto.randomUUID(), title: defaultEventTitle(), createdAt: now, updatedAt: now, isDemo: false, segments: [], currentSegmentIndex: 0, phase: 'lineup', correctPoints: 2, stealPoints: 1, people: [], facePairs: [], teams: newTeams(), scoreEntries: [], assets: {} };
+  return { formatVersion: 3, id: crypto.randomUUID(), title: defaultEventTitle(), createdAt: now, updatedAt: now, isDemo: false, segments: [], currentSegmentIndex: 0, phase: 'lineup', correctPoints: 2, stealPoints: 1, people: [], facePairs: [], teams: newTeams(), scoreEntries: [], assets: {}, photoSets: [] };
 }
 export const currentSegment = (event: EventSession): Segment | undefined => event.segments[event.currentSegmentIndex];
 const toActivityPhase = (status: Segment['status']): ActivitySegment['phase'] => status === 'pending' || status === 'done' ? 'setup' : status;
@@ -23,7 +23,12 @@ export function activitySegment<S, G>(event: EventSession, index: number): Activ
   return { formatVersion: 1, id: event.id, title: event.title, activityId: segment.activityId, activityVersion: segment.activityVersion, segmentId: segment.id, points: { correct: event.correctPoints * segment.weight, steal: event.stealPoints * segment.weight }, createdAt: event.createdAt, updatedAt: event.updatedAt, isDemo: event.isDemo, phase: toActivityPhase(segment.status), setupStepId: segment.setupStepId, settings: segment.settings as S, game: segment.game as G, scoreEntries: event.scoreEntries.filter(e => e.segmentId === segment.id) };
 }
 export function activityEvent(event: EventSession): ActivityEvent {
-  return { id: event.id, title: event.title, createdAt: event.createdAt, updatedAt: event.updatedAt, isDemo: event.isDemo, phase: event.phase, currentSegmentIndex: event.currentSegmentIndex, wager: event.wager, correctPoints: event.correctPoints, stealPoints: event.stealPoints, people: event.people, facePairs: event.facePairs, teams: event.teams, scoreEntries: event.scoreEntries, assets: event.assets };
+  return { id: event.id, title: event.title, createdAt: event.createdAt, updatedAt: event.updatedAt, isDemo: event.isDemo, phase: event.phase, currentSegmentIndex: event.currentSegmentIndex, wager: event.wager, correctPoints: event.correctPoints, stealPoints: event.stealPoints, people: event.people, facePairs: event.facePairs, teams: event.teams, scoreEntries: event.scoreEntries, assets: event.assets, photoSets: event.photoSets };
+}
+// A mutable copy of the event-level fields an activity may change. Arrays are copied one level deep,
+// so assigning a whole field never leaks into the source; the items themselves are still shared.
+export function eventDraft(event: ActivityEvent): EventUpdate {
+  return { title: event.title, isDemo: event.isDemo, phase: event.phase, wager: event.wager, correctPoints: event.correctPoints, stealPoints: event.stealPoints, people: [...event.people], facePairs: [...event.facePairs], teams: [...event.teams], scoreEntries: [...event.scoreEntries], assets: { ...event.assets }, photoSets: [...event.photoSets] };
 }
 export function applyActivitySegment<S, G>(event: EventSession, index: number, segmentView: ActivitySegment<S, G>) {
   const segment = event.segments[index];
