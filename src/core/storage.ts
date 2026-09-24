@@ -2,6 +2,7 @@ import { openDB, type IDBPDatabase } from 'idb';
 import type { EventSession } from './types';
 
 const SESSION_KEY = 'fun-friday-studio.session.v1';
+const DEMO_KEY = 'fun-friday-studio.demo.v1';
 let db: Promise<IDBPDatabase> | undefined;
 const memory = new Map<string, Blob>();
 const warnings = new Set<string>();
@@ -44,11 +45,14 @@ export const imageStore = {
   },
 };
 export function saveSession(session: EventSession) {
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
+  try {
+    localStorage.setItem(session.isDemo ? DEMO_KEY : SESSION_KEY, JSON.stringify(session));
+    if (!session.isDemo) localStorage.removeItem(DEMO_KEY);
+  }
   catch { storageWarning('Temporary game progress — saving is unavailable. Export your session before closing this tab.'); }
 }
-export function readSavedSession(): unknown | null {
-  try { const raw = localStorage.getItem(SESSION_KEY); return raw ? JSON.parse(raw) : null; }
+export function readSavedSession(personalOnly = false): unknown | null {
+  try { const raw = (personalOnly ? null : localStorage.getItem(DEMO_KEY)) ?? localStorage.getItem(SESSION_KEY); return raw ? JSON.parse(raw) : null; }
   catch { storageWarning('Saved game progress could not be read. You can restore a session ZIP.'); return null; }
 }
 export async function checkStorage() {

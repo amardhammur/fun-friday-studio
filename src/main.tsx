@@ -8,8 +8,8 @@ import '@fontsource/caveat/latin-500.css';
 import './theme/styles.css';
 import { App } from './app/App';
 import { discoverActivities, getActivities } from './core/registry';
-import { activitySegment, applyActivitySegment, applyEventUpdate, createEvent, createSegment, eventDraft } from './core/event';
-import type { EventUpdate } from './core/types';
+import { createEvent, createSegment } from './core/event';
+import { createDemoEvent } from './core/demo';
 import { validateEvent } from './core/session';
 import type { EventSession } from './core/types';
 import { checkStorage, readSavedSession, saveSession, storageWarning } from './core/storage';
@@ -27,9 +27,15 @@ async function boot() {
   if (!session) {
     const activity = getActivities()[0];
     session = createEvent(); session.segments = [createSegment(activity)]; session.phase = 'segment'; session.segments[0].status = 'setup';
-    if (activity.createDemo) { try { const evt: EventUpdate = eventDraft(session); const prepared = await activity.createDemo(activitySegment(session, 0), evt); activity.startNewGame(prepared.segment, prepared.event); applyActivitySegment(session, 0, prepared.segment); applyEventUpdate(session, prepared.event); } catch (error) { storageWarning(`The demo could not load. You can still upload your own photos. ${(error as Error).message}`); } }
+    if (activity.createDemo) { try { session = await createDemoEvent(activity); } catch (error) { storageWarning(`The demo could not load. You can still set up your own game. ${(error as Error).message}`); } }
     saveSession(session);
   }
-  root.render(<ErrorBoundary><App initialSession={session}/></ErrorBoundary>);
+  let personalSession: EventSession | undefined;
+  const personal = readSavedSession(true);
+  if (personal) {
+    try { const restored = validateEvent(personal); if (!restored.isDemo) personalSession = restored; }
+    catch (error) { storageWarning(`Your personal session could not be restored. ${(error as Error).message}`); }
+  }
+  root.render(<ErrorBoundary><App initialSession={session} personalSession={personalSession}/></ErrorBoundary>);
 }
 boot().catch(error => root.render(<div className="empty-state"><h1>Studio couldn’t open.</h1><p>{String(error)}</p><button className="button primary" onClick={() => location.reload()}>Try again</button></div>));

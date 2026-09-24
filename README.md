@@ -145,6 +145,8 @@ Export an `Activity<Settings, GameState>` definition in `activity.ts`. The inter
 - Shared play mechanics live in `src/core/play/`: `Timer`, `StealPanel`, `Wager`. Use them rather than writing your own — they keep the score ledger idempotent and segment-scoped.
 - Write score entries through `src/core/scoring.ts`, passing `session.segmentId`, so two activities containing the same person cannot collide in the shared ledger.
 
+Each activity can implement `createDemo(segment, event)` to supply its own sample settings, game data, teams, or photos. The app passes a fresh event, calls `startNewGame`, and saves demo progress separately from the personal session. The app owns the demo flag and **Exit demo** action; activities do not need to manage backups or replace the people library. **Exit demo** returns to the activity library. Use **Set up your game** there to prepare a real game with imported people or new photos. Visiting the People library during setup provides a Continue action back to that activity.
+
 Register it in `index.ts`:
 
 ```ts

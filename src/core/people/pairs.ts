@@ -20,7 +20,6 @@ const FILE_NAMES: Record<SetImageField, string> = { now: 'now', then: 'then', no
 export const setImagePath = (key: string, field: SetImageField) => `sets/${key}/${FILE_NAMES[field]}`;
 const v1GroupPath = (field: SetImageField) => `groups/${FILE_NAMES[field]}`;
 export const pairCropPath = (number: number, side: 'now' | 'then') => `pairs/${String(number).padStart(3, '0')}-${side}.jpg`;
-export const bundleSetName = (fileName: string) => fileName.replace(/\.zip$/i, '').trim().slice(0, 80) || 'Imported group';
 
 const paddingValue = z.number().min(0).max(3, { message: 'Crop padding must stay between 0 and 3.' });
 const paddingSchema = z.object({ top: paddingValue, right: paddingValue, bottom: paddingValue, left: paddingValue });

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   assertLibraryCapacity,
-  bundleSetName,
   duplicateNames,
   duplicateSummary,
   hasJpegSignature,
@@ -315,11 +314,7 @@ describe('face-pair bundle manifest version 2', () => {
     const unnamed = v2Manifest(); unnamed.sets[0].name = '  ';
     expect(() => parseFacePairsBundleManifest(unnamed)).toThrow(/name/i);
   });
-  it('names a version 1 set after its file', () => {
-    expect(bundleSetName('Design offsite.zip')).toBe('Design offsite');
-    expect(bundleSetName('.zip')).toBe('Imported group');
-    expect(bundleSetName(`${'x'.repeat(90)}.ZIP`)).toHaveLength(80);
-  });
+
 });
 
 describe('duplicate names', () => {
@@ -467,7 +462,7 @@ describe('face-pair bundle transfer', () => {
 
     expect(inspectImage).toHaveBeenCalledTimes(5);
     expect(putImage).toHaveBeenCalledTimes(5);
-    expect(imported.photoSets).toEqual([{ id: expect.any(String), name: 'pairs', kind: 'group', nowImageId: 'fresh-1', thenImageId: 'fresh-2', previews: { 'fresh-1': 'fresh-3' }, order: 0 }]);
+    expect(imported.photoSets).toEqual([{ id: expect.any(String), name: 'Imported group', kind: 'group', nowImageId: 'fresh-1', thenImageId: 'fresh-2', previews: { 'fresh-1': 'fresh-3' }, order: 0 }]);
     expect(imported.facePairs[0].setId).toBe(imported.photoSets[0].id);
     expect(imported.facePairs[0]).toMatchObject({
       number: 6, color: '#f7d873', matchMethod: 'manual', reviewStatus: 'confirmed',

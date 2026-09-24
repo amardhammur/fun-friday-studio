@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { test, expect, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 const key = 'fun-friday-studio.session.v1';
-const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key);
+const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem('fun-friday-studio.demo.v1') ?? localStorage.getItem(k)!), key);
 async function home(page: Page) { await page.goto('/'); await expect(page.getByRole('heading', { name: 'What are we playing?' })).toBeVisible(); }
 test('full demo: unique sets, two-point scoring, refresh, finale and group wipe', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));

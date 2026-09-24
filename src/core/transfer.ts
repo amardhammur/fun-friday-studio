@@ -4,7 +4,6 @@ import { validateEvent } from './session';
 import {
   assertLibraryCapacity,
   bundlePaths,
-  bundleSetName,
   FACE_PAIR_BUNDLE_VERSION,
   hasJpegSignature,
   normalizeName,
@@ -90,7 +89,7 @@ export async function readFacePairsBundle(file: File): Promise<FacePairsBundle> 
   const manifestBytes = files['face-pairs.json'];
   if (!manifestBytes) throw new Error('The face pair ZIP is missing face-pairs.json.');
   let manifest: FacePairsBundleManifest;
-  try { manifest = parseFacePairsBundleManifest(JSON.parse(new TextDecoder().decode(manifestBytes)), bundleSetName(file.name)); }
+  try { manifest = parseFacePairsBundleManifest(JSON.parse(new TextDecoder().decode(manifestBytes))); }
   catch (error) { if (error instanceof SyntaxError) throw new Error('face-pairs.json is not valid JSON.'); throw error; }
   const expected = new Set(['face-pairs.json', ...bundlePaths(manifest)]);
   const archivePaths = Object.keys(files).filter(path => !path.endsWith('/'));

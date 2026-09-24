@@ -8,15 +8,13 @@ import { libraryDraft, type LibraryContext } from './context';
 export function SetUpload({ ctx, setId, footer }: { ctx: LibraryContext; setId: string; footer: ReactNode }) {
   const { event, updateEvent, runTask, notify } = ctx, set = event.photoSets.find(s => s.id === setId);
   const upload = (side: 'now' | 'then', file: File) => runTask('Opening your photo…', async () => {
-    if (event.facePairs.some(p => p.setId === setId) && !event.isDemo && !window.confirm('Replacing a photo clears this group’s face matches and people. Continue?')) return;
+    if (event.facePairs.some(p => p.setId === setId) && !window.confirm('Replacing a photo clears this group’s face matches and people. Continue?')) return;
     const stored = await storePhoto(file, file.name);
     let next: ReturnType<typeof libraryDraft> | undefined;
     try {
       next = libraryDraft(event);
-      const target = next.photoSets.find(s => s.id === setId)!, wasDemo = next.isDemo;
+      const target = next.photoSets.find(s => s.id === setId)!;
       const oldImages = [target.nowImageId, target.thenImageId, ...Object.keys(target.previews), ...Object.values(target.previews)].filter((id): id is string => Boolean(id));
-      // Your own photo replaces the whole demo group, as the demo banner promises.
-      if (wasDemo) { target.nowImageId = undefined; target.thenImageId = undefined; target.previews = {}; target.name = 'Group 1'; next.isDemo = false; }
       const crops = clearSetPairs(next, setId), previous = side === 'now' ? target.nowImageId : target.thenImageId;
       if (previous) delete target.previews[previous];
       next.assets[stored.asset.id] = stored.asset; next.assets[stored.preview.id] = stored.preview;
@@ -24,7 +22,7 @@ export function SetUpload({ ctx, setId, footer }: { ctx: LibraryContext; setId: 
       if (side === 'now') target.nowImageId = stored.asset.id; else target.thenImageId = stored.asset.id;
       next = await alignThen(next, setId);
       const removed = forgetUnusedImages(next, [...oldImages, ...crops, stored.asset.id, stored.preview.id]);
-      updateEvent(e => { Object.assign(e, next); if (wasDemo) e.scoreEntries = []; });
+      updateEvent(e => { Object.assign(e, next); });
       void Promise.allSettled(removed.map(id => imageStore.delete(id)));
       notify('Photo saved on this laptop.');
     } catch (error) {

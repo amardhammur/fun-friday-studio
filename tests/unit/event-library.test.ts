@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import fixture from '../fixtures/event-v2.json';
 import { discoverActivities, getActivity } from '../../src/core/registry';
 import { createEvent, createSegment, foldSegmentView, segmentView } from '../../src/core/event';
-import { addEventPeople, leaveDemo, libraryLocked, prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
+import { addEventPeople, libraryLocked, prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
 import { validateEvent } from '../../src/core/session';
 import type { ImportedFacePairs } from '../../src/core/transfer';
 
@@ -86,14 +86,9 @@ describe('adding to the people library', () => {
     expect(event.scoreEntries).toEqual([]);
     expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
   });
-  it('never locks the demo, and leaving the demo resets progress but keeps the people', () => {
+  it('never locks the demo', () => {
     const event = validateEvent(fixture); event.isDemo = true;
     expect(libraryLocked(event)).toBe(false);
-    leaveDemo(event);
-    expect(event.isDemo).toBe(false);
-    expect(event.scoreEntries).toEqual([]);
-    expect(event.segments[0].status).toBe('setup');
-    expect(event.people).toHaveLength(1);
-    expect(libraryLocked(event)).toBe(false);
+
   });
 });

@@ -32,7 +32,6 @@ export function resetEventProgress(event: EventSession) {
     prepareSegmentPeople(event, index);
   });
 }
-export function leaveDemo(event: EventSession) { if (event.isDemo) resetEventProgress(event); }
 
 // Replacing shared identities invalidates every activity, including completed ones.
 export function replaceEventPeople(event: EventSession, imported: ImportedFacePairs) {

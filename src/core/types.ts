@@ -80,6 +80,8 @@ export interface Activity<S = any, G = any> {
   /** Home-screen card copy. Falls back to the original Childhood vs Now wording when omitted. */
   card?: { label: string; eyebrow: string; tags: { icon?: ComponentType<{ size?: number }>; text: string }[] };
   Preview?: ComponentType<{ session?: Session<S, G> }>;
+  /** Prepare sample content in a fresh event. The app starts the game, marks it as a demo,
+      saves it separately, and restores the personal session on exit. */
   createDemo?: (segment: ActivitySegment<S, G>, event: EventUpdate) => Promise<PreparedActivity<S, G>>;
   validateSession?: (segment: ActivitySegment<S, G>, event: ActivityEvent) => string[];
   remapImages: (game: G, ids: Record<string, string>) => G;
