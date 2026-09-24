@@ -112,9 +112,11 @@ Names map by the horizontal centre of the **current** face, left to right (verti
 
 **Export face pairs** downloads matched faces as `<Name> - then.jpg` and `<Name> - now.jpg`. Filename characters are sanitized; duplicate names receive suffixes. Exporting pairs does not export game progress.
 
-The People library belongs to the whole event and is available even before activities are added. Names can be edited there; new Childhood vs Now segments reuse the shared photos and face pairs. **Import pairs** replaces the library after confirmation: all activity progress, scores, and wager bets reset, while the line-up, activity settings, teams, and wager question remain. An event already under way returns to the first activity's setup; a line-up stays in the builder. Cancel leaves the event untouched.
+The People library belongs to the whole event and is available even before activities are added. It holds **photo sets**: groups (a childhood group photo and a current group photo, matched face by face) and single people (one childhood photo and one current photo each). **Add a group** runs upload → match → names for a new group; people in a second or later group start switched off, so for a partial group you switch on only the players (**Everyone in / Everyone out** do a whole group at once). **Add a person** adds someone from two single photos. Groups can be renamed, reordered, edited or removed.
 
-After an earlier activity has been played, photo/matching/roster setup and team editing are locked to protect its saved rounds. Use the People library to rename people, or import a replacement library to reset the event. Starting or replaying one activity clears only that segment's score entries and preserves earlier activities' scores.
+**Export pairs** saves every set in one ZIP. **Import pairs → Add to library** adds a ZIP's sets after your own (matching names are flagged first: Add anyway, Skip duplicates or Cancel); **Replace library** swaps the whole library after confirmation and resets all activity progress, scores and wager bets, keeping the line-up, activity settings, teams and wager question. Older single-group exports still import; the group is named after the ZIP file.
+
+After an activity has started, the roster is locked to protect its saved rounds; only Replace library changes it. Names can still be edited. Starting or replaying one activity clears only that segment's score entries. The Childhood vs Now whole team reveal shows one wipe per group that had players in the game, in library order, and a final "Also in the game" slide for people added from single photos.
 
 ## How to add a new activity
 
@@ -142,6 +144,8 @@ Export an `Activity<Settings, GameState>` definition in `activity.ts`. The inter
 - `estimatedMinutes` feeds the line-up builder’s runtime estimate.
 - Shared play mechanics live in `src/core/play/`: `Timer`, `StealPanel`, `Wager`. Use them rather than writing your own — they keep the score ledger idempotent and segment-scoped.
 - Write score entries through `src/core/scoring.ts`, passing `session.segmentId`, so two activities containing the same person cannot collide in the shared ledger.
+
+Each activity can implement `createDemo(segment, event)` to supply its own sample settings, game data, teams, or photos. The app passes a fresh event, calls `startNewGame`, and saves demo progress separately from the personal session. The app owns the demo flag and **Exit demo** action; activities do not need to manage backups or replace the people library. **Exit demo** returns to the activity library. Use **Set up your game** there to prepare a real game with imported people or new photos. Visiting the People library during setup provides a Continue action back to that activity.
 
 Register it in `index.ts`:
 

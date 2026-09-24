@@ -2,14 +2,14 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import fixture from '../fixtures/event-v2.json';
 import { discoverActivities, getActivity } from '../../src/core/registry';
 import { createEvent, createSegment, foldSegmentView, segmentView } from '../../src/core/event';
-import { prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
+import { addEventPeople, libraryLocked, prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
 import { validateEvent } from '../../src/core/session';
 import type { ImportedFacePairs } from '../../src/core/transfer';
 
 beforeAll(discoverActivities);
 function imported(): ImportedFacePairs {
-  const event = validateEvent(fixture), game = segmentView(event, 0).game;
-  return { people: event.people, facePairs: event.facePairs, assets: event.assets, originalImageId: game.originalImageId, childhoodImageId: game.childhoodImageId, childhoodUploadId: game.childhoodUploadId, previews: game.previews };
+  const event = validateEvent(fixture);
+  return { people: event.people, facePairs: event.facePairs, assets: event.assets, photoSets: event.photoSets };
 }
 
 describe('event people library', () => {
@@ -19,7 +19,6 @@ describe('event people library', () => {
     event.segments[0].status = 'done'; event.currentSegmentIndex = 1; event.phase = phase;
     event.wager = { question: 'Question', answer: 'Answer', bets: { [event.teams[0].id]: 5 } };
     const teams = structuredClone(event.teams), settings = structuredClone(second.settings);
-    for (const s of event.segments) (s.game as any).originalImageId = 'obsolete';
     replaceEventPeople(event, imported());
     expect(event.currentSegmentIndex).toBe(0);
     expect(event.phase).toBe(phase === 'lineup' ? 'lineup' : 'segment');
@@ -30,8 +29,7 @@ describe('event people library', () => {
     event.segments.forEach((_, i) => {
       const view = segmentView(event, i);
       expect(view.game.rounds).toEqual([]);
-      expect(view.game.originalImageId).not.toBe('obsolete');
-      expect(view.game.finale).toEqual({ wipePosition: 0 });
+      expect(view.game.finale).toEqual({ wipePosition: 0, slideIndex: 0 });
     });
     expect(event.segments[0].game).not.toBe(event.segments[1].game);
     expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
@@ -42,7 +40,7 @@ describe('event people library', () => {
     event.segments.push(createSegment(getActivity('childhood-vs-now')!));
     prepareSegmentPeople(event, 0);
     expect(event.segments[0].status).toBe('pending');
-    expect(segmentView(event, 0).game.originalImageId).toBe(event.facePairs[0].now!.sourceImageId);
+    expect(event.photoSets[0].nowImageId).toBe(event.facePairs[0].now!.sourceImageId);
     expect(validateEvent(event)).toEqual(event);
   });
   it('starting and restarting a segment keeps earlier awards and clears only its own awards', () => {
@@ -55,5 +53,42 @@ describe('event people library', () => {
     expect(event.scoreEntries).toEqual(earlier);
     expect(view.game.rounds).toHaveLength(1);
     expect(validateEvent(event)).toEqual(event);
+  });
+});
+
+describe('adding to the people library', () => {
+  const extra = (): ImportedFacePairs => {
+    const source = imported();
+    const set = { ...source.photoSets[0], id: 'set-2', name: 'Design', order: 1 };
+    const pair = { ...source.facePairs[0], id: 'pair-2', number: 2, setId: 'set-2' };
+    return { assets: {}, photoSets: [set], facePairs: [pair], people: [{ ...source.people[0], id: 'person-2', facePairId: 'pair-2', name: 'Priya' }] };
+  };
+  it('appends sets, pairs and people and keeps progress on an unlocked event', () => {
+    const event = validateEvent(fixture); event.segments[0].status = 'setup';
+    const scores = structuredClone(event.scoreEntries);
+    addEventPeople(event, extra());
+    expect(event.photoSets.map(s => s.name)).toEqual(['Group 1', 'Design']);
+    expect(event.people.map(p => p.name)).toEqual(['Asha', 'Priya']);
+    expect(event.scoreEntries).toEqual(scores);
+    expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
+  });
+  it('refuses to add once an activity has started', () => {
+    const event = validateEvent(fixture);
+    expect(libraryLocked(event)).toBe(true);
+    expect(() => addEventPeople(event, extra())).toThrow(/locked/);
+  });
+  it('adding to a demo event keeps both the old and new people and leaves the demo', () => {
+    const event = validateEvent(fixture); event.isDemo = true;
+    addEventPeople(event, extra());
+    expect(event.people.map(p => p.name)).toEqual(['Asha', 'Priya']);
+    expect(event.photoSets.map(s => s.name)).toEqual(['Group 1', 'Design']);
+    expect(event.isDemo).toBe(false);
+    expect(event.scoreEntries).toEqual([]);
+    expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
+  });
+  it('never locks the demo', () => {
+    const event = validateEvent(fixture); event.isDemo = true;
+    expect(libraryLocked(event)).toBe(false);
+
   });
 });

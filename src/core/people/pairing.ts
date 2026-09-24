@@ -1,4 +1,4 @@
-import type { Rect } from '../../../src/core/types';
+import type { Rect } from '../types';
 const center = (r: Rect) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
 export function distance(a: Rect, b: Rect) { const p = center(a), q = center(b); return Math.hypot(p.x - q.x, p.y - q.y); }
 // Hungarian assignment with dummy rows/columns to allow unmatched faces.
@@ -36,4 +36,4 @@ export function pairFaces(now: Rect[], then: Rect[], tolerance = .12): { now?: n
   then.forEach((_, j) => { if (!taken.has(j)) results.push({ then: j }); });
   return results;
 }
-export { intersectionOverUnion } from '../../../src/core/images/math';
+export { intersectionOverUnion } from '../images/math';

@@ -94,9 +94,10 @@ describe('segment view', () => {
 describe('createEvent', () => {
   it('starts on the lineup with four teams and no segments', () => {
     const fresh = createEvent();
-    expect(fresh.formatVersion).toBe(2);
+    expect(fresh.formatVersion).toBe(3);
     expect(fresh.phase).toBe('lineup');
     expect(fresh.segments).toEqual([]);
     expect(fresh.teams).toHaveLength(4);
+    expect(fresh.photoSets).toEqual([]);
   });
 });

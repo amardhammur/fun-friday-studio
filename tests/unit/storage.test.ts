@@ -29,3 +29,22 @@ describe('image storage durability', () => {
       .rejects.toThrow(/Persistent image storage is unavailable or full/);
   });
 });
+
+describe('demo session isolation', () => {
+  it('preserves the personal session through demo play, reload and exit', async () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
+    try {
+      const storage = await import('../../src/core/storage');
+      const { createEvent } = await import('../../src/core/event');
+      const personal = createEvent(); personal.title = 'Imported team';
+      storage.saveSession(personal);
+      const demo = createEvent(); demo.isDemo = true;
+      storage.saveSession(demo);
+      expect(JSON.parse(values.get('fun-friday-studio.session.v1')!)).toEqual(personal);
+      expect(storage.readSavedSession()).toEqual(demo);
+      storage.saveSession(personal);
+      expect(storage.readSavedSession()).toEqual(personal);
+    } finally { vi.unstubAllGlobals(); }
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pairFaces, intersectionOverUnion } from '../../activities/childhood-vs-now/logic/pairing';
+import { pairFaces, intersectionOverUnion } from '../../src/core/people/pairing';
 import type { Rect } from '../../src/core/types';
 const box = (x: number, y = .3, size = .08): Rect => ({ x, y, width: size, height: size });
 describe('position-based one-to-one face pairing', () => {

@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { test, expect, type Page } from '@playwright/test';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 const key = 'fun-friday-studio.session.v1';
-const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key);
+const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem('fun-friday-studio.demo.v1') ?? localStorage.getItem(k)!), key);
 async function home(page: Page) { await page.goto('/'); await expect(page.getByRole('heading', { name: 'What are we playing?' })).toBeVisible(); }
 test('full demo: unique sets, two-point scoring, refresh, finale and group wipe', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
@@ -60,13 +61,13 @@ test('demo pair bundle replaces the library and restores the whole-team reveal',
   expect(imported.segments[0].setupStepId).toBe('game');
   expect(importedGame.rounds).toEqual([]);
   expect(imported.scoreEntries).toEqual([]);
-  expect(importedGame.finale).toEqual({ wipePosition: 0 });
+  expect(importedGame.finale).toEqual({ wipePosition: 0, slideIndex: 0 });
   expect(Object.keys(imported.assets).some(id => demoSession.assets[id])).toBe(false);
-  expect(imported.assets[importedGame.originalImageId]).toBeTruthy();
-  expect(imported.assets[importedGame.childhoodImageId]).toBeTruthy();
-  expect(importedGame.childhoodUploadId).toBe(importedGame.childhoodImageId);
-  expect(imported.assets[importedGame.previews[importedGame.originalImageId]]).toBeTruthy();
-  expect(imported.assets[importedGame.previews[importedGame.childhoodImageId]]).toBeTruthy();
+  const set = imported.photoSets[0];
+  expect(imported.assets[set.nowImageId]).toBeTruthy();
+  expect(imported.assets[set.thenImageId]).toBeTruthy();
+  expect(imported.assets[set.previews[set.nowImageId]]).toBeTruthy();
+  expect(imported.assets[set.previews[set.thenImageId]]).toBeTruthy();
   expect(new Set(imported.people.map((person: any) => person.name))).toEqual(new Set(['Asha', 'Leo', 'Maya', 'Dev']));
   for (const person of imported.people) {
     const pair = imported.facePairs.find((candidate: any) => candidate.id === person.facePairId);
@@ -169,10 +170,9 @@ test('4200px uploads retain source resolution, align sizes and support manual bo
   await page.getByLabel('Childhood group photo (then)', { exact: true }).setInputFiles({ name: 'team-then.jpg', mimeType: 'image/jpeg', buffer: then });
   await expect(page.getByRole('dialog')).toBeHidden();
   let session = await saved(page);
-  expect(session.assets[session.segments[0].game.originalImageId].width).toBe(4200);
-  expect(session.assets[session.segments[0].game.childhoodUploadId].width).toBe(2800);
-  expect(session.assets[session.segments[0].game.childhoodImageId].width).toBe(4200);
-  expect(session.assets[session.segments[0].game.childhoodImageId].height).toBe(2400);
+  expect(session.assets[session.photoSets[0].nowImageId].width).toBe(4200);
+  expect(session.assets[session.photoSets[0].thenImageId].width).toBe(4200);
+  expect(session.assets[session.photoSets[0].thenImageId].height).toBe(2400);
   await page.getByRole('button', { name: 'Match people', exact: true }).click();
   for (const label of ['Original photo face editor', 'Childhood photo face editor']) {
     await page.getByRole('button', { name: 'Add face', exact: true }).click();
@@ -268,7 +268,7 @@ test('three activities carry scores through ZIP restore and a wager changes the 
     await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
     await expect(page.getByText(`Correct = ${segment === 1 ? 4 : 2} points. Stolen = ${segment === 1 ? 2 : 1}. Missed = 0.`)).toBeVisible();
     if (segment > 0) {
-      await expect(page.getByRole('button', { name: 'Upload photos', exact: false })).toBeDisabled();
+      await expect(page.locator('.setup-steps').getByRole('button', { name: /People/ })).toBeDisabled();
       await expect(page.getByLabel('Team 1 name', { exact: true })).toBeDisabled();
     }
     await page.getByRole('button', { name: 'Start new game' }).click();
@@ -330,9 +330,9 @@ test('three activities carry scores through ZIP restore and a wager changes the 
   expect(replaced.segments.map((s: any) => s.status)).toEqual(['setup', 'pending', 'pending']);
   for (const segment of replaced.segments) {
     expect(segment.game.rounds).toEqual([]);
-    expect(replaced.assets[segment.game.originalImageId]).toBeTruthy();
-    expect(beforeReplace.assets[segment.game.originalImageId]).toBeUndefined();
   }
+  expect(replaced.assets[replaced.photoSets[0].nowImageId]).toBeTruthy();
+  expect(beforeReplace.assets[replaced.photoSets[0].nowImageId]).toBeUndefined();
   await page.reload();
   await expect(page.locator('.storage-warning')).toHaveCount(0);
   await page.getByRole('button', { name: 'Continue event', exact: true }).click();
@@ -453,7 +453,7 @@ test('an event runs two different activities on one leaderboard', async ({ page 
 
   // Moving on must reach Childhood vs Now's setup with the roster locked, not strand the host.
   await page.getByRole('button', { name: /^Next activity/ }).click();
-  await expect(page.getByRole('button', { name: /Upload photos/ })).toBeDisabled();
+  await expect(page.locator('.setup-steps').getByRole('button', { name: /People/ })).toBeDisabled();
   await expect(page.getByRole('heading', { name: 'A little team spirit.' })).toBeVisible();
   session = await saved(page);
   expect(session.currentSegmentIndex).toBe(1);
@@ -529,4 +529,102 @@ test('act it out: a custom category, an edited built-in and the describe-it rule
   expect(session.segments[0].settings.rule).toBe('describe');
   expect(new Set(session.segments[0].game.deck.map((p: any) => p.category))).toEqual(new Set(['Kerala']));
   expect(errors).toEqual([]);
+});
+
+test('a partial second group from a version 1 file joins the game and gets its own reveal slide', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await aioHome(page);
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+  // Export the demo group and rebuild it as a version 1 bundle, the format older exports used.
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export pairs', exact: true }).click();
+  const exported = unzipSync(await readFile((await (await download).path())!));
+  const manifest = JSON.parse(strFromU8(exported['face-pairs.json'])), set = manifest.sets[0];
+  const groups: Record<string, unknown> = { now: { ...set.now, path: 'groups/now' }, then: { ...set.then, path: 'groups/then' } };
+  const files: Record<string, Uint8Array> = { 'groups/now': exported['sets/01/now'], 'groups/then': exported['sets/01/then'] };
+  if (set.nowPreview) { groups.nowPreview = { ...set.nowPreview, path: 'groups/now-preview' }; files['groups/now-preview'] = exported['sets/01/now-preview']; }
+  if (set.thenPreview) { groups.thenPreview = { ...set.thenPreview, path: 'groups/then-preview' }; files['groups/then-preview'] = exported['sets/01/then-preview']; }
+  for (const pair of manifest.pairs) for (const side of ['now', 'then']) files[pair[side].cropPath] = exported[pair[side].cropPath];
+  files['face-pairs.json'] = strToU8(JSON.stringify({ version: 1, groups, pairs: manifest.pairs.map(({ set: _set, ...pair }: any) => pair) }));
+
+  await page.getByLabel('Add face pairs ZIP').setInputFiles({ name: 'Design offsite.zip', mimeType: 'application/zip', buffer: Buffer.from(zipSync(files)) });
+  await expect(page.getByRole('heading', { name: 'Some names match' })).toBeVisible();
+  await page.getByRole('button', { name: 'Add anyway' }).click();
+  await expect(page.getByRole('status')).toContainText('4 people added.');
+  const second = page.getByRole('region', { name: 'Design offsite' });
+  await second.getByRole('button', { name: 'Everyone out' }).click();
+  await second.getByRole('checkbox', { name: 'Include Asha' }).check();
+  await second.getByRole('checkbox', { name: 'Include Leo' }).check();
+  const session = await saved(page);
+  expect(session.photoSets.map((s: any) => s.name)).toEqual(['Demo team', 'Design offsite']);
+  expect(session.people.filter((p: any) => p.included)).toHaveLength(6);
+  expect(session.isDemo).toBe(false);
+
+  await page.getByRole('button', { name: 'Activity library', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue event', exact: true }).click();
+  await page.getByRole('button', { name: 'Start new game' }).click();
+  for (let i = 0; i < 6; i++) {
+    await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+    await page.getByRole('button', { name: /^Missed/ }).click();
+    await page.getByRole('button', { name: /^(Next (?!photo)|Final results)/ }).click();
+  }
+  await page.getByRole('button', { name: 'The whole team reveal' }).click();
+  await expect(page.getByText(/Demo team \(1 of 2\)/)).toBeVisible();
+  const slider = page.getByRole('slider', { name: 'Reveal original group photo' });
+  await slider.focus(); await page.keyboard.press('ArrowRight');
+  await expect(slider).toHaveValue('1');
+  await expect(page.getByText(/Demo team \(1 of 2\)/)).toBeVisible();
+  await page.getByRole('heading', { name: 'Look how far we’ve come.' }).click();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByText(/Design offsite \(2 of 2\)/)).toBeVisible();
+  await expect(page.locator('.spotlight-controls button')).toHaveCount(3);
+  await page.locator('.spotlight-controls').getByRole('button', { name: 'Leo', exact: true }).click();
+  await expect(page.locator('.spotlight-box')).toHaveText('Leo');
+  await expect(page.locator('.image-missing')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('a person added from two single photos is revealed on the last slide', async ({ page }) => {
+  test.setTimeout(120_000);
+  await aioHome(page);
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+  const makeImage = async (w: number, h: number) => Buffer.from(await page.evaluate(({ w, h }) => {
+    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#f1dfbf'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#c98f6b'; ctx.beginPath(); ctx.ellipse(w * .5, h * .4, w * .2, h * .18, 0, 0, Math.PI * 2); ctx.fill();
+    return canvas.toDataURL('image/jpeg', .9).split(',')[1];
+  }, { w, h }), 'base64');
+  await page.getByRole('button', { name: 'Add a person' }).click();
+  await page.getByLabel('Person name').fill('Priya');
+  await page.getByLabel('Childhood photo').setInputFiles({ name: 'priya-then.jpg', mimeType: 'image/jpeg', buffer: await makeImage(500, 700) });
+  await page.getByLabel('Current photo').setInputFiles({ name: 'priya-now.jpg', mimeType: 'image/jpeg', buffer: await makeImage(600, 800) });
+  await page.getByRole('button', { name: 'Add person' }).click();
+  await expect(page.getByRole('status')).toContainText('Priya added.', { timeout: 60_000 });
+  await expect(page.getByRole('region', { name: 'Single photos' }).getByRole('img', { name: 'Priya now' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Activity library', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue event', exact: true }).click();
+  await page.getByRole('button', { name: 'Start new game' }).click();
+  for (let i = 0; i < 5; i++) {
+    await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
+    await page.getByRole('button', { name: /^Missed/ }).click();
+    await page.getByRole('button', { name: /^(Next (?!photo)|Final results)/ }).click();
+  }
+  await page.getByRole('button', { name: 'The whole team reveal' }).click();
+  await page.getByRole('button', { name: 'Next reveal photo' }).click();
+  await expect(page.getByRole('heading', { name: 'Also in the game' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Priya as a child' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Priya now' })).toBeVisible();
+});
+
+test('a version 2 session saved before photo sets still opens with its people', async ({ page }) => {
+  const doc = await readFile('tests/fixtures/event-v2.json', 'utf8');
+  await page.addInitScript(([k, value]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, value); sessionStorage.setItem('seeded', '1'); } }, [key, doc] as const);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Fun Friday Studio home' }).click();
+  await expect(page.locator('.storage-warning')).toHaveCount(0);
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Group 1' })).toBeVisible();
+  await expect(page.getByLabel(/^Library name/)).toHaveValue('Asha');
 });

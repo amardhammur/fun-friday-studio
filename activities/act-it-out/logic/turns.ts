@@ -1,6 +1,7 @@
 import type { EventUpdate, Team } from '../../../src/core/types';
 import { setRoundAward } from '../../../src/core/scoring';
 import { pauseTimer, startTimer } from '../../../src/core/play/timer';
+import { eventDraft } from '../../../src/core/event';
 import type { Prompt } from '../prompts';
 import type { AIOSegment, Context, GameState, Settings } from '../types';
 type Turn = GameState['turns'][number];
@@ -89,7 +90,7 @@ export function moveTurn(segment: AIOSegment, delta: number) {
 // A segment edit and an event edit are two separate atomic updates, so the score write is staged on a
 // mutable copy and handed to updateEvent afterwards.
 export function scoreChange(ctx: Context, fn: (s: AIOSegment, e: EventUpdate) => void) {
-  const event: EventUpdate = { ...ctx.event, people: [...ctx.event.people], facePairs: [...ctx.event.facePairs], teams: [...ctx.event.teams], scoreEntries: [...ctx.event.scoreEntries], assets: { ...ctx.event.assets } };
+  const event: EventUpdate = eventDraft(ctx.event);
   ctx.update(s => fn(s, event));
   ctx.updateEvent(draft => { draft.scoreEntries = event.scoreEntries; });
 }

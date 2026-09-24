@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, Check, Eye, X, Trophy } from 'lucide-react';
 import { StoredImage } from '../../../src/components/Images';
 import { Scoreboard } from '../../../src/core/teams/Scoreboard';
 import { StealPanel } from '../../../src/core/play/StealPanel';
+import { eventDraft } from '../../../src/core/event';
 import { markResult, markSteal, moveRound, reveal } from '../logic/rounds';
 import type { Context, CVEventUpdate, CVSession } from '../types';
 
@@ -11,7 +12,7 @@ export function Stage(context: Context) {
   const person = event.people.find(p => p.id === round.personId), pair = event.facePairs.find(p => p.id === person?.facePairId), team = event.teams.find(t => t.id === round.teamId)!;
   if (!person || !pair || !team) return <div className="empty-state">This round’s person is missing.</div>;
   const teamRounds = game.rounds.filter(r => r.teamId === team.id), teamPhoto = teamRounds.findIndex(r => r.id === round.id) + 1, next = game.rounds[game.currentRoundIndex + 1], nextTeam = next && event.teams.find(t => t.id === next.teamId), complete = game.rounds.every(r => r.result !== null);
-  const scoreChange = (fn: (s: CVSession, e: CVEventUpdate) => void) => { const e: CVEventUpdate = { ...event, people: [...event.people], facePairs: [...event.facePairs], teams: [...event.teams], scoreEntries: [...event.scoreEntries], assets: { ...event.assets } }; update(s => fn(s, e)); updateEvent(d => { d.scoreEntries = e.scoreEntries; }); };
+  const scoreChange = (fn: (s: CVSession, e: CVEventUpdate) => void) => { const e: CVEventUpdate = eventDraft(event); update(s => fn(s, e)); updateEvent(d => { d.scoreEntries = e.scoreEntries; }); };
   return <div className="stage-layout"><main className={`game-stage ${round.revealed ? 'revealed' : ''}`}>
     <div className="round-header"><div className="active-team" style={{ '--team-color': team.color } as React.CSSProperties}><span className="team-dot" style={{ background: team.color }}/><div><small>IN THE HOT SEAT</small><strong>{team.name}</strong></div></div><div className="round-count"><span>Photo <b>{game.currentRoundIndex + 1}</b> of {game.rounds.length}</span><small>{teamPhoto} / {teamRounds.length} in this team’s set</small></div><div className="point-stake"><b>{event.correctPoints}</b><span>POINT<br/>UP FOR GRABS</span></div></div>
     <div className="round-scene" key={round.id}>{!round.revealed ? <><div className="question-intro"><span className="eyebrow">THE ULTIMATE THROWBACK</span><h1>Recognise this little legend?</h1></div><div className="polaroid childhood-polaroid"><StoredImage id={pair.then?.cropImageId} alt="The childhood face to guess"/><span className="handwritten polaroid-caption">Who is this?</span></div></> : <><div className="reveal-polaroids"><div className="polaroid then-reveal"><StoredImage id={pair.then?.cropImageId} alt={`${person.name} as a child`}/><span className="handwritten polaroid-caption">back then</span></div><span className="reveal-arrow handwritten">→</span><div className="polaroid now-reveal"><StoredImage id={pair.now?.cropImageId} alt={`${person.name} now`}/><span className="handwritten polaroid-caption">all grown up</span></div></div><div className="reveal-name"><span className="eyebrow">LOOK WHO IT IS!</span><h1>{person.name}</h1>{person.funFact && <p>{person.funFact}</p>}</div></>}</div>
