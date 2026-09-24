@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { setRoundAward, standings, teamScore, segmentScore, DEFAULT_CORRECT_POINTS } from '../../src/core/scoring';
-import { allocateRounds, markResult, startNewGame } from '../../activities/childhood-vs-now/logic/rounds';
+import { allocateRounds, furthestRound, goToRound, markResult, moveRound, startNewGame } from '../../activities/childhood-vs-now/logic/rounds';
 import type { Person, Team, ScoreEntry } from '../../src/core/types';
 import type { CVSession } from '../../activities/childhood-vs-now/types';
 const teams: Team[] = Array.from({ length: 4 }, (_, i) => ({ id: `t${i}`, name: `Team ${i}`, color: '#ffffff' }));
@@ -76,5 +76,31 @@ describe('segment-scoped ledger', () => {
     ];
     expect(segmentScore(entries, 'seg-a', 't0')).toBe(2);
     expect(teamScore(entries, 't0')).toBe(5);
+  });
+});
+describe('round navigation', () => {
+  const session = (results: (null | 'correct' | 'missed')[], current = 0) => ({ phase: 'play', game: { currentRoundIndex: current, rounds: results.map((result, i) => ({ id: `r${i}`, personId: `p${i}`, teamId: 't0', revealed: result !== null, result })) } }) as unknown as CVSession;
+  it('reaches every played round plus the first unplayed one', () => {
+    expect(furthestRound(session([null, null, null]).game.rounds)).toBe(0);
+    expect(furthestRound(session(['correct', 'missed', null, null]).game.rounds)).toBe(2);
+    expect(furthestRound(session(['correct', 'missed']).game.rounds)).toBe(1);
+  });
+  it('will not move forward past an unplayed round', () => {
+    const s = session([null, null, null]); moveRound(s, 1); expect(s.game.currentRoundIndex).toBe(0);
+    s.game.rounds[0].result = 'correct'; moveRound(s, 1); expect(s.game.currentRoundIndex).toBe(1);
+  });
+  it('moves back freely and forward again up to the frontier', () => {
+    const s = session(['correct', 'missed', null, null], 2);
+    moveRound(s, -1); moveRound(s, -1); expect(s.game.currentRoundIndex).toBe(0);
+    moveRound(s, 1); moveRound(s, 1); moveRound(s, 1); expect(s.game.currentRoundIndex).toBe(2);
+  });
+  it('jumps only to reachable rounds', () => {
+    const s = session(['correct', null, null]);
+    goToRound(s, 2); expect(s.game.currentRoundIndex).toBe(0);
+    goToRound(s, 1); expect(s.game.currentRoundIndex).toBe(1);
+    goToRound(s, 0); expect(s.game.currentRoundIndex).toBe(0);
+  });
+  it('opens the finale only once every round is played', () => {
+    const s = session(['correct', 'missed'], 1); moveRound(s, 1); expect(s.phase).toBe('finale');
   });
 });

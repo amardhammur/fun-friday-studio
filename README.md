@@ -1,6 +1,6 @@
 # Fun Friday Studio
 
-A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and a chalkboard-style theme.
+A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and a warm game-night theme.
 
 The first activity is **Childhood vs Now**. Each team gets its own unique batch of childhood portraits and plays its batch in turn. The host reveals the current portrait and name, then marks **Correct (+2)** or **Missed (0)**. A person appears **only once in the entire game**. There are no hints, clarity levels, zoom puzzles, or timers.
 
@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-Open the localhost address printed by Vite. The first visit generates four paired cartoon portraits in a worker. **Try the demo** runs a complete sample game; **Set up your game** opens the host workflow.
+Open the localhost address printed by Vite. The first visit opens a welcoming screen for the audience. **Build your Friday** opens event planning; **Your event** holds the lineup and overall standings. **Activities** lets you add games to the lineup or explicitly try a demo. Teams are managed in event planning, and final results show each activity’s contribution to the total.
 
 Production build and local event server:
 
@@ -72,7 +72,7 @@ This copies the installed WASM files and downloads the pinned BlazeFace model on
 7. **Standings.** Between activities, the leaderboard shows the running total, what each team gained in that round, and the biggest climber.
 8. **Final wager.** Each team bets between 0 and their current score (a team on zero may still bet 5), the question is revealed, and the host marks each team. Then the event finale crowns the winner.
 
-Round squares let the host revisit any photo; filled/check-marked squares show revealed, missed, or correct rounds. Revisiting is for host corrections and does not allocate that photo to another team. All rounds need a recorded result before the finale is available.
+Round squares and the arrows let the host revisit any played photo and return to the current one; photos further ahead unlock only as results are recorded, so the main **Next** button is the only way forward. Check-marked squares show correct rounds and dashes show missed ones. Revisiting is for host corrections and does not allocate that photo to another team. All rounds need a recorded result before the finale is available.
 
 ### Keyboard shortcuts
 
@@ -81,7 +81,7 @@ Round squares let the host revisit any photo; filled/check-marked squares show r
 | Enter or Space | Reveal the current photo |
 | C | Correct: award the round to the assigned team |
 | M | Missed: award zero and open the round to a steal |
-| Left / Right arrows | Previous / next photo |
+| Left / Right arrows | Previous / next photo (up to the first unplayed one) |
 
 Shortcuts are ignored in inputs, textareas, editable content, and dialogs. Native button Enter/Space behaviour is preserved. The header has a full-screen button. CSS respects reduced-motion preferences.
 

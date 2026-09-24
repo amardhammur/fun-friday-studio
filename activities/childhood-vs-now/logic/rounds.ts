@@ -41,8 +41,11 @@ export function markSteal(session: CVSession, eventOrTeam: CVEventUpdate | strin
   event.scoreEntries = setStealAward(event.scoreEntries, session.segmentId, round.id, round.teamId, teamId ?? null, session.points.steal);
   if (legacy) (session as any).scoreEntries = event.scoreEntries;
 }
+// Played rounds can be revisited for corrections; ahead of them only the first unplayed round is reachable.
+export function furthestRound(rounds: GameState['rounds']) { const i = rounds.findIndex(r => r.result === null); return i === -1 ? rounds.length - 1 : i; }
+export function goToRound(session: CVSession, index: number) { if (index >= 0 && index <= furthestRound(session.game.rounds)) session.game.currentRoundIndex = index; }
 export function moveRound(session: CVSession, delta: number) {
   const next = session.game.currentRoundIndex + delta;
-  if (next >= 0 && next < session.game.rounds.length) session.game.currentRoundIndex = next;
+  if (next >= 0 && next < session.game.rounds.length) goToRound(session, next);
   else if (next === session.game.rounds.length && session.game.rounds.every(r => r.result !== null)) session.phase = 'finale';
 }

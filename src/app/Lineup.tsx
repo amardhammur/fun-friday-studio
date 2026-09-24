@@ -13,7 +13,7 @@ export function Lineup({ event, onChange, onStart }: { event: EventSession; onCh
     [s.segments[index], s.segments[to]] = [s.segments[to], s.segments[index]];
   });
   return <main className="lineup-page">
-    <div className="section-heading"><span className="eyebrow">THE RUNNING ORDER</span><h1>Build your Friday<span className="accent">.</span></h1><p>Pick your activities. One set of teams, one leaderboard, one winner.</p><label className="event-title-field"><span className="eyebrow">EVENT NAME</span><input aria-label="Event name" maxLength={80} value={event.title} onChange={e => onChange(s => { s.title = e.target.value; })}/></label></div>
+    <div className="section-heading"><span className="eyebrow">THE RUNNING ORDER</span><h1>Plan your event<span className="accent">.</span></h1><p>Pick your activities. One set of teams, one leaderboard, one winner.</p><label className="event-title-field"><span className="eyebrow">EVENT NAME</span><input aria-label="Event name" maxLength={80} value={event.title} onChange={e => onChange(s => { s.title = e.target.value; })}/></label></div>
     <div className="lineup-grid">
       <section className="panel"><div className="panel-heading"><Clock size={21}/><h2>Your line-up</h2><span className="pill">{minutes} min</span></div>
         {!event.segments.length && <p className="muted">Nothing here yet. Add an activity to get started.</p>}
@@ -27,12 +27,12 @@ export function Lineup({ event, onChange, onStart }: { event: EventSession; onCh
         </li>)}</ol>
         <div className="lineup-add">{getActivities().map(activity => <button key={activity.id} className="button subtle" disabled={event.segments.length >= 12} onClick={() => onChange(s => { s.segments.push(createSegment(activity)); })}><Plus size={16}/> {activity.name}</button>)}</div>
       </section>
-      <section className="panel"><div className="panel-heading"><Trophy size={21}/><h2>The teams</h2></div><TeamEditor teams={event.teams} onChange={teams => onChange(s => { s.teams = teams; })}/>
+      <section className="panel"><div className="panel-heading"><Trophy size={21}/><h2>Event teams</h2></div><p className="muted">These teams compete across the entire lineup.</p><TeamEditor teams={event.teams} onChange={teams => onChange(s => { s.teams = teams; })}/>
         <div className="panel-heading wager-heading"><h2>The final wager</h2></div><p className="muted">Optional. Teams bet their points on one last question. Leave it blank to skip it.</p>
         <input aria-label="Final wager question" placeholder="One last question…" maxLength={240} value={event.wager?.question ?? ''} onChange={e => onChange(s => { s.wager = { question: e.target.value, answer: s.wager?.answer ?? '', bets: s.wager?.bets ?? {} }; })}/>
         <input aria-label="Final wager answer" placeholder="The answer" maxLength={240} value={event.wager?.answer ?? ''} onChange={e => onChange(s => { s.wager = { question: s.wager?.question ?? '', answer: e.target.value, bets: s.wager?.bets ?? {} }; })}/>
       </section>
     </div>
-    <div className="setup-footer">{issues.map(issue => <p className="warning-text" key={issue}>{issue}</p>)}<button className="button primary large" disabled={issues.length > 0} onClick={onStart}><Play size={20}/> Start the event</button></div>
+    <div className="setup-footer">{issues.map(issue => <p className="warning-text" key={issue}>{issue}</p>)}<button className="button primary large" disabled={issues.length > 0} onClick={onStart}><Play size={20}/> Set up first activity</button></div>
   </main>;
 }

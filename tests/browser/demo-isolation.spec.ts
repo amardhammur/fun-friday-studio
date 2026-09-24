@@ -118,3 +118,12 @@ test('abandoned photo setup stays visibly incomplete and can be resumed or remov
   await group.getByRole('button', { name: 'Remove Group 1', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'The roster is empty.' })).toBeVisible();
 });
+
+test('going back to the activity library ends the demo and shows no library photos', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Fun Friday Studio home', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Exit demo', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Continue event', exact: true })).toHaveCount(0);
+  await expect(page.locator('.activity-card img')).toHaveCount(0);
+});
