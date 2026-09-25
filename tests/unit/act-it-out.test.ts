@@ -303,3 +303,53 @@ describe('migrating a version 1 save', () => {
     expect(() => migrate(v1, 7)).toThrow(/not supported/);
   });
 });
+
+describe('F02 shared deck navigation', () => {
+  it('blocks moving ahead from an unfinished turn without discarding its deadline', () => {
+    const { segment, event } = started();
+    startTurn(segment, '', 1_000); markGuessed(segment, event);
+    moveTurn(segment, 1);
+    expect(segment.game.currentTurnIndex).toBe(0);
+    expect(segment.game.timer.deadlineAt).toBe(91_000);
+    expect(segment.game.turns[1].status).toBe('pending');
+  });
+  it('blocks skipping pending turns with a direct jump', () => {
+    const { segment } = started({ roundsPerTeam: 2 });
+    moveTurn(segment, 3);
+    expect(segment.game.currentTurnIndex).toBe(0);
+  });
+  it('preserves the live deadline through completed-turn review and reload', () => {
+    const { segment, event } = started();
+    startTurn(segment, '', 0); markGuessed(segment, event); endTurn(segment, 100);
+    moveTurn(segment, 1); startTurn(segment, '', 1_000); markGuessed(segment, event);
+    moveTurn(segment, -1); undoLast(segment, event);
+    expect(segment.game.cursor).toBe(2);
+    segment.game = stateSchema.parse(JSON.parse(JSON.stringify(segment.game)));
+    moveTurn(segment, 1);
+    expect(segment.game.timer.deadlineAt).toBe(91_000);
+    undoLast(segment, event);
+    expect(segment.game.cursor).toBe(1);
+    expect(teamScore(event.scoreEntries, 'team-a')).toBe(2);
+    expect(teamScore(event.scoreEntries, 'team-b')).toBe(0);
+  });
+  it('refuses to start another turn even if its index was set directly', () => {
+    const { segment } = started();
+    startTurn(segment, '', 1_000);
+    segment.game.currentTurnIndex = 1;
+    startTurn(segment, '', 2_000);
+    expect(segment.game.turns[1].status).toBe('pending');
+    expect(segment.game.timer.deadlineAt).toBe(91_000);
+  });
+  it('rejects multiple acting turns in saved data', () => {
+    expect(stateSchema.safeParse(state({ turns: [turn({ status: 'acting' }), turn({ id: 't2', status: 'acting' })] })).success).toBe(false);
+  });
+  it('does not undo a card when a later turn has drawn since', () => {
+    const { segment, event } = started();
+    startTurn(segment, '', 0); markGuessed(segment, event); endTurn(segment, 1);
+    moveTurn(segment, 1); startTurn(segment, '', 2); markGuessed(segment, event);
+    segment.game.turns[0].status = 'acting'; segment.game.currentTurnIndex = 0;
+    const before = structuredClone({ segment, event });
+    undoLast(segment, event);
+    expect({ segment, event }).toEqual(before);
+  });
+});

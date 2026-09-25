@@ -49,7 +49,7 @@ export const currentPrompt = (game: GameState): Prompt | undefined => game.deck[
 export const turnScore = (turn: Turn, correctPoints: number) => turn.results.filter(r => r.outcome === 'guessed').length * correctPoints;
 export function startTurn(segment: AIOSegment, guesserName: string, now = Date.now()) {
   const turn = currentTurn(segment.game);
-  if (!turn || turn.status !== 'pending') return;
+  if (!turn || turn.status !== 'pending' || segment.game.turns.some(t => t.status === 'acting') || segment.game.turns.slice(0, segment.game.currentTurnIndex).some(t => t.status !== 'done')) return;
   turn.guesserName = guesserName.trim() || undefined;
   turn.status = 'acting';
   segment.game.timer = startTimer({ durationMs: segment.settings.turnSeconds * 1000 }, now);
@@ -72,6 +72,7 @@ export const markSkipped = (segment: AIOSegment, event: EventUpdate) => record(s
 export function undoLast(segment: AIOSegment, event: EventUpdate) {
   const game = segment.game, turn = currentTurn(game);
   if (!turn || turn.status !== 'acting' || !turn.results.length) return;
+  if (game.turns.slice(game.currentTurnIndex + 1).some(t => t.results.length) || turn.results.at(-1)?.text !== game.deck[game.cursor - 1]?.text) return;
   turn.results.pop();
   game.cursor -= 1;
   event.scoreEntries = award(segment, event, turn);
@@ -82,9 +83,16 @@ export function endTurn(segment: AIOSegment, now = Date.now()) {
   turn.status = 'done';
   segment.game.timer = pauseTimer(segment.game.timer, now);
 }
+export function canVisitTurn(game: GameState, index: number) {
+  const frontier = game.turns.findIndex(t => t.status !== 'done');
+  return Number.isInteger(index) && index >= 0 && index < game.turns.length && (frontier === -1 || index <= frontier);
+}
 export function moveTurn(segment: AIOSegment, delta: number) {
   const game = segment.game, next = game.currentTurnIndex + delta;
-  if (next >= 0 && next < game.turns.length) { game.currentTurnIndex = next; game.timer = { durationMs: segment.settings.turnSeconds * 1000 }; }
+  if (canVisitTurn(game, next)) {
+    game.currentTurnIndex = next;
+    if (game.turns[next].status === 'pending') game.timer = { durationMs: segment.settings.turnSeconds * 1000 };
+  }
   else if (next === game.turns.length && game.turns.every(t => t.status === 'done')) segment.phase = 'finale';
 }
 // A segment edit and an event edit are two separate atomic updates, so the score write is staged on a

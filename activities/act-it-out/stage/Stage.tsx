@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, EyeOff, Play, SkipForward, Trophy, Undo2 } from 'lucide-react';
 import { Timer } from '../../../src/core/play/TimerView';
 import { Scoreboard } from '../../../src/core/teams/Scoreboard';
-import { currentPrompt, currentTurn, endTurn, markGuessed, markSkipped, moveTurn, scoreChange, startTurn, turnScore, undoLast } from '../logic/turns';
+import { canVisitTurn, currentPrompt, currentTurn, endTurn, markGuessed, markSkipped, moveTurn, scoreChange, startTurn, turnScore, undoLast } from '../logic/turns';
 import { rules } from '../rules';
 import type { Context } from '../types';
 export function Stage(context: Context) {
@@ -54,9 +54,9 @@ export function Stage(context: Context) {
     </div>
 
     <div className="round-navigation">
-      <button className="icon-button" aria-label="Previous turn" disabled={game.currentTurnIndex === 0} onClick={() => update(s => moveTurn(s, -1))}><ArrowLeft size={18}/></button>
-      <div className="round-squares">{game.turns.map((t, i) => <button key={t.id} aria-label={`Turn ${i + 1}`} onClick={() => update(s => { s.game.currentTurnIndex = i; })}>{t.status === 'done' ? t.results.filter(r => r.outcome === 'guessed').length : ''}</button>)}</div>
-      <button className="icon-button" aria-label="Next turn" disabled={!next} onClick={() => update(s => moveTurn(s, 1))}><ArrowRight size={18}/></button>
+      <button className="icon-button" aria-label="Previous turn" disabled={!canVisitTurn(game, game.currentTurnIndex - 1)} onClick={() => update(s => moveTurn(s, -1))}><ArrowLeft size={18}/></button>
+      <div className="round-squares">{game.turns.map((t, i) => <button key={t.id} aria-label={`Turn ${i + 1}`} disabled={!canVisitTurn(game, i)} onClick={() => update(s => moveTurn(s, i - s.game.currentTurnIndex))}>{t.status === 'done' ? t.results.filter(r => r.outcome === 'guessed').length : ''}</button>)}</div>
+      <button className="icon-button" aria-label="Next turn" disabled={!canVisitTurn(game, game.currentTurnIndex + 1)} onClick={() => update(s => moveTurn(s, 1))}><ArrowRight size={18}/></button>
     </div>
   </main><Scoreboard segmentId={segment.segmentId} event={event} updateEvent={updateEvent} activeTeamId={team.id} playedCounts={Object.fromEntries(event.teams.map(t => [t.id, game.turns.filter(x => x.teamId === t.id && x.status === 'done').length]))}/></div>;
 }

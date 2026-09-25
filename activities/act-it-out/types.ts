@@ -26,6 +26,7 @@ export const stateSchema = z.object({
   // One deck, one cursor, many turns. If the cursor drifts from the cards actually played a card is
   // silently skipped or dealt twice, and nothing on the projector would show it. Catch it at the
   // schema boundary instead, which is where the registry and ZIP import both check.
+  if (s.turns.filter(t => t.status === 'acting').length > 1) ctx.addIssue({ code: 'custom', message: 'Only one turn can be acting.' });
   const played = s.turns.reduce((n, t) => n + t.results.length, 0);
   if (played !== s.cursor) ctx.addIssue({ code: 'custom', message: 'The prompt deck position does not match the cards played.' });
   if (s.cursor > s.deck.length) ctx.addIssue({ code: 'custom', message: 'The prompt deck position is past the end of the deck.' });
