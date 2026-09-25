@@ -20,7 +20,7 @@ export const libraryLocked = (event: EventSession) => !event.isDemo && event.seg
 // Clears scores, bets and every activity's game, keeping the line-up, settings, teams and people.
 export function resetEventProgress(event: EventSession) {
   event.scoreEntries = []; event.isDemo = false;
-  if (event.wager) event.wager.bets = {};
+  if (event.wager) { event.wager.bets = {}; delete event.wager.stage; }
   event.currentSegmentIndex = 0;
   event.phase = event.phase === 'lineup' || !event.segments.length ? 'lineup' : 'segment';
   event.segments.forEach((segment, index) => {

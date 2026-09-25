@@ -97,7 +97,7 @@ export interface Segment {
   status: 'pending' | 'setup' | 'play' | 'finale' | 'done';
   setupStepId: string; weight: number;
 }
-export interface EventWager { question: string; answer: string; bets: Record<ID, number> }
+export interface EventWager { stage?: 'betting' | 'question' | 'answer' | 'results'; question: string; answer: string; bets: Record<ID, number> }
 export interface EventSession {
   formatVersion: 3; id: ID; title: string; createdAt: string; updatedAt: string; isDemo: boolean;
   segments: Segment[]; currentSegmentIndex: number;

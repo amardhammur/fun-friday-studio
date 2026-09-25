@@ -19,7 +19,7 @@ const schema = z.object({
   formatVersion: z.literal(3), id: z.string(), title: z.string(), createdAt: z.string(), updatedAt: z.string(), isDemo: z.boolean(),
   segments: z.array(segmentSchema).max(12), currentSegmentIndex: z.number().int().min(0),
   phase: z.enum(['lineup', 'segment', 'interstitial', 'wager', 'finale']),
-  wager: z.object({ question: z.string(), answer: z.string(), bets: z.record(z.string(), z.number().int().min(0)) }).optional(),
+  wager: z.object({ stage: z.enum(['betting', 'question', 'answer', 'results']).optional(), question: z.string(), answer: z.string(), bets: z.record(z.string(), z.number().int().min(0)) }).optional(),
   correctPoints: z.number().int().min(1).max(10), stealPoints: z.number().int().min(0).max(10),
   people: z.array(z.object({ id: z.string(), name: z.string(), funFact: z.string(), included: z.boolean(), facePairId: z.string() })).max(MAX_PEOPLE),
   facePairs: z.array(z.object({ id: z.string(), number: z.number().int().positive(), color: z.string(), setId: z.string(), now: crop.optional(), then: crop.optional(), matchMethod: z.enum(['automatic', 'manual']), reviewStatus: z.enum(['suggested', 'confirmed', 'unmatched']) })).max(MAX_FACE_PAIRS),

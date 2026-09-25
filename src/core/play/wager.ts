@@ -1,9 +1,9 @@
 import { teamScore } from '../scoring';
-import type { ScoreEntry } from '../types';
+import type { EventSession, ScoreEntry } from '../types';
 
 export const WAGER_FLOOR = 5;
 
-export const maxWager = (entries: ScoreEntry[], teamId: string) => Math.max(teamScore(entries, teamId), WAGER_FLOOR);
+export const maxWager = (entries: ScoreEntry[], teamId: string) => Math.max(teamScore(entries.filter(e => e.kind !== 'wager'), teamId), WAGER_FLOOR);
 export const clampWager = (entries: ScoreEntry[], teamId: string, bet: number) => Math.max(0, Math.min(Math.round(bet) || 0, maxWager(entries, teamId)));
 
 export function setWagerResult(entries: ScoreEntry[], teamId: string, bet: number, correct: boolean): ScoreEntry[] {
@@ -12,3 +12,5 @@ export function setWagerResult(entries: ScoreEntry[], teamId: string, bet: numbe
   const points = correct ? clampWager(withoutWager, teamId, bet) : -clampWager(withoutWager, teamId, bet);
   return [...withoutWager, { id, teamId, kind: 'wager', points, active: true }];
 }
+
+export const wagerStage = (event: EventSession) => event.scoreEntries.some(e => e.kind === 'wager' && e.active) ? 'results' : event.wager?.stage ?? 'betting';
