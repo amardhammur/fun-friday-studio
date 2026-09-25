@@ -23,7 +23,7 @@ const schema = z.object({
   correctPoints: z.number().int().min(1).max(10), stealPoints: z.number().int().min(0).max(10),
   people: z.array(z.object({ id: z.string(), name: z.string(), funFact: z.string(), included: z.boolean(), facePairId: z.string() })).max(MAX_PEOPLE),
   facePairs: z.array(z.object({ id: z.string(), number: z.number().int().positive(), color: z.string(), setId: z.string(), now: crop.optional(), then: crop.optional(), matchMethod: z.enum(['automatic', 'manual']), reviewStatus: z.enum(['suggested', 'confirmed', 'unmatched']) })).max(MAX_FACE_PAIRS),
-  teams: z.array(z.object({ id: z.string(), name: z.string().min(1), color: z.string().regex(/^#[0-9a-f]{6}$/i) })).min(1).max(8),
+  teams: z.array(z.object({ id: z.string(), name: z.string(), color: z.string().regex(/^#[0-9a-f]{6}$/i) })).min(1).max(8),
   scoreEntries: z.array(z.object({ id: z.string(), teamId: z.string(), segmentId: z.string().optional(), roundId: z.string().optional(), kind: z.enum(['round-award', 'steal-award', 'manual-adjustment', 'wager']), points: z.number().int(), active: z.boolean() })),
   assets: z.record(z.string(), z.object({ id: z.string(), name: z.string(), width: z.number().positive(), height: z.number().positive(), mime: z.string() })),
   photoSets: z.array(photoSet).max(MAX_PHOTO_SETS),

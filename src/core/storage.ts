@@ -1,8 +1,8 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type { EventSession } from './types';
 
-const SESSION_KEY = 'fun-friday-studio.session.v1';
-const DEMO_KEY = 'fun-friday-studio.demo.v1';
+export const SESSION_KEY = 'fun-friday-studio.session.v1';
+export const DEMO_KEY = 'fun-friday-studio.demo.v1';
 let db: Promise<IDBPDatabase> | undefined;
 const memory = new Map<string, Blob>();
 const warnings = new Set<string>();

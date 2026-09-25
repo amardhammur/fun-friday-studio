@@ -9,10 +9,8 @@ import './theme/styles.css';
 import { applyTheme, readTheme } from './theme/theme';
 import { App } from './app/App';
 import { discoverActivities } from './core/registry';
-import { createEvent } from './core/event';
-import { validateEvent } from './core/session';
-import type { EventSession } from './core/types';
-import { checkStorage, readSavedSession, saveSession, storageWarning } from './core/storage';
+import { preserveRejected, restoreStartup } from './core/startup';
+import { checkStorage, saveSession } from './core/storage';
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error?: string }> {
   state: { error?: string } = {};
   static getDerivedStateFromError(error: Error) { return { error: error.message }; }
@@ -23,18 +21,15 @@ const root = createRoot(document.getElementById('root')!);
 root.render(<div className="boot-screen"><span>✦</span><h1>fun friday studio</h1><p>Getting the good times ready…</p></div>);
 async function boot() {
   await discoverActivities(); await checkStorage();
-  const saved = readSavedSession(); let session: EventSession | undefined;
-  if (saved) { try { session = validateEvent(saved); } catch (error) { storageWarning(`The saved session could not be restored. ${(error as Error).message}`); } }
-  if (!session) {
-    session = createEvent();
-    saveSession(session);
-  }
-  let personalSession: EventSession | undefined;
-  const personal = readSavedSession(true);
-  if (personal) {
-    try { const restored = validateEvent(personal); if (!restored.isDemo) personalSession = restored; }
-    catch (error) { storageWarning(`Your personal session could not be restored. ${(error as Error).message}`); }
-  }
-  root.render(<ErrorBoundary><App initialSession={session} personalSession={personalSession}/></ErrorBoundary>);
+  const { session, personalSession, rejected } = restoreStartup();
+  const open = () => root.render(<ErrorBoundary><App initialSession={session} personalSession={personalSession}/></ErrorBoundary>);
+  if (rejected.length) {
+    root.render(<main className="empty-state"><h1>A saved event needs recovery.</h1><p>The original documents have not been changed. Download them before continuing if you need to recover their contents.</p>
+      {rejected.map(({ key, raw, error }) => <section key={key}><p>{error}</p><a className="button secondary" download={`${key}.json`} href={`data:application/json;charset=utf-8,${encodeURIComponent(raw)}`}>Download rejected {key.includes('.demo.') ? 'demo' : 'personal event'}</a></section>)}
+      <button className="button primary" onClick={() => {
+        try { preserveRejected(rejected); saveSession(session); open(); }
+        catch { window.alert('The original save could not be backed up. Download it and free browser storage before continuing.'); }
+      }}>Back up originals and continue</button></main>);
+  } else { saveSession(session); open(); }
 }
 boot().catch(error => root.render(<div className="empty-state"><h1>Studio couldn’t open.</h1><p>{String(error)}</p><button className="button primary" onClick={() => location.reload()}>Try again</button></div>));
