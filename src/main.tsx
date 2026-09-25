@@ -6,6 +6,7 @@ import '@fontsource/atkinson-hyperlegible/latin-400.css';
 import '@fontsource/atkinson-hyperlegible/latin-700.css';
 import '@fontsource/caveat/latin-500.css';
 import './theme/styles.css';
+import { applyTheme, readTheme } from './theme/theme';
 import { App } from './app/App';
 import { discoverActivities } from './core/registry';
 import { createEvent } from './core/event';
@@ -17,6 +18,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { err
   static getDerivedStateFromError(error: Error) { return { error: error.message }; }
   render() { return this.state.error ? <main className="empty-state"><h1>We hit a pause.</h1><p>{this.state.error}</p><p>Your saved session is still on this laptop.</p><button className="button primary" onClick={() => location.reload()}>Reload Studio</button></main> : this.props.children; }
 }
+applyTheme(readTheme());
 const root = createRoot(document.getElementById('root')!);
 root.render(<div className="boot-screen"><span>✦</span><h1>fun friday studio</h1><p>Getting the good times ready…</p></div>);
 async function boot() {
