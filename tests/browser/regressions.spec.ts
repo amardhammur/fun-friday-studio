@@ -53,6 +53,24 @@ test('Host settings resumes Childhood vs Now without clearing scores', async ({ 
   expect(after.scoreEntries).toEqual(before.scoreEntries);
 });
 
+test('Act It Out arrow shortcuts cannot move away from an acting turn', async ({ page }) => {
+  await openWelcome(page);
+  await startDemo(page, 'Act It Out');
+  await page.getByRole('button', { name: 'Start the turn' }).click();
+
+  const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), sessionKey);
+  expect(before.segments[0].game.turns[0].status).toBe('acting');
+  await expect(page.getByRole('button', { name: 'Previous turn', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Next turn', exact: true })).toBeDisabled();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowRight');
+
+  const after = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), sessionKey);
+  expect(after.segments[0].game.currentTurnIndex).toBe(before.segments[0].game.currentTurnIndex);
+  expect(after.segments[0].game.turns[0].status).toBe('acting');
+  expect(after.segments[0].game.timer.deadlineAt).toBe(before.segments[0].game.timer.deadlineAt);
+});
+
 test('CSV import preview shows the fun facts that will be applied', async ({ page }) => {
   await personalPhotoEvent(page);
   await page.getByRole('button', { name: 'People library', exact: true }).click();

@@ -320,9 +320,23 @@ test('three activities carry scores through ZIP restore and a wager changes the 
   await page.reload();
   await expect(page.getByRole('spinbutton')).toHaveCount(0);
   await page.getByRole('button', { name: 'Reveal the answer' }).click();
-  for (const team of session.teams) {
+  for (const [index, team] of session.teams.entries()) {
     const row = page.locator('.wager-bet').filter({ has: page.getByText(team.name, { exact: true }) });
-    await row.getByRole('button', { name: team.id === challenger.id ? '+5' : team.id === leader.id ? '−8' : '−5', exact: true }).click();
+    const resultName = team.id === challenger.id ? '+5' : team.id === leader.id ? '−8' : '−5';
+    await row.getByRole('button', { name: resultName, exact: true }).click();
+    if (index === 0) {
+      const marked = await saved(page);
+      expect(marked.wager.stage).toBe('results');
+      expect(marked.scoreEntries.filter((entry: any) => entry.id.startsWith('wager-'))).toHaveLength(1);
+      expect(marked.scoreEntries.find((entry: any) => entry.id === `wager-${team.id}`)).toMatchObject({ points: -8, active: true });
+      await page.reload();
+      await expect(page.getByText('Far too many', { exact: true })).toBeVisible();
+      const restored = await saved(page);
+      expect(restored.wager).toEqual(marked.wager);
+      expect(restored.scoreEntries).toEqual(marked.scoreEntries);
+      const restoredRow = page.locator('.wager-bet').filter({ has: page.getByText(team.name, { exact: true }) });
+      await expect(restoredRow.getByRole('button', { name: resultName, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    }
   }
   await page.getByRole('button', { name: 'The final results' }).click();
   await expect(page.locator('.winner-name')).toHaveText(challenger.name);
