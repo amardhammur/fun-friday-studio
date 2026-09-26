@@ -26,7 +26,7 @@ test('two activities share teams and totals through the final breakdown', async 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await page.getByRole('button', { name: 'Build your Friday', exact: true }).click();
-  for (let n = 4; n > 2; n--) await page.getByRole('button', { name: `Remove team ${n}`, exact: true }).click();
+  for (let n = 5; n > 2; n--) await page.getByRole('button', { name: `Remove team ${n}`, exact: true }).click();
   await page.getByRole('textbox', { name: 'Team 1 name' }).fill('Comets');
   await page.getByRole('button', { name: 'Act It Out', exact: true }).click();
   await page.getByRole('button', { name: 'Activities', exact: true }).click();

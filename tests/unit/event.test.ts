@@ -92,12 +92,12 @@ describe('segment view', () => {
 });
 
 describe('createEvent', () => {
-  it('starts on the lineup with four teams and no segments', () => {
+  it('starts on the lineup with the five element teams and no segments', () => {
     const fresh = createEvent();
     expect(fresh.formatVersion).toBe(3);
     expect(fresh.phase).toBe('lineup');
     expect(fresh.segments).toEqual([]);
-    expect(fresh.teams).toHaveLength(4);
+    expect(fresh.teams.map(t => t.name)).toEqual(['Prithvi', 'Jal', 'Agni', 'Vayu', 'Akash']);
     expect(fresh.photoSets).toEqual([]);
   });
 });

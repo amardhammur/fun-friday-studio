@@ -8,17 +8,17 @@ describe('team shuffle', () => {
   it('assigns every player once with balanced sizes and preserves team identity', () => {
     const teams = newTeams(), before = structuredClone(teams);
     const result = shuffleTeams(players(13), teams, seeded(7));
-    expect(result.map(t => t.memberIds.length).sort()).toEqual([3, 3, 3, 4]);
+    expect(result.map(t => t.memberIds.length).sort()).toEqual([2, 2, 3, 3, 3]);
     expect(result.flatMap(t => t.memberIds).sort()).toEqual(players(13).map(p => p.id).sort());
     expect(result.map(({ id, name, color }) => ({ id, name, color }))).toEqual(teams.map(({ id, name, color }) => ({ id, name, color })));
     expect(teams).toEqual(before);
   });
   it('places pins before dealing and fills the smallest teams', () => {
     const teams = newTeams(); teams[0].memberIds = ['p0', 'p1', 'p2']; teams[0].pinnedIds = ['p0', 'p1', 'p2'];
-    const result = shuffleTeams(players(12), teams, seeded(1));
+    const result = shuffleTeams(players(15), teams, seeded(1));
     expect(result[0].memberIds).toEqual(['p0', 'p1', 'p2']);
     expect(result[0].pinnedIds).toEqual(['p0', 'p1', 'p2']);
-    expect(result.map(t => t.memberIds.length)).toEqual([3, 3, 3, 3]);
+    expect(result.map(t => t.memberIds.length)).toEqual([3, 3, 3, 3, 3]);
   });
   it('reproduces seeded runs and uses new randomness on another shuffle', () => {
     const teams = newTeams();
@@ -44,13 +44,25 @@ describe('team shuffle', () => {
     expect(shuffleTeams([], teams).every(t => !t.memberIds.length)).toBe(true);
   });
   it('keeps existing identities and adds/removes from the end', () => {
-    const teams = newTeams(), expanded = resizeTeams(teams, 6, false, (() => { let i = 0; return () => `new-${++i}`; })());
-    expect(expanded.slice(0, 4)).toEqual(teams);
-    expect(expanded.slice(4).map(t => t.id)).toEqual(['new-1', 'new-2']);
+    const teams = newTeams(), expanded = resizeTeams(teams, 7, false, (() => { let i = 0; return () => `new-${++i}`; })());
+    expect(expanded.slice(0, 5)).toEqual(teams);
+    expect(expanded.slice(5).map(t => t.id)).toEqual(['new-1', 'new-2']);
     expect(resizeTeams(expanded, 2)).toEqual(teams.slice(0, 2));
-    expect(teams).toHaveLength(4);
+    expect(teams).toHaveLength(5);
     expect(() => resizeTeams(teams, 1)).toThrow(/2.*8/);
     expect(() => resizeTeams(teams, 9)).toThrow(/2.*8/);
+  });
+  it('names the default teams after the five elements, each in its own colour', () => {
+    const teams = newTeams();
+    expect(teams.map(t => t.name)).toEqual(['Prithvi', 'Jal', 'Agni', 'Vayu', 'Akash']);
+    expect(new Set(teams.map(t => t.color)).size).toBe(5);
+  });
+  it('adds the next unused element name before falling back to numbered teams', () => {
+    const renamed = newTeams().slice(0, 2); renamed[0].name = 'Earth Movers';
+    expect(resizeTeams(renamed, 4).map(t => t.name)).toEqual(['Earth Movers', 'Jal', 'Prithvi', 'Agni']);
+    const eight = resizeTeams(newTeams(), 8);
+    expect(eight.map(t => t.name)).toEqual(['Prithvi', 'Jal', 'Agni', 'Vayu', 'Akash', 'Team 6', 'Team 7', 'Team 8']);
+    expect(new Set(eight.map(t => t.color)).size).toBe(8);
   });
   it('requires confirmation to remove a team with pins', () => {
     const teams = newTeams(); teams[3].memberIds = teams[3].pinnedIds = ['p0'];

@@ -5,6 +5,8 @@ import { activitySegment, applyActivitySegment, applyEventUpdate, createEvent, c
 export async function createDemoEvent(activity: Activity): Promise<EventSession> {
   if (!activity.createDemo) throw new Error('This activity does not include a demo.');
   const event = createEvent();
+  // The sample content is sized for four teams (the Childhood vs Now demo has four photos).
+  event.teams = event.teams.slice(0, 4);
   event.segments = [createSegment(activity)]; event.phase = 'segment'; event.isDemo = true;
   const prepared = await activity.createDemo(activitySegment(event, 0), eventDraft(event));
   prepared.segment.isDemo = true; prepared.event.isDemo = true;

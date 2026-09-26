@@ -1,5 +1,5 @@
 import type { Player, Team } from '../types';
-import { teamColors } from '../event';
+import { elementTeams, teamColors } from '../event';
 
 const BALANCE_MESSAGE = 'Unpin players or reduce the team count to balance these teams.';
 export function pinBalanceIssue(players: readonly Player[], teams: readonly Team[]): string | undefined {
@@ -33,6 +33,14 @@ export function resizeTeams(teams: readonly Team[], count: number, confirmed = f
   if (!Number.isInteger(count) || count < 2 || count > 8) throw new Error('Choose between 2 and 8 teams.');
   if (!confirmed && teams.slice(count).some(t => t.pinnedIds.length)) throw new Error('Confirm removal of teams with pinned players.');
   const result = teams.slice(0, count).map(t => ({ ...t, memberIds: [...t.memberIds], pinnedIds: [...t.pinnedIds] }));
-  while (result.length < count) result.push({ id: makeId(), name: `Team ${result.length + 1}`, color: teamColors[result.length], memberIds: [], pinnedIds: [] });
+  while (result.length < count) result.push({ id: makeId(), ...nextTeamIdentity(result), memberIds: [], pinnedIds: [] });
   return result;
+}
+
+/** A new team takes the next element name nobody is using, in that element's colour when it is free. */
+function nextTeamIdentity(teams: readonly Team[]) {
+  const names = new Set(teams.map(t => t.name.trim().toLocaleLowerCase())), colors = new Set(teams.map(t => t.color.toLowerCase()));
+  const element = elementTeams.find(e => !names.has(e.name.toLocaleLowerCase()));
+  const color = element && !colors.has(element.color) ? element.color : teamColors.find(c => !colors.has(c)) ?? teamColors[teams.length % teamColors.length];
+  return { name: element?.name ?? `Team ${teams.length + 1}`, color };
 }

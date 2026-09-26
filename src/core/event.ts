@@ -1,7 +1,12 @@
 import type { Activity, ActivityEvent, ActivitySegment, AnySession, EventSession, EventUpdate, Segment } from './types';
 export type { EventSession } from './types';
-export const teamColors = ['#f7d873', '#eea7bb', '#8fcbe0', '#9edbbd', '#d2b5f2', '#f0b085', '#b8d685', '#c2c9ed'];
-export const newTeams = () => ['Coffee Breakers', 'Reply-All Crew', 'Deadline Dodgers', 'Snack Drawer Squad'].map((name, i) => ({ id: crypto.randomUUID(), name, color: teamColors[i], memberIds: [] as string[], pinnedIds: [] as string[] }));
+// The five elements (Pancha Mahabhoota) name the default teams, each in a colour that suits it.
+export const elementTeams = [
+  { name: 'Prithvi', color: '#f7d873' }, { name: 'Jal', color: '#8fcbe0' }, { name: 'Agni', color: '#f0b085' },
+  { name: 'Vayu', color: '#9edbbd' }, { name: 'Akash', color: '#d2b5f2' },
+] as const;
+export const teamColors = [...elementTeams.map(e => e.color), '#eea7bb', '#b8d685', '#c2c9ed'];
+export const newTeams = () => elementTeams.map(({ name, color }) => ({ id: crypto.randomUUID(), name: name as string, color: color as string, memberIds: [] as string[], pinnedIds: [] as string[] }));
 export function defaultEventTitle() {
   return `Fun Friday · ${new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date())}`;
 }
