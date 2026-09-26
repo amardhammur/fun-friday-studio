@@ -1,3 +1,4 @@
+import { syncPlayers } from '../teams/roster';
 import { activitySegment } from '../event';
 import { getActivity } from '../registry';
 import type { EventSession, EventUpdate } from '../types';
@@ -53,6 +54,7 @@ export function resetEventProgress(event: EventSession) {
 export function replaceEventPeople(event: EventSession, imported: ImportedFacePairs) {
   assertLibraryCapacity({ pairs: imported.facePairs.length, sets: imported.photoSets.length }, { people: 0, facePairs: 0, photoSets: 0 });
   event.assets = imported.assets; event.photoSets = imported.photoSets; event.facePairs = imported.facePairs; event.people = imported.people;
+  syncPlayers(event);
   resetEventProgress(event);
 }
 export function addEventPeople(event: EventSession, imported: ImportedFacePairs) {

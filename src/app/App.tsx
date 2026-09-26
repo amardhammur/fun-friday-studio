@@ -19,11 +19,12 @@ import { applyTheme, nextTheme, readTheme, themeName } from '../theme/theme';
 import { PeopleLibrary } from '../core/people/PeopleLibrary';
 import { Wager } from '../core/play/WagerView';
 import { clearSegmentProgress, libraryLocked, prepareSegmentPeople, segmentPaused } from '../core/people/event-library';
+import { syncPlayers } from '../core/teams/roster';
 import { PausedView } from '../core/play/PausedView';
 export function App({ initialSession, personalSession }: { initialSession: EventSession; personalSession?: EventSession }) {
   const personalRef = useRef(personalSession ?? (initialSession.isDemo ? createEvent() : initialSession));
   const [session, setSession] = useState(initialSession), sessionRef = useRef(initialSession);
-  const [route, setRoute] = useState<'home' | 'session' | 'people' | 'library' | 'overview'>(initialSession.phase === 'lineup' || currentSegment(initialSession)?.status === 'setup' ? 'home' : 'session');
+  const [route, setRoute] = useState<'home' | 'session' | 'people' | 'library' | 'overview' | 'planning'>(initialSession.phase === 'lineup' || currentSegment(initialSession)?.status === 'setup' ? 'home' : 'session');
   const [toast, setToast] = useState(''), [busy, setBusy] = useState(''), busyRef = useRef(false);
   const [warnings, setWarnings] = useState(getStorageWarnings()), [offlineReady, setOfflineReady] = useState(false), [offlineError, setOfflineError] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -36,7 +37,7 @@ export function App({ initialSession, personalSession }: { initialSession: Event
   const activityEventView = activityEvent(session);
   const notify = useCallback((message: string) => setToast(message), []);
   // The event owns updatedAt, so install must run on the event itself, never on a segment view.
-  const install = useCallback((next: EventSession) => { next.updatedAt = new Date().toISOString(); sessionRef.current = next; if (!next.isDemo) personalRef.current = next; saveSession(next); setSession(next); }, []);
+  const install = useCallback((next: EventSession) => { syncPlayers(next); next.updatedAt = new Date().toISOString(); sessionRef.current = next; if (!next.isDemo) personalRef.current = next; saveSession(next); setSession(next); }, []);
   // An activity only ever edits its own segment: run the change against a view of a clone, fold it back, install the event.
   const update = useCallback<ActivityContext['update']>(change => { try { const next = structuredClone(sessionRef.current); const index = next.currentSegmentIndex; const draft = activitySegment(next, index); change(draft); applyActivitySegment(next, index, draft); install(next); } catch (error) { notify(error instanceof Error ? error.message : 'This change could not be applied.'); } }, [install, notify]);
   const updateEvent = useCallback((change: (draft: EventSession) => void) => { try { const next = structuredClone(sessionRef.current); change(next); install(next); } catch (error) { notify(error instanceof Error ? error.message : 'This change could not be applied.'); } }, [install, notify]);
@@ -72,7 +73,7 @@ export function App({ initialSession, personalSession }: { initialSession: Event
   }, [route, session.phase, updateEvent]);
   const rosterLocked = libraryLocked(session), paused = session.phase === 'segment' && segmentPaused(session, session.currentSegmentIndex);
   const updateActivityEvent = useCallback((change: (draft: EventUpdate) => void) => updateEvent(next => { const draft: EventUpdate = eventDraft(next); change(draft); applyEventUpdate(next, draft); }), [updateEvent]);
-  const exitDemo = (destination: 'home' | 'session' | 'people' | 'library' | 'overview' = 'home') => {
+  const exitDemo = (destination: 'home' | 'session' | 'people' | 'library' | 'overview' | 'planning' = 'home') => {
     if (sessionRef.current.isDemo) install(structuredClone(personalRef.current));
     setRoute(destination);
   };
@@ -82,7 +83,7 @@ export function App({ initialSession, personalSession }: { initialSession: Event
   const goOverview = () => exitDemo('overview');
   const context: ActivityContext | undefined = activitySegmentView && { rosterLocked, segment: activitySegmentView, event: activityEventView, update, updateEvent: updateActivityEvent, notify, runTask, goHome, openPeople };
   useShortcuts(activity, context, !!activity && !!context && route === 'session' && segment?.status === 'play' && !busy);
-  const canEditLineup = session.phase === 'lineup' || (session.phase === 'segment' && !session.scoreEntries.length && session.segments.every(s => s.status === 'pending' || s.status === 'setup'));
+  const canEditLineup = !rosterLocked && (session.phase === 'lineup' || (session.phase === 'segment' && !session.scoreEntries.length && session.segments.every(s => s.status === 'pending' || s.status === 'setup')));
   const editLineup = () => { if (!canEditLineup) return; updateEvent(s => { s.phase = 'lineup'; }); setRoute('session'); };
   const addActivity = (chosen: Activity) => {
     if (!canEditLineup || session.isDemo) return;
@@ -132,12 +133,12 @@ export function App({ initialSession, personalSession }: { initialSession: Event
       <button onClick={() => exitDemo()}>Exit demo</button>
     </div>}
     {route === 'home' && <Home event={session} onResume={goOverview} onBuildEvent={buildEvent} onLibrary={() => setRoute('library')}/>}
-    {route === 'overview' && <EventOverview event={session} onResume={() => setRoute('session')} onBuildEvent={buildEvent} onLibrary={() => setRoute('library')} onEdit={editLineup}/>}
+    {route === 'overview' && <EventOverview event={session} onResume={() => setRoute('session')} onBuildEvent={buildEvent} onLibrary={() => setRoute('library')} onEdit={editLineup} onTeams={() => setRoute('planning')}/>}
     {route === 'library' && <ActivityLibrary session={view} canAdd={canEditLineup && !session.isDemo} onAdd={addActivity} onSetup={beginSetup} onDemo={demo}/>}
     {route === 'session' && session.phase !== 'lineup' && !showMode && <EventContext event={session} onOverview={session.isDemo ? goHome : goOverview}/>}
     {showMode && <div className="show-masthead" aria-label="Show mode"><div className="show-masthead-brand"><Asterisk size={20} strokeWidth={2}/><span>fun friday</span></div><span className="show-masthead-activity">{showTitle}</span><span className="show-masthead-progress">{showProgress}</span></div>}
     {route === 'people' && <PeopleLibrary session={session} update={updateEvent} notify={notify} runTask={runTask} locked={rosterLocked} continueLabel={afterPeopleStep && `Continue to ${afterPeopleStep.title.toLowerCase()}`} onContinue={!session.isDemo && session.phase === 'segment' && segment?.status === 'setup' && afterPeopleStep ? () => { if (jumpStep(afterPeopleStep.id)) setRoute('session'); } : undefined}/>}
-    {route === 'session' && session.phase === 'lineup' && <Lineup event={session} onChange={updateEvent} onStart={() => updateEvent(s => { s.phase = 'segment'; s.currentSegmentIndex = 0; s.segments[0].status = 'setup'; prepareSegmentPeople(s, 0); })}/>}
+    {(route === 'planning' || (route === 'session' && session.phase === 'lineup')) && <Lineup event={session} onChange={updateEvent} onReturn={() => setRoute('session')} onStart={() => { updateEvent(s => { s.phase = 'segment'; s.currentSegmentIndex = 0; s.segments[0].status = 'setup'; prepareSegmentPeople(s, 0); }); setRoute('session'); }}/>}
     {route === 'session' && paused && activity && context && <><div className="setup-topbar"><span>{activity.name}</span><span className="small muted">HOST’S DESK</span></div><PausedView activity={activity} context={context} onStartOver={() => updateEvent(s => clearSegmentProgress(s, s.currentSegmentIndex))}/></>}
     {route === 'session' && !paused && session.phase === 'segment' && segment?.status === 'setup' && activity && context && currentStep && <><div className="setup-topbar"><span>{activity.name}</span><span className="small muted">HOST’S DESK</span></div><nav className="setup-steps" aria-label="Activity setup">{activity.setupSteps.map((step, i) => { const current = step.id === currentStep.id, passed = i < activity.setupSteps.findIndex(s => s.id === currentStep.id); return <button key={step.id} className={current ? 'current' : passed ? 'passed' : ''} aria-current={current ? 'step' : undefined} disabled={rosterLocked && step.id !== 'game'} onClick={() => jumpStep(step.id)}><span>{passed ? <Check size={15}/> : `0${i + 1}`}</span>{step.title}</button>; })}</nav><currentStep.View {...context}/></>}
     {route === 'session' && session.phase === 'segment' && segment?.status === 'play' && activity && context && <activity.Stage {...context}/>}

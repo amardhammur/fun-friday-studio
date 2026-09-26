@@ -18,7 +18,7 @@ export function GameSetupStep({ segment, event, update, updateEvent }: Context) 
   };
   return <div className="setup-content"><div className="section-heading"><span className="eyebrow">02 / SET THE CLOCK</span><h1>How long have they got<span className="accent">?</span></h1><p>{segment.points.correct} points for every prompt the guesser gets. Skips cost nothing, so keep moving.</p></div>
     <div className="aio-setup-grid">
-      <section className="panel"><div className="panel-heading"><Users size={21}/><h2>Your event teams</h2></div><EventTeams teams={event.teams}/>
+      <section className="panel"><div className="panel-heading"><Users size={21}/><h2>Your event teams</h2></div><EventTeams teams={event.teams} players={event.players}/>
       </section>
       <section className="panel"><div className="panel-heading"><Flag size={21}/><h2>The game plan</h2></div>
         <div className="segmented aio-rule" role="group" aria-label="How the team gives clues">{(['act', 'describe'] as const).map(rule => <button key={rule} aria-pressed={settings.rule === rule} onClick={() => update(s => { s.settings.rule = rule; })}><b>{rules[rule].label}</b><small>{rules[rule].hint}</small></button>)}</div>

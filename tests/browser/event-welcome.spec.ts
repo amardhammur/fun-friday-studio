@@ -26,7 +26,7 @@ test('two activities share teams and totals through the final breakdown', async 
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await page.getByRole('button', { name: 'Build your Friday', exact: true }).click();
-  for (let n = 4; n > 1; n--) await page.getByRole('button', { name: `Remove team ${n}`, exact: true }).click();
+  for (let n = 4; n > 2; n--) await page.getByRole('button', { name: `Remove team ${n}`, exact: true }).click();
   await page.getByRole('textbox', { name: 'Team 1 name' }).fill('Comets');
   await page.getByRole('button', { name: 'Act It Out', exact: true }).click();
   await page.getByRole('button', { name: 'Activities', exact: true }).click();
@@ -43,10 +43,13 @@ test('two activities share teams and totals through the final breakdown', async 
     await page.getByRole('button', { name: 'Start the turn' }).click();
     await page.getByRole('button', { name: /^Got it/ }).click();
     await page.getByRole('button', { name: 'End turn' }).click();
+    await page.getByRole('button', { name: /^Next:/ }).click();
+    await page.getByRole('button', { name: 'Start the turn', exact: true }).click();
+    await page.getByRole('button', { name: 'End turn', exact: true }).click();
     await page.getByRole('button', { name: 'Activity results', exact: true }).click();
-    await expect(page.locator('.aio-total b')).toHaveText(index === 0 ? '+2' : '+6');
+    await expect(page.locator('.aio-total b').first()).toHaveText(index === 0 ? '+2' : '+6');
     await page.getByRole('button', { name: 'View overall standings' }).click();
-    await expect(page.locator('.interstitial-total')).toHaveText(index === 0 ? '2' : '8');
+    await expect(page.locator('.interstitial-total').first()).toHaveText(index === 0 ? '2' : '8');
     await page.getByRole('button', { name: index === 0 ? 'Set up next: Encore' : 'View final results', exact: true }).click();
   }
   await expect(page.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();

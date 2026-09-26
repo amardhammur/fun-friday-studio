@@ -216,10 +216,11 @@ test('4200px uploads retain source resolution, align sizes and support manual bo
   await page.getByRole('checkbox', { name: 'Include Amar', exact: true }).check();
   await page.getByRole('button', { name: 'Your event', exact: true }).click();
   await page.getByRole('button', { name: 'Edit lineup & teams', exact: true }).click();
-  for (const i of [4, 3, 2]) await page.getByRole('button', { name: `Remove team ${i}`, exact: true }).click();
+  for (const i of [4, 3]) await page.getByRole('button', { name: `Remove team ${i}`, exact: true }).click();
   await page.getByRole('button', { name: 'Set up first activity', exact: true }).click();
-  await page.getByRole('button', { name: 'Start activity' }).click();
-  await expect(page.getByRole('img', { name: 'The childhood face to guess' })).toBeVisible();
+  // Two teams now require two photos; this manual-matching fixture has one.
+  await expect(page.getByRole('button', { name: 'Start activity' })).toBeDisabled();
+  await expect(page.getByText('Some teams have no photos. Reduce the number of teams or include more people.')).toBeVisible();
 });
 
 test('stealing, retracting a steal, and reaching the event finale through the standings', async ({ page }) => {

@@ -7,19 +7,19 @@ beforeAll(async () => { await discoverActivities(); });
 
 describe('line-up validation', () => {
   it('requires at least one activity', () => {
-    expect(lineupIssues(createEvent())).toContain('Add at least one activity to your line-up.');
+    expect(lineupIssues(createEvent()).map(i => i.message)).toContain('Add at least one activity to your line-up.');
   });
   it('requires every team to be named', () => {
     const event = createEvent();
     event.segments = [createSegment(getActivities()[0])];
     event.teams[0].name = '  ';
-    expect(lineupIssues(event)).toContain('Every team needs a name.');
+    expect(lineupIssues(event).map(i => i.message)).toContain('Every team needs a name.');
   });
   it('requires an answer when a wager question is written', () => {
     const event = createEvent();
     event.segments = [createSegment(getActivities()[0])];
     event.wager = { question: 'How many biscuits?', answer: '', bets: {} };
-    expect(lineupIssues(event)).toContain('Give the final wager an answer, or clear the question.');
+    expect(lineupIssues(event).map(i => i.message)).toContain('Give the final wager an answer, or clear the question.');
   });
   it('accepts a complete line-up', () => {
     const event = createEvent();

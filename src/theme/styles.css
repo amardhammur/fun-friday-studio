@@ -707,3 +707,55 @@
   }
 }
 .csv-preview small { display: block; color: var(--muted); margin-top: 3px; font-size: 12px; }
+
+@layer components {
+  .planning-fields { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .event-team-members { margin: 5px 0 0; color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+  .team-builder { display: grid; gap: 14px; margin-top: 24px; }
+  .team-builder :is(button, select, input) { min-height: 44px; }
+  .team-builder .icon-button { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+  .team-builder h3 { font-size: 18px; margin: 0; }
+  .team-builder p { margin: 0; }
+  .roster-heading, .roster-heading h3 { display: flex; align-items: center; gap: 10px; }
+  .roster-heading { justify-content: space-between; }
+  .roster-pull { justify-self: start; }
+  .player-roster, .team-members { list-style: none; margin: 0; padding: 0; }
+  .player-roster { max-height: 240px; overflow: auto; scrollbar-gutter: stable; }
+  .player-roster li { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); min-height: 48px; }
+  .player-roster li > span { flex: 1; overflow-wrap: anywhere; min-width: 0; }
+  .library-badge { border: 1px solid var(--line); border-radius: 4px; color: var(--muted); padding: 3px 6px; white-space: nowrap; font-size: 11px; }
+  .add-players { display: grid; gap: 8px; }
+  .add-players > label, .add-player-actions label { font-size: 14px; font-weight: 700; }
+  .add-players textarea { resize: vertical; min-height: 76px; width: 100%; }
+  .add-player-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  .add-player-actions label { display: grid; gap: 6px; flex: 1; min-width: 150px; }
+  .team-builder-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding-top: 18px; border-top: 1px solid var(--line); }
+  .team-stepper { display: flex; align-items: center; gap: 10px; }
+  .team-stepper > span { white-space: nowrap; font-weight: 700; }
+  .team-cards { display: grid; gap: 12px; }
+  .team-card { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+  .team-card-heading { display: flex; align-items: center; gap: 8px; }
+  .team-card-heading > input:not([type=color]) { flex: 1; min-width: 0; width: 100%; font-weight: 700; padding: 8px; }
+  .team-card-heading .team-colour { width: 44px; height: 44px; padding: 6px; border: 1px solid var(--line); flex-shrink: 0; background: transparent; }
+  .team-colour::-webkit-color-swatch-wrapper { padding: 0; }
+  .team-colour::-webkit-color-swatch { border: 0; border-radius: 0; }
+  .member-count { color: var(--muted); font: 14px var(--label); }
+  .team-members { display: grid; gap: 6px; margin-top: 10px; }
+  .member-chip { display: flex; align-items: center; gap: 6px; border-radius: 5px; background: var(--board-deep); padding: 4px 6px; min-width: 0; }
+  .member-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 15px; }
+  .member-chip select { width: 145px; max-width: 48%; min-width: 0; padding: 8px; font-size: 13px; }
+  .pin-button[aria-pressed=true] { color: var(--yellow); background: var(--accent-wash); }
+  .team-builder .team-empty { padding: 8px 0 0; font-size: 14px; }
+  .unassigned-tray { padding-top: 18px; border-top: 1px dashed var(--line); }
+  .unassigned-tray h3 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+}
+@layer ink {
+  [data-theme=ink] .event-teams-panel { border-radius: 0; box-shadow: none; }
+  [data-theme=ink] .event-teams-panel > .panel-heading h2 { font: 500 13px var(--label); letter-spacing: .14em; text-transform: uppercase; }
+  [data-theme=ink] .team-builder .team-card { border: 0; border-top: 1px solid var(--rule); border-radius: 0; padding: 14px 0; }
+  [data-theme=ink] .team-builder .team-card:last-child { border-bottom: 1px solid var(--rule); }
+  [data-theme=ink] .team-card-heading > input:not([type=color]) { font: 700 19px var(--body); background: transparent; border-color: transparent; }
+  [data-theme=ink] .team-card-heading .team-colour { padding: 8px; border: 0; }
+  [data-theme=ink] .team-builder :is(.member-chip, .library-badge, button, input, select, textarea) { border-radius: 0; box-shadow: none; }
+  [data-theme=ink] .team-builder .member-chip { background: var(--ink); border-bottom: 1px solid var(--rule); }
+}
