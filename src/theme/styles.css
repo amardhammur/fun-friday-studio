@@ -1,4 +1,4 @@
-@layer tokens, base, show-floor, components, pages, afterhours, ink, responsive;
+@layer tokens, base, show-floor, components, pages, afterhours, show, ink, responsive;
 @layer tokens {
   @font-face { font-family: 'Lexend Exa'; font-style: normal; font-display: swap; font-weight: 400; src: url('/fonts/lexend-exa-latin-400-normal.woff2') format('woff2'); }
   @font-face { font-family: 'Lexend Exa'; font-style: normal; font-display: swap; font-weight: 600; src: url('/fonts/lexend-exa-latin-600-normal.woff2') format('woff2'); }
@@ -454,7 +454,9 @@
   .app-footer { font-family: var(--label); font-size: 10px; margin-top: 20px; }
 }
 
-@layer ink {
+/* Show mode is theme-agnostic: the masthead and host rail render in every theme, so their rules live
+   in a shared layer. Ink-only presentation goes in the ink layer below, scoped to [data-theme="ink"]. */
+@layer show {
   /* Show mode keeps the stage clear and reserves one consistent home for host controls. */
   .app[data-mode="show"] { display: flex; flex-direction: column; height: 100svh; min-height: 100svh; overflow: hidden; padding-bottom: 70px; }
   .app[data-mode="show"].presentation { padding-bottom: 70px; }
