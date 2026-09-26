@@ -114,3 +114,39 @@ test('the correct stamp is Ink-only: other themes render it hidden', async ({ pa
   await expect(page.locator('.correct-stamp')).toHaveCount(1);
   await expect(page.locator('.correct-stamp')).toBeHidden();
 });
+
+test('Ink: the Act It Out clock turns urgent with a "quick, quick, quick!" note at 10 seconds', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('studio-theme', 'ink'));
+  await openWelcome(page);
+  await startDemo(page, 'Act It Out');
+  await page.getByRole('button', { name: 'Start the turn' }).click();
+  const timer = page.getByRole('timer', { name: 'Turn timer' }), note = timer.locator('.timer-note');
+  await expect(timer).not.toHaveClass(/\bhurry\b/);
+  await expect(note).toHaveCount(0);
+
+  // Twelve seconds left: not yet urgent. The live countdown then crosses ten seconds on its own.
+  await page.evaluate(key => { const doc = JSON.parse(localStorage.getItem(key)!); doc.segments[0].game.timer = { durationMs: 90_000, deadlineAt: Date.now() + 12_000 }; localStorage.setItem(key, JSON.stringify(doc)); }, demoKey);
+  await page.reload();
+  await expect(timer.locator('strong')).toHaveText(/00:1[12]/);
+  await expect(timer).not.toHaveClass(/\bhurry\b/);
+  await expect(timer).toHaveClass(/\bhurry\b/, { timeout: 5_000 });
+  await expect(note).toBeVisible();
+  await expect(note).toHaveText('quick, quick, quick!');
+  expect(await timer.locator('strong').evaluate(el => getComputedStyle(el).color)).toBe('rgb(239, 91, 58)');
+  expect(await note.evaluate(el => getComputedStyle(el).fontFamily)).toContain('Caveat');
+
+  // A paused clock is not urgent, however little time is left.
+  await page.getByRole('button', { name: 'Pause the timer' }).click();
+  await expect(timer).not.toHaveClass(/\bhurry\b/);
+  await expect(note).toHaveCount(0);
+});
+
+test('the timer note is Ink-only: other themes keep it hidden', async ({ page }) => {
+  await openWelcome(page);
+  await startDemo(page, 'Act It Out');
+  await page.getByRole('button', { name: 'Start the turn' }).click();
+  await page.evaluate(key => { const doc = JSON.parse(localStorage.getItem(key)!); doc.segments[0].game.timer = { durationMs: 90_000, deadlineAt: Date.now() + 8_000 }; localStorage.setItem(key, JSON.stringify(doc)); }, demoKey);
+  await page.reload();
+  await expect(page.getByRole('timer', { name: 'Turn timer' })).toHaveClass(/\bhurry\b/);
+  await expect(page.locator('.timer-note')).toBeHidden();
+});

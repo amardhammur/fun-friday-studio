@@ -188,7 +188,7 @@
   .prompt-card.spent b { font-size: clamp(24px, 3.4vw, 40px); } .prompt-card.spent small { color: var(--muted); }
   .aio-clock { display: flex; justify-content: center; }
   .turn-tally { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: 15px; }
-  .turn-tally span { display: inline-flex; align-items: center; gap: 8px; } .turn-running { color: var(--chalk); } .turn-running b { color: var(--yellow); font-family: var(--heading); font-size: 21px; }
+  .turn-tally > span { display: inline-flex; align-items: center; gap: 8px; } .turn-running { color: var(--chalk); } .turn-running b { color: var(--yellow); font-family: var(--heading); font-size: 21px; }
   .turn-summary { display: flex; gap: 40px; } .turn-summary > div { display: grid; gap: 3px; } .turn-summary b { font-family: var(--heading); font-size: clamp(38px, 5vw, 62px); line-height: 1; } .turn-summary small { color: var(--muted); letter-spacing: .1em; font-size: 11px; text-transform: uppercase; } .turn-summary-points b { color: var(--yellow); }
   .turn-results { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; max-width: 860px; }
   .turn-results li { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 30px; padding: 6px 14px; font-size: 13px; }
@@ -546,7 +546,7 @@
 
 @layer components {
   /* Stage flourishes that only the Ink theme draws. Hidden everywhere else so other themes are unchanged. */
-  .correct-stamp { display: none; }
+  .correct-stamp, .timer-note { display: none; }
 }
 
 @layer ink {
@@ -610,6 +610,67 @@
   [data-theme="ink"] [data-mode="show"] .correct-stamp small { margin-top: 4px; font: 500 max(18px, 1.15vw)/1.3 var(--label); letter-spacing: .12em; text-transform: uppercase; overflow-wrap: anywhere; }
   @keyframes ink-stamp { from { transform: rotate(-4deg) scale(1.15); } to { transform: rotate(-4deg) scale(1); } }
   @media (prefers-reduced-motion: reduce) { [data-theme="ink"] [data-mode="show"] .correct-stamp { animation: none; } }
+
+  /* ---- Stage · Act It Out, acting (handoff screen 6): vermilion prompt panel left; turn, clock, tallies
+     and scores right. The stage wrappers dissolve (display: contents) so their parts can take grid areas. ---- */
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) { grid-template-columns: minmax(0, 1160fr) minmax(0, 700fr); grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; grid-template-areas: "panel turn" "panel clock" "panel tally" "panel board" "actions board" "nav board"; column-gap: clamp(28px, 2.9vw, 56px); row-gap: 0; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .game-stage, [data-theme="ink"] [data-mode="show"] .aio-stage .aio-acting { display: contents; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-header, [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-count { display: contents; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-header .point-stake { display: none; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-count > span { grid-area: turn; align-self: start; justify-self: start; text-align: left; color: var(--muted); font: 500 clamp(18px, 1.15vw, 22px)/1.2 var(--label); letter-spacing: .16em; text-transform: uppercase; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-count b { font-weight: 500; }
+  /* The header's team and guesser drop into the foot of the panel: "Deadline Dodgers are acting / Sam is guessing". */
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) :is(.active-team, .round-count small) { grid-area: panel; align-self: end; z-index: 1; box-sizing: border-box; min-height: calc(2.4em + 3px + clamp(10px, .95vw, 18px)); margin-bottom: calc(clamp(10px, 1.7vh, 18px) + clamp(28px, 2.9vw, 56px)); padding-top: clamp(10px, .95vw, 18px); border-top: 3px solid var(--ink); color: var(--ink); font: 700 clamp(22px, 1.6vw, 30px)/1.2 var(--body); letter-spacing: 0; text-transform: none; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .active-team { display: block; justify-self: stretch; margin-left: clamp(32px, 3.33vw, 64px); margin-right: 42%; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-count small { justify-self: stretch; margin-left: 58%; margin-right: clamp(32px, 3.33vw, 64px); text-align: right; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .active-team :is(.team-dot, small) { display: none; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .active-team strong { font: inherit; color: inherit; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .active-team strong::after { content: " are acting"; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card { grid-area: panel; container-type: size; display: flex; flex-direction: column; align-items: stretch; min-height: 0; max-width: none; margin: 0 0 clamp(10px, 1.7vh, 18px); padding: clamp(28px, 2.9vw, 56px) clamp(32px, 3.33vw, 64px) calc(clamp(28px, 2.9vw, 56px) + 2.4 * clamp(22px, 1.6vw, 30px) + 3px + clamp(10px, .95vw, 18px) + clamp(16px, 2vw, 40px)); text-align: left; background: var(--vermilion); color: var(--ink); border: 0; border-radius: 0; box-shadow: none; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card .eyebrow { align-self: flex-end; color: var(--ink); font: 500 clamp(18px, 1.15vw, 22px)/1.2 var(--label); letter-spacing: .18em; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card .eyebrow::after { content: " · " attr(data-points) " PTS"; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card b { margin-top: auto; font: 800 min(120px, 11cqw, 20cqh)/.9 var(--heading); letter-spacing: -.08em; overflow-wrap: anywhere; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card[data-length="short"] b { font-size: min(176px, 15.5cqw, 30cqh); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card small { margin-top: 16px; color: var(--ink); font: 500 18px/1.3 var(--label); letter-spacing: .1em; text-transform: uppercase; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card.spent { background: var(--ink-2); color: var(--paper); border: 1px dashed var(--rule-strong); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.prompt-card.spent) :is(.active-team, .round-count small) { color: var(--paper); border-color: var(--rule-strong); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card.spent b { font-size: min(88px, 8cqw); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .prompt-card.spent small { color: var(--muted); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .aio-clock { grid-area: clock; justify-content: flex-start; margin-top: clamp(8px, 3vh, 40px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .play-timer { flex-wrap: wrap; align-items: flex-end; gap: 8px 16px; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .play-timer strong { font: 800 clamp(96px, 11vw, 240px)/.85 var(--heading); letter-spacing: -.08em; color: var(--cobalt); font-variant-numeric: tabular-nums; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .play-timer-controls { margin-bottom: .6em; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .play-timer-controls .icon-button { border-radius: 0; color: var(--muted); }
+  /* The last ten seconds: the clock turns vermilion and the host's scrawl appears. */
+  [data-theme="ink"] [data-mode="show"] .aio-stage .play-timer.hurry strong { color: var(--vermilion); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .timer-note { display: block; flex-basis: 100%; font: 600 clamp(30px, 2.5vw, 48px)/1.1 var(--hand); color: var(--paper); transform: rotate(-3deg); transform-origin: left center; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .turn-tally { grid-area: tally; justify-content: flex-start; gap: clamp(24px, 1.9vw, 36px); margin-top: clamp(12px, 2.5vh, 44px); padding-top: clamp(10px, 1.8vh, 20px); border-top: 1px solid var(--rule); color: var(--muted); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .turn-tally > span, [data-theme="ink"] [data-mode="show"] .aio-stage .tally-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; font: 500 18px/1.2 var(--label); letter-spacing: .06em; text-transform: uppercase; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .turn-tally svg { display: none; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .tally-n, [data-theme="ink"] [data-mode="show"] .aio-stage .turn-running b { font: 800 clamp(36px, 3.1vw, 60px)/1 var(--heading); letter-spacing: -.04em; color: var(--paper); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .turn-running b { color: var(--vermilion); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .scoreboard { grid-area: board; align-self: end; margin-top: clamp(12px, 2vh, 40px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .score-heading b { font-size: clamp(32px, 2.3vw, 44px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-actions { grid-area: actions; justify-content: flex-start; min-height: 0; padding: 0; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-navigation { grid-area: nav; justify-content: flex-start; }
+  /* Short screens, or six or more teams: the tallies move under the panel and the clock shrinks, so the
+     scores keep the whole right column and eight teams fit at 1280×720. */
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) { grid-template-rows: auto auto minmax(0, 1fr) auto auto auto; grid-template-areas: "panel turn" "panel clock" "panel board" "tally board" "actions board" "nav board"; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .turn-tally { margin: 0 0 clamp(8px, 1.5vh, 16px); padding-top: 0; border-top: 0; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .tally-n, [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .turn-running b { font-size: clamp(30px, 2.4vw, 48px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .play-timer strong { font-size: clamp(80px, 8.5vw, 200px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .score-heading strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  @media (max-height: 800px) {
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) { grid-template-rows: auto auto minmax(0, 1fr) auto auto auto; grid-template-areas: "panel turn" "panel clock" "panel board" "tally board" "actions board" "nav board"; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .turn-tally { margin: 0 0 clamp(8px, 1.5vh, 16px); padding-top: 0; border-top: 0; }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .tally-n, [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .turn-running b { font-size: clamp(30px, 2.4vw, 48px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .play-timer strong { font-size: clamp(80px, 8.5vw, 200px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .score-heading strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  }
+  @media (max-height: 800px) {
+    [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .score-heading strong { -webkit-line-clamp: 1; }
+    [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting):has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .scoreboard-title { padding-block: 6px 4px; }
+  }
 }
 @layer responsive {
   @media (max-width: 1150px) {

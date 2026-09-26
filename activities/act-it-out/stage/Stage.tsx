@@ -14,7 +14,7 @@ export function Stage(context: Context) {
   const prompt = currentPrompt(game), guessed = turn.results.filter(r => r.outcome === 'guessed').length, skipped = turn.results.length - guessed;
   const next = game.turns[game.currentTurnIndex + 1], nextTeam = next && event.teams.find(t => t.id === next.teamId), complete = game.turns.every(t => t.status === 'done');
   const spent = !prompt;
-  return <div className="stage-layout"><main className="game-stage">
+  return <div className="stage-layout aio-stage"><main className="game-stage">
     <div className="round-header">
       <div className="active-team" style={{ '--team-color': team.color } as React.CSSProperties}><span className="team-dot" style={{ background: team.color }}/><div><small>ON THEIR FEET</small><strong>{team.name}</strong></div></div>
       <div className="round-count"><span>Turn <b>{game.currentTurnIndex + 1}</b> of {game.turns.length}</span><small>{turn.guesserName ? `${turn.guesserName} is guessing` : 'One teammate faces away'}</small></div>
@@ -27,9 +27,9 @@ export function Stage(context: Context) {
     </div>}
 
     {turn.status === 'acting' && <div className="round-scene aio-acting" key={game.cursor}>
-      {spent ? <div className="prompt-card spent"><b>That’s the whole deck.</b><small>End the turn and the points are banked.</small></div> : <div className="prompt-card"><span className="eyebrow">{prompt!.category}</span><b>{prompt!.text}</b>{rules[segment.settings.rule].card && <small>{rules[segment.settings.rule].card}</small>}</div>}
+      {spent ? <div className="prompt-card spent"><b>That’s the whole deck.</b><small>End the turn and the points are banked.</small></div> : <div className="prompt-card" data-length={prompt!.text.length > 22 ? 'long' : 'short'}><span className="eyebrow" data-points={segment.points.correct}>{prompt!.category}</span><b>{prompt!.text}</b>{rules[segment.settings.rule].card && <small>{rules[segment.settings.rule].card}</small>}</div>}
       <div className="aio-clock"><Timer state={game.timer} label="Turn timer" confirmReset={`Reset the clock? ${team.name} would get a fresh ${Math.round(game.timer.durationMs / 1000)} seconds, more time than other teams get.`} onChange={timer => update(s => { s.game.timer = timer; })}/></div>
-      <div className="turn-tally"><span><Check size={16}/> {guessed} guessed</span><span><SkipForward size={16}/> {skipped} skipped</span><span className="turn-running"><b>+{turnScore(turn, segment.points.correct)}</b> this turn</span></div>
+      <div className="turn-tally"><span><Check size={16}/> <span className="tally-text"><span className="tally-n">{guessed}</span> guessed</span></span><span><SkipForward size={16}/> <span className="tally-text"><span className="tally-n">{skipped}</span> skipped</span></span><span className="turn-running"><b>+{turnScore(turn, segment.points.correct)}</b> this turn</span></div>
     </div>}
 
     {turn.status === 'done' && <div className="round-scene aio-summary">
