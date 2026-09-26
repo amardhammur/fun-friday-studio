@@ -555,12 +555,12 @@
   [data-theme="ink"] [data-mode="show"] .round-header { border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
   [data-theme="ink"] [data-mode="show"] .active-team .team-dot { width: 16px; height: 16px; border-radius: 0; box-shadow: none; }
   [data-theme="ink"] [data-mode="show"] .active-team small { color: var(--muted); letter-spacing: .14em; }
-  [data-theme="ink"] [data-mode="show"] .active-team strong { color: var(--paper); font: 700 clamp(22px, 1.6vw, 30px)/1.1 var(--body); letter-spacing: 0; }
+  [data-theme="ink"] [data-mode="show"] .active-team strong { color: var(--paper); font: 700 clamp(20px, 1.3vw, 26px)/1.1 var(--body); letter-spacing: 0; }
   [data-theme="ink"] [data-mode="show"] .round-count { font-family: var(--label); color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
   [data-theme="ink"] [data-mode="show"] .round-count b { color: var(--paper); font-weight: 500; }
   [data-theme="ink"] [data-mode="show"] .round-count small, [data-theme="ink"] [data-mode="show"] .point-stake > span { white-space: nowrap; letter-spacing: .06em; }
   [data-theme="ink"] [data-mode="show"] .point-stake { color: var(--vermilion); }
-  [data-theme="ink"] [data-mode="show"] .point-stake > b { font: 800 clamp(44px, 3.3vw, 64px)/.85 var(--heading); letter-spacing: -.06em; }
+  [data-theme="ink"] [data-mode="show"] .point-stake > b { font: 800 clamp(32px, 2.3vw, 44px)/.85 var(--heading); letter-spacing: -.06em; }
 
   /* Scoreboard: rules between rows, the team on stage as a colour slab ("● PLAYING NOW · 1ST"). */
   [data-theme="ink"] [data-mode="show"] .scoreboard { border-left: 0; padding: 0; display: flex; flex-direction: column; }
@@ -570,16 +570,16 @@
   [data-theme="ink"] [data-mode="show"] .scoreboard .score-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head buttons"; align-items: center; column-gap: 12px; margin: 0; padding: clamp(8px, .8vw, 14px) 0; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; background: none; }
   [data-theme="ink"] [data-mode="show"] .score-heading { grid-area: head; gap: 12px; min-width: 0; }
   [data-theme="ink"] [data-mode="show"] .score-heading .team-dot { width: 16px; height: 16px; border-radius: 0; flex-shrink: 0; }
-  [data-theme="ink"] [data-mode="show"] .score-heading strong { font: 700 clamp(20px, 1.4vw, 28px)/1.1 var(--body); overflow-wrap: anywhere; }
-  [data-theme="ink"] [data-mode="show"] .score-heading b { font: 800 clamp(40px, 3.3vw, 64px)/.85 var(--heading); letter-spacing: -.06em; }
+  [data-theme="ink"] [data-mode="show"] .score-heading strong { font: 700 clamp(20px, 1.2vw, 24px)/1.15 var(--body); overflow-wrap: anywhere; }
+  [data-theme="ink"] [data-mode="show"] .score-heading b { font: 800 clamp(28px, 2.1vw, 40px)/.9 var(--heading); letter-spacing: -.05em; }
   [data-theme="ink"] [data-mode="show"] .score-meta { display: contents; }
   [data-theme="ink"] [data-mode="show"] .score-meta > span { display: none; }
   [data-theme="ink"] [data-mode="show"] .score-meta > div { grid-area: buttons; }
   [data-theme="ink"] [data-mode="show"] .score-meta button { border-radius: 0; border-color: var(--rule-strong); color: var(--muted); }
-  [data-theme="ink"] [data-mode="show"] .scoreboard .score-row.active { grid-template-areas: "label label" "head buttons"; padding: clamp(10px, 1vw, 20px) clamp(14px, 1.7vw, 32px); background: var(--team-color); color: var(--ink); border-bottom-color: transparent; }
-  [data-theme="ink"] [data-mode="show"] .score-row.active::before { content: "● PLAYING NOW · " attr(data-rank); grid-area: label; margin-bottom: clamp(6px, 1vw, 20px); font: 500 18px/1.2 var(--label); letter-spacing: .08em; white-space: nowrap; }
-  [data-theme="ink"] [data-mode="show"] .score-row.active .team-dot { display: none; }
-  [data-theme="ink"] [data-mode="show"] .score-row.active .score-meta button { border-color: color-mix(in oklch, var(--ink) 35%, transparent); color: var(--ink); }
+  [data-theme="ink"] [data-mode="show"] .scoreboard .score-row.active { grid-template-areas: "label label" "head buttons"; padding: clamp(8px, .8vw, 14px) clamp(12px, 1vw, 18px); background: var(--ink-2); box-shadow: inset 5px 0 var(--team-color); }
+  [data-theme="ink"] [data-mode="show"] .score-row.active::before { content: "● PLAYING NOW · " attr(data-rank); grid-area: label; margin-bottom: 6px; color: var(--muted); font: 500 18px/1.2 var(--label); letter-spacing: .08em; white-space: nowrap; }
+  [data-theme="ink"] [data-mode="show"] .score-row.active .team-dot { display: block; }
+  [data-theme="ink"] [data-mode="show"] .score-row.active .score-meta button { border-color: var(--rule-strong); color: var(--muted); }
   /* Six or more teams: compact rows so eight fit at 1280×720 without clipping behind the host rail. */
   [data-theme="ink"] [data-mode="show"] .scoreboard:has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .score-row { padding-block: 5px; }
   [data-theme="ink"] [data-mode="show"] .scoreboard:has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .score-heading strong { font-size: 20px; }
@@ -587,27 +587,27 @@
   [data-theme="ink"] [data-mode="show"] .scoreboard:has(.score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row ~ .score-row) .score-row.active::before { margin-bottom: 4px; }
 
   /* ---- Stage · Childhood vs Now (handoff screen 5): then | name | now, polaroids either side ---- */
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .polaroid { background: var(--paper-2); padding: 14px 14px 0; box-shadow: 0 18px 40px #000a; color: var(--rule); }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .polaroid-caption { font: 600 clamp(28px, 2.3vw, 44px)/1.5 var(--hand); color: var(--rule); }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .polaroid { background: var(--paper-2); padding: 10px 10px 0; box-shadow: var(--shadow-polaroid); color: var(--rule); }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .polaroid-caption { font: 600 clamp(22px, 1.6vw, 32px)/1.5 var(--hand); color: var(--rule); }
   [data-theme="ink"] [data-mode="show"] .cvn-stage .question-intro .eyebrow { color: var(--vermilion); letter-spacing: .22em; }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .question-intro h1 { font: 800 clamp(40px, 3.3vw, 64px)/1 var(--heading); letter-spacing: -.06em; }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .childhood-polaroid { width: auto; height: min(38vh, 480px); aspect-ratio: 360 / 470; transform: rotate(-4deg); }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .question-intro h1 { font: 800 clamp(32px, 2.5vw, 48px)/1 var(--heading); letter-spacing: -.05em; }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .childhood-polaroid { width: auto; height: min(32vh, 360px); aspect-ratio: 360 / 470; transform: rotate(-3deg); }
   [data-theme="ink"] [data-mode="show"] .cvn-stage .round-scene:has(.reveal-polaroids) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); align-items: center; gap: clamp(16px, 2vw, 40px); }
   [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-polaroids { display: contents; }
   [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-arrow { display: none; }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-polaroids .polaroid { grid-row: 1; width: min(90%, 400px, calc(52vh * 360 / 470)); height: auto; aspect-ratio: 360 / 470; }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .then-reveal { grid-column: 1; justify-self: end; transform: rotate(-6deg); }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .now-reveal { grid-column: 3; justify-self: start; transform: rotate(5deg); }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-polaroids .polaroid { grid-row: 1; width: min(70%, 280px, calc(36vh * 360 / 470)); height: auto; aspect-ratio: 360 / 470; }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .then-reveal { grid-column: 1; justify-self: end; transform: rotate(-4deg); }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .now-reveal { grid-column: 3; justify-self: start; transform: rotate(3deg); }
   [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-name { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: center; max-width: none; margin: 0; }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-name .eyebrow { font: 500 clamp(18px, 1.25vw, 24px)/1.2 var(--label); letter-spacing: .22em; color: var(--vermilion); }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-name h1 { font: 800 clamp(56px, 4.6vw, 88px)/.95 var(--heading); letter-spacing: -.07em; margin-top: 12px; color: var(--paper); }
-  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-name p { font: 600 clamp(28px, 2.5vw, 48px)/1.1 var(--hand); color: var(--body-muted-soft); margin-top: 14px; }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-name .eyebrow { font: 500 clamp(18px, 1vw, 20px)/1.2 var(--label); letter-spacing: .18em; color: var(--vermilion); }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-name h1 { font: 800 clamp(44px, 3.4vw, 64px)/.95 var(--heading); letter-spacing: -.06em; margin-top: 10px; color: var(--paper); }
+  [data-theme="ink"] [data-mode="show"] .cvn-stage .reveal-name p { font: 600 clamp(24px, 1.8vw, 34px)/1.15 var(--hand); color: var(--body-muted-soft); margin-top: 10px; }
 
   /* The "+N CORRECT" stamp lands with a small thump when the host marks the round correct. */
-  [data-theme="ink"] [data-mode="show"] .correct-stamp { display: inline-flex; align-items: center; gap: clamp(12px, 1.2vw, 22px); max-width: 100%; margin-top: clamp(18px, 2.3vw, 44px); padding: clamp(8px, .75vw, 14px) clamp(16px, 1.8vw, 34px); border: clamp(4px, .31vw, 6px) solid var(--vermilion); color: var(--vermilion); transform: rotate(-4deg); animation: ink-stamp 180ms ease-out both; }
-  [data-theme="ink"] [data-mode="show"] .correct-stamp b { font: 800 clamp(48px, 4.2vw, 80px)/1 var(--heading); letter-spacing: -.06em; }
-  [data-theme="ink"] [data-mode="show"] .correct-stamp span { display: flex; flex-direction: column; min-width: 0; text-align: left; font: 700 clamp(24px, 1.8vw, 34px)/1.05 var(--heading); letter-spacing: -.05em; }
-  [data-theme="ink"] [data-mode="show"] .correct-stamp small { margin-top: 4px; font: 500 max(18px, 1.15vw)/1.3 var(--label); letter-spacing: .12em; text-transform: uppercase; overflow-wrap: anywhere; }
+  [data-theme="ink"] [data-mode="show"] .correct-stamp { display: inline-flex; align-items: center; gap: clamp(8px, .7vw, 14px); max-width: 100%; margin-top: clamp(14px, 1.4vw, 28px); padding: clamp(4px, .4vw, 8px) clamp(12px, 1vw, 20px); border: 3px solid var(--vermilion); color: var(--vermilion); transform: rotate(-4deg); animation: ink-stamp 180ms ease-out both; }
+  [data-theme="ink"] [data-mode="show"] .correct-stamp b { font: 800 clamp(30px, 2.2vw, 44px)/1 var(--heading); letter-spacing: -.05em; }
+  [data-theme="ink"] [data-mode="show"] .correct-stamp span { display: flex; flex-direction: column; min-width: 0; text-align: left; font: 700 clamp(18px, 1.1vw, 22px)/1.05 var(--heading); letter-spacing: -.03em; }
+  [data-theme="ink"] [data-mode="show"] .correct-stamp small { margin-top: 3px; font: 500 18px/1.3 var(--label); letter-spacing: .1em; text-transform: uppercase; overflow-wrap: anywhere; }
   @keyframes ink-stamp { from { transform: rotate(-4deg) scale(1.15); } to { transform: rotate(-4deg) scale(1); } }
   @media (prefers-reduced-motion: reduce) { [data-theme="ink"] [data-mode="show"] .correct-stamp { animation: none; } }
 
@@ -650,7 +650,7 @@
   [data-theme="ink"] [data-mode="show"] .aio-stage .tally-n, [data-theme="ink"] [data-mode="show"] .aio-stage .turn-running b { font: 800 clamp(36px, 3.1vw, 60px)/1 var(--heading); letter-spacing: -.04em; color: var(--paper); }
   [data-theme="ink"] [data-mode="show"] .aio-stage .turn-running b { color: var(--vermilion); }
   [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .scoreboard { grid-area: board; align-self: end; margin-top: clamp(12px, 2vh, 40px); }
-  [data-theme="ink"] [data-mode="show"] .aio-stage .score-heading b { font-size: clamp(32px, 2.3vw, 44px); }
+  [data-theme="ink"] [data-mode="show"] .aio-stage .score-heading b { font-size: clamp(28px, 2.1vw, 40px); }
   [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-actions { grid-area: actions; justify-content: flex-start; min-height: 0; padding: 0; }
   [data-theme="ink"] [data-mode="show"] .aio-stage:has(.aio-acting) .round-navigation { grid-area: nav; justify-content: flex-start; }
   /* Short screens, or six or more teams: the tallies move under the panel and the clock shrinks, so the
