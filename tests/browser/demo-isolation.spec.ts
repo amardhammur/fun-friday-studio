@@ -75,7 +75,7 @@ test('demo host settings show the prepared roster without reopening photo matchi
   page.on('dialog', dialog => dialog.accept());
   await openWelcome(page);
   await startDemo(page);
-  await page.getByRole('button', { name: 'Host settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
   await page.getByRole('navigation', { name: 'Activity setup' }).getByRole('button', { name: /People/ }).click();
   await expect(page.getByRole('heading', { name: 'Who’s playing today?' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Match people', exact: true })).toHaveCount(0);
@@ -120,7 +120,7 @@ test('going back to the activity library ends the demo and shows no library phot
   await openWelcome(page);
   await startDemo(page);
   await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
-  await page.getByRole('button', { name: 'Fun Friday Studio home', exact: true }).click();
+  await page.locator('.host-key-rail').getByRole('button', { name: 'Exit demo', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Exit demo', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Continue event', exact: true })).toHaveCount(0);
   await expect(page.locator('.activity-card img')).toHaveCount(0);

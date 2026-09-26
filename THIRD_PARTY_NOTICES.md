@@ -6,9 +6,11 @@ The application source and cartoon demo artwork were created for this project. R
 
 - **Bricolage Grotesque** — SIL Open Font License 1.1; `public/licenses/Bricolage-Grotesque-OFL.txt`.
 - **Atkinson Hyperlegible** — SIL Open Font License 1.1; `public/licenses/Atkinson-Hyperlegible-OFL.txt`.
+- **IBM Plex Mono** — SIL Open Font License 1.1; `public/licenses/IBM-Plex-Mono-OFL.txt`.
+- **Lexend Exa** — SIL Open Font License 1.1; `public/licenses/Lexend-Exa-OFL.txt`.
 - **Caveat** — SIL Open Font License 1.1; `public/licenses/Caveat-OFL.txt`.
 
-Font binaries are supplied by the corresponding `@fontsource` npm packages and emitted into the production assets. Original copyright notices are retained in the license files.
+The app self-hosts the WOFF2 files in `public/fonts/`. Bricolage Grotesque, Atkinson Hyperlegible, and Caveat source packages are recorded in `package-lock.json`. IBM Plex Mono and Lexend Exa files come from `@fontsource/ibm-plex-mono@5.3.0` and `@fontsource/lexend-exa@5.3.0`. Original copyright notices are retained in the license files.
 
 ## Face detection
 

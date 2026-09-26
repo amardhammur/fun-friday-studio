@@ -3,7 +3,8 @@ import { builtInCategory, bundledPrompts, categories, defaultCategories, prompts
 import type { Category, GameState, Settings, AIOSegment } from '../../activities/act-it-out/types';
 import { initialState, settingsSchema, stateSchema } from '../../activities/act-it-out/types';
 import { migrate } from '../../activities/act-it-out/logic/migrate';
-import { allocateTurns, buildDeck, cardsNeeded, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, startNewGame, startTurn, undoLast } from '../../activities/act-it-out/logic/turns';
+import { allocateTurns, buildDeck, cardsNeeded, eligiblePrompts, endTurn, holdClock, markGuessed, markSkipped, moveTurn, progressLabel, releaseClock, startNewGame, startTurn, undoLast } from '../../activities/act-it-out/logic/turns';
+import { remainingMs } from '../../src/core/play/timer';
 import { loadDemo } from '../../activities/act-it-out/logic/demo';
 import { teamScore } from '../../src/core/scoring';
 import type { EventUpdate, Team } from '../../src/core/types';
@@ -351,5 +352,44 @@ describe('F02 shared deck navigation', () => {
     const before = structuredClone({ segment, event });
     undoLast(segment, event);
     expect({ segment, event }).toEqual(before);
+  });
+});
+
+// Every team races the same clock, so pausing the game must never spend a team's time.
+describe('pausing the game mid-turn', () => {
+  it('stops a running clock and restarts it with the same time left', () => {
+    const { segment } = started();
+    startTurn(segment, '', 0);
+    holdClock(segment, 30_000);
+    expect(segment.game.timer.deadlineAt).toBeUndefined();
+    expect(remainingMs(segment.game.timer, 500_000)).toBe(60_000);
+    expect(stateSchema.safeParse(segment.game).success).toBe(true);
+    releaseClock(segment, 500_000);
+    expect(segment.game.timer.deadlineAt).toBe(560_000);
+    expect(segment.game.clockHeld).toBeUndefined();
+  });
+  it('leaves a clock the host had already stopped stopped on resume', () => {
+    const { segment } = started();
+    startTurn(segment, '', 0);
+    segment.game.timer = { durationMs: 90_000, pausedRemainingMs: 40_000 };
+    holdClock(segment, 30_000); releaseClock(segment, 500_000);
+    expect(segment.game.timer).toEqual({ durationMs: 90_000, pausedRemainingMs: 40_000 });
+  });
+  it('does not start the clock of a turn that has not begun', () => {
+    const { segment } = started();
+    holdClock(segment, 30_000); releaseClock(segment, 500_000);
+    expect(segment.game.timer.deadlineAt).toBeUndefined();
+  });
+});
+
+describe('the paused progress line', () => {
+  it('names the turn in progress, and counts finished turns between them', () => {
+    const { segment } = started();
+    const total = segment.game.turns.length;
+    expect(progressLabel(segment.game)).toBe(`0 of ${total} turns played.`);
+    startTurn(segment, '', 0);
+    expect(progressLabel(segment.game)).toBe(`Turn 1 of ${total} in progress.`);
+    endTurn(segment, 1_000);
+    expect(progressLabel(segment.game)).toBe(`1 of ${total} turns played.`);
   });
 });

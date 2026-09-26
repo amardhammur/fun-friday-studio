@@ -22,6 +22,8 @@ export const stateSchema = z.object({
   })),
   currentTurnIndex: z.number().int().min(0),
   timer: z.object({ durationMs: z.number().int().positive(), deadlineAt: z.number().optional(), pausedRemainingMs: z.number().optional() }),
+  // Set while the host has paused the game on a running turn, so Resume knows to restart the clock.
+  clockHeld: z.literal(true).optional(),
 }).superRefine((s, ctx) => {
   // One deck, one cursor, many turns. If the cursor drifts from the cards actually played a card is
   // silently skipped or dealt twice, and nothing on the projector would show it. Catch it at the

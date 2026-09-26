@@ -14,8 +14,24 @@ export function prepareSegmentPeople(event: EventSession, index = 0) {
 }
 
 const STARTED: EventSession['segments'][number]['status'][] = ['play', 'finale', 'done'];
+function segmentHasProgress(event: EventSession, index: number) {
+  const segment = event.segments[index];
+  return event.scoreEntries.some(entry => entry.segmentId === segment.id) || Boolean(getActivity(segment.activityId)?.hasProgress?.(segment.game));
+}
+// Pause returns a running game to setup, but its line-up is already fixed, so progress counts as started.
+export const segmentStarted = (event: EventSession, index: number) => STARTED.includes(event.segments[index].status) || segmentHasProgress(event, index);
+export const segmentPaused = (event: EventSession, index: number) => event.segments[index]?.status === 'setup' && segmentHasProgress(event, index);
+// Start over: this activity's scores and game go, so its setup (and the roster, if nothing else ran) is editable again.
+export function clearSegmentProgress(event: EventSession, index: number) {
+  const segment = event.segments[index], activity = getActivity(segment.activityId);
+  if (!activity) throw new Error(`Activity not installed: ${segment.activityId}`);
+  event.scoreEntries = event.scoreEntries.filter(entry => entry.segmentId !== segment.id);
+  segment.game = activity.createInitialState();
+  segment.status = 'setup'; segment.setupStepId = 'game';
+  prepareSegmentPeople(event, index);
+}
 // Once any activity has run, people are shared history. The demo is throwaway, so it never locks.
-export const libraryLocked = (event: EventSession) => !event.isDemo && event.segments.some(segment => STARTED.includes(segment.status));
+export const libraryLocked = (event: EventSession) => !event.isDemo && event.segments.some((_, index) => segmentStarted(event, index));
 
 // Clears scores, bets and every activity's game, keeping the line-up, settings, teams and people.
 export function resetEventProgress(event: EventSession) {

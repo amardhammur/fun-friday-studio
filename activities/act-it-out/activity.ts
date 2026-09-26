@@ -9,7 +9,7 @@ import { defaultCategories } from './prompts';
 import { migrate } from './logic/migrate';
 import { loadDemo } from './logic/demo';
 import { settingsSchema, stateSchema, initialState, type GameState, type Settings } from './types';
-import { cardsNeeded, currentTurn, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, scoreChange, startNewGame, undoLast } from './logic/turns';
+import { cardsNeeded, currentTurn, hasProgress, holdClock, progressLabel, releaseClock, eligiblePrompts, endTurn, markGuessed, markSkipped, moveTurn, scoreChange, startNewGame, undoLast } from './logic/turns';
 const acting = (ctx: { segment: { phase: string; game: GameState } }) => ctx.segment.phase === 'play' && currentTurn(ctx.segment.game)?.status === 'acting';
 export const actItOut: Activity<Settings, GameState> = {
   id: 'act-it-out', version: 2, name: 'Act It Out', description: 'No props, no prep. One teammate faces away while the team acts out or describes what is on screen, without ever saying the words.', icon: Drama,
@@ -19,12 +19,12 @@ export const actItOut: Activity<Settings, GameState> = {
       const available = eligiblePrompts(s.settings).length, needed = cardsNeeded(e.teams.length, s.settings.roundsPerTeam);
       return available >= needed ? [] : [`You need at least ${needed} prompts for ${e.teams.length} teams and have ${available}. Add a category or write your own.`];
     } },
-    // This step MUST keep the id 'game': App.tsx treats it as the only step reachable once an
-    // earlier activity has locked the roster.
+    // This step MUST keep the id 'game': App.tsx treats it as the only step reachable once the
+    // roster is locked by an activity that has been played.
     { id: 'game', title: 'Game setup', View: GameSetupStep, validate: (_s, e) => e.teams.every(t => t.name.trim()) ? [] : ['Every team needs a name.'] },
   ],
   settingsSchema, stateSchema, settingsFields: [{ key: 'turnSeconds', label: 'Turn length', type: 'number' }, { key: 'roundsPerTeam', label: 'Turns per team', type: 'number' }],
-  Stage, Finale, Preview, createDemo: loadDemo, estimatedMinutes: 12, order: 1,
+  Stage, Finale, Preview, createDemo: loadDemo, estimatedMinutes: 12, order: 1, hasProgress, progressLabel, onPause: segment => holdClock(segment), onResume: segment => releaseClock(segment),
   validateSession: (s, e) => {
     if (s.phase === 'setup') return [];
     if (!s.game.turns.length) return ['The saved game has no turns.'];

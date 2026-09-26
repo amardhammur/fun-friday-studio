@@ -24,6 +24,8 @@ export function startNewGame(session: CVSession, event?: CVEventUpdate) {
   session.game.rounds = allocateRounds(event.people as Person[], event.teams as Team[], session.settings.shuffle);
   session.game.currentRoundIndex = 0; event.scoreEntries = event.scoreEntries.filter(e => e.segmentId !== session.segmentId); if (legacy) (session as any).scoreEntries = event.scoreEntries; session.phase = 'play';
 }
+export const hasProgress = (game: GameState) => game.rounds.some(r => r.revealed || r.result !== null);
+export const progressLabel = (game: GameState) => `${game.rounds.filter(r => r.result !== null).length} of ${game.rounds.length} photos played.`;
 export function reveal(session: CVSession) { const round = session.game.rounds[session.game.currentRoundIndex]; if (round) round.revealed = true; }
 export function markResult(session: CVSession, eventOrResult: CVEventUpdate | 'correct' | 'missed', resultArg?: 'correct' | 'missed') {
   const legacy = typeof eventOrResult === 'string'; const event = legacy ? ({ people: [], facePairs: [], teams: [], scoreEntries: (session as any).scoreEntries ?? [], assets: {}, photoSets: [], title: '', isDemo: false, phase: 'segment', correctPoints: session.points.correct, stealPoints: session.points.steal } as CVEventUpdate) : eventOrResult; const result = (legacy ? eventOrResult : resultArg)!;

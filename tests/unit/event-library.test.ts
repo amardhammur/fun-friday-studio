@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import fixture from '../fixtures/event-v2.json';
 import { discoverActivities, getActivity } from '../../src/core/registry';
 import { createEvent, createSegment, foldSegmentView, segmentView } from '../../src/core/event';
-import { addEventPeople, libraryLocked, prepareSegmentPeople, replaceEventPeople } from '../../src/core/people/event-library';
+import { addEventPeople, clearSegmentProgress, libraryLocked, prepareSegmentPeople, replaceEventPeople, segmentPaused } from '../../src/core/people/event-library';
 import { validateEvent } from '../../src/core/session';
 import type { ImportedFacePairs } from '../../src/core/transfer';
 
@@ -63,8 +63,10 @@ describe('adding to the people library', () => {
     const pair = { ...source.facePairs[0], id: 'pair-2', number: 2, setId: 'set-2' };
     return { assets: {}, photoSets: [set], facePairs: [pair], people: [{ ...source.people[0], id: 'person-2', facePairId: 'pair-2', name: 'Priya' }] };
   };
-  it('appends sets, pairs and people and keeps progress on an unlocked event', () => {
+  it('appends sets, pairs and people on an unlocked event', () => {
     const event = validateEvent(fixture); event.segments[0].status = 'setup';
+    (event.segments[0].game as any).rounds[0] = { ...(event.segments[0].game as any).rounds[0], revealed: false, result: null };
+    event.scoreEntries = [];
     const scores = structuredClone(event.scoreEntries);
     addEventPeople(event, extra());
     expect(event.photoSets.map(s => s.name)).toEqual(['Group 1', 'Design']);
@@ -86,9 +88,54 @@ describe('adding to the people library', () => {
     expect(event.scoreEntries).toEqual([]);
     expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
   });
+  // Pause returns a running game to setup; its rounds are already fixed, so the roster must stay put.
+  it('stays locked while a started activity is paused in setup', () => {
+    const event = validateEvent(fixture); event.segments[0].status = 'setup';
+    expect(libraryLocked(event)).toBe(true);
+    expect(() => addEventPeople(event, extra())).toThrow(/locked/);
+  });
+  it('counts a scored round as progress even before anything else is revealed', () => {
+    const event = validateEvent(fixture); event.segments[0].status = 'setup';
+    (event.segments[0].game as any).rounds[0] = { ...(event.segments[0].game as any).rounds[0], revealed: false, result: null };
+    expect(libraryLocked(event)).toBe(true);
+  });
+  it('unlocks a paused activity once nothing in it has been played', () => {
+    const event = validateEvent(fixture); event.segments[0].status = 'setup';
+    (event.segments[0].game as any).rounds[0] = { ...(event.segments[0].game as any).rounds[0], revealed: false, result: null };
+    event.scoreEntries = [];
+    expect(libraryLocked(event)).toBe(false);
+  });
+  it('locks while a paused act-it-out game has progress', () => {
+    const event = validateEvent(fixture), activity = getActivity('act-it-out')!;
+    const segment = createSegment(activity); event.segments = [segment]; event.scoreEntries = [];
+    expect(libraryLocked(event)).toBe(false);
+    (segment.game as any).cursor = 1;
+    expect(libraryLocked(event)).toBe(true);
+  });
   it('never locks the demo', () => {
     const event = validateEvent(fixture); event.isDemo = true;
     expect(libraryLocked(event)).toBe(false);
 
+  });
+});
+
+describe('pausing an activity', () => {
+  it('is paused only while back in setup with progress', () => {
+    const event = validateEvent(fixture);
+    expect(segmentPaused(event, 0)).toBe(false);
+    event.segments[0].status = 'setup';
+    expect(segmentPaused(event, 0)).toBe(true);
+  });
+  it('start over clears only this activity and unlocks the roster when nothing else was played', () => {
+    const event = validateEvent(fixture), other = structuredClone(event.segments[0]);
+    other.id = 'other'; other.status = 'pending'; event.segments.push(other);
+    event.scoreEntries.push({ ...event.scoreEntries[0], id: 'other-award', segmentId: 'other' });
+    event.segments[0].status = 'setup';
+    clearSegmentProgress(event, 0);
+    expect(event.segments[0]).toMatchObject({ status: 'setup', setupStepId: 'game' });
+    expect((event.segments[0].game as any).rounds).toEqual([]);
+    expect(event.scoreEntries.map(e => e.segmentId)).toEqual(['other']);
+    expect(segmentPaused(event, 0)).toBe(false);
+    expect(validateEvent(JSON.parse(JSON.stringify(event)))).toEqual(event);
   });
 });

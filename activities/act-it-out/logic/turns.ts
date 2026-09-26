@@ -1,6 +1,6 @@
 import type { EventUpdate, Team } from '../../../src/core/types';
 import { setRoundAward } from '../../../src/core/scoring';
-import { pauseTimer, startTimer } from '../../../src/core/play/timer';
+import { isRunning, pauseTimer, startTimer } from '../../../src/core/play/timer';
 import { eventDraft } from '../../../src/core/event';
 import type { Prompt } from '../prompts';
 import type { AIOSegment, Context, GameState, Settings } from '../types';
@@ -43,6 +43,20 @@ export function startNewGame(segment: AIOSegment, event?: EventUpdate) {
   segment.game = { deck, cursor: 0, turns, currentTurnIndex: 0, timer: { durationMs: segment.settings.turnSeconds * 1000 } };
   event.scoreEntries = event.scoreEntries.filter(e => e.segmentId !== segment.segmentId);
   segment.phase = 'play';
+}
+export const hasProgress = (game: GameState) => game.cursor > 0 || game.turns.some(turn => turn.status !== 'pending' || turn.results.length > 0);
+export const progressLabel = (game: GameState) => currentTurn(game)?.status === 'acting'
+  ? `Turn ${game.currentTurnIndex + 1} of ${game.turns.length} in progress.`
+  : `${game.turns.filter(t => t.status === 'done').length} of ${game.turns.length} turns played.`;
+// Pausing the game must not spend the team's time, and must not start a clock the host had stopped.
+export function holdClock(segment: AIOSegment, now = Date.now()) {
+  if (currentTurn(segment.game)?.status !== 'acting' || !isRunning(segment.game.timer)) return;
+  segment.game.timer = pauseTimer(segment.game.timer, now); segment.game.clockHeld = true;
+}
+export function releaseClock(segment: AIOSegment, now = Date.now()) {
+  if (!segment.game.clockHeld) return;
+  delete segment.game.clockHeld;
+  if (currentTurn(segment.game)?.status === 'acting') segment.game.timer = startTimer(segment.game.timer, now);
 }
 export const currentTurn = (game: GameState): Turn | undefined => game.turns[game.currentTurnIndex];
 export const currentPrompt = (game: GameState): Prompt | undefined => game.deck[game.cursor];

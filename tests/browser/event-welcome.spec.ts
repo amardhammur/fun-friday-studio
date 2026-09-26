@@ -38,7 +38,7 @@ test('two activities share teams and totals through the final breakdown', async 
     await page.getByRole('button', { name: 'Next: game setup' }).click();
     await expect(page.getByRole('textbox', { name: 'Team 1 name' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Start activity', exact: true }).click();
-    await expect(page.getByText(`Activity ${index + 1} of 2`, { exact: true })).toBeVisible();
+    await expect(page.locator('.show-masthead-progress')).toHaveText(`${index + 1} / 2`);
     await expect(page.locator('.point-stake > b')).toHaveText(index === 0 ? '2' : '6');
     await page.getByRole('button', { name: 'Start the turn' }).click();
     await page.getByRole('button', { name: /^Got it/ }).click();
@@ -83,6 +83,12 @@ test('the header switches themes and remembers the choice', async ({ page }) => 
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'gameshow');
   await page.screenshot({ path: 'test-results/welcome-gameshow.png', fullPage: true });
+  await page.getByRole('button', { name: 'Switch to Ink & Paper theme' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'ink');
+  expect(await board()).toBe('rgb(21, 19, 15)');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'ink');
+  await page.screenshot({ path: 'test-results/welcome-ink.png', fullPage: true });
   await page.getByRole('button', { name: 'Switch to After Hours theme' }).click();
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
   expect(await board()).toBe('rgb(21, 24, 39)');

@@ -15,7 +15,8 @@ function beep(frequency: number) {
     oscillator.start(); oscillator.stop(audio.currentTime + .2);
   } catch { /* Audio is a flourish; a blocked context must never break the round. */ }
 }
-export function Timer({ state, onChange, label = 'Round timer' }: { state: TimerState; onChange: (next: TimerState) => void; label?: string }) {
+// confirmReset: resetting mid-turn hands one team extra time, so the caller can ask the host first.
+export function Timer({ state, onChange, label = 'Round timer', confirmReset }: { state: TimerState; onChange: (next: TimerState) => void; label?: string; confirmReset?: string }) {
   const remaining = useCountdown(state), seconds = Math.ceil(remaining / 1000), running = isRunning(state);
   const lastBeep = useRef<number | undefined>(undefined);
   useEffect(() => {
@@ -27,7 +28,7 @@ export function Timer({ state, onChange, label = 'Round timer' }: { state: Timer
     <strong aria-live="off">{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</strong>
     <div className="play-timer-controls">
       <button className="icon-button" aria-label={running ? 'Pause the timer' : 'Start the timer'} onClick={() => onChange(running ? pauseTimer(state, Date.now()) : startTimer(state, Date.now()))}>{running ? <Pause size={18}/> : <Play size={18}/>}</button>
-      <button className="icon-button" aria-label="Reset the timer" disabled={remainingMs(state, Date.now()) === state.durationMs && !running} onClick={() => onChange(resetTimer(state))}><RotateCcw size={17}/></button>
+      <button className="icon-button" aria-label="Reset the timer" disabled={remainingMs(state, Date.now()) === state.durationMs && !running} onClick={() => { if (!confirmReset || window.confirm(confirmReset)) onChange(resetTimer(state)); }}><RotateCcw size={17}/></button>
     </div>
   </div>;
 }

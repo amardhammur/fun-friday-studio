@@ -6,7 +6,7 @@ import { Stage } from './stage/Stage';
 import { Finale } from './stage/Finale';
 import { Preview } from './Preview';
 import { settingsSchema, stateSchema, initialState, type Settings, type GameState } from './types';
-import { markResult, moveRound, reveal, startNewGame } from './logic/rounds';
+import { hasProgress, progressLabel, markResult, moveRound, reveal, startNewGame } from './logic/rounds';
 import { loadDemo } from './logic/preparation';
 import { playerIssues } from '../../src/core/people/photo-sets';
 import { eventDraft } from '../../src/core/event';
@@ -19,6 +19,7 @@ export const childhoodVsNow: Activity<Settings, GameState> = {
   ],
   settingsSchema, stateSchema, settingsFields: [{ key: 'shuffle', label: 'Shuffle photos', type: 'boolean' }],
   Stage, Finale, Preview, createDemo: loadDemo,
+  hasProgress, progressLabel,
   preparePeople: (s, e) => { if (e.facePairs.some(p => p.now && p.then)) s.setupStepId = 'game'; },
   validateSession: (s, e) => {
     if (s.phase !== 'setup') {

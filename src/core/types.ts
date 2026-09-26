@@ -88,6 +88,13 @@ export interface Activity<S = any, G = any> {
   shortcuts: { key: string; label: string; run: (ctx: ActivityContext<S, G>) => void }[];
   createInitialState: () => G; defaultSettings: () => S;
   preparePeople?: (segment: ActivitySegment<S, G>, event: EventUpdate) => void;
+  /** True once anything in this game has been played. A paused game with progress keeps the roster locked. */
+  hasProgress?: (game: G) => boolean;
+  /** One sentence on the paused screen, e.g. "3 of 8 photos played." */
+  progressLabel?: (game: G) => string;
+  /** Pause and Resume from the stage. A paused game is frozen: settings only change through Start over. */
+  onPause?: (segment: ActivitySegment<S, G>) => void;
+  onResume?: (segment: ActivitySegment<S, G>) => void;
   startNewGame: (segment: ActivitySegment<S, G>, event?: EventUpdate) => void;
   migrate: (saved: unknown, fromVersion: number) => { settings: S; game: G };
 }

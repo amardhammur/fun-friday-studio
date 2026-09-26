@@ -28,7 +28,7 @@ export function Stage(context: Context) {
 
     {turn.status === 'acting' && <div className="round-scene aio-acting" key={game.cursor}>
       {spent ? <div className="prompt-card spent"><b>That’s the whole deck.</b><small>End the turn and the points are banked.</small></div> : <div className="prompt-card"><span className="eyebrow">{prompt!.category}</span><b>{prompt!.text}</b>{rules[segment.settings.rule].card && <small>{rules[segment.settings.rule].card}</small>}</div>}
-      <div className="aio-clock"><Timer state={game.timer} label="Turn timer" onChange={timer => update(s => { s.game.timer = timer; })}/></div>
+      <div className="aio-clock"><Timer state={game.timer} label="Turn timer" confirmReset={`Reset the clock? ${team.name} would get a fresh ${Math.round(game.timer.durationMs / 1000)} seconds, more time than other teams get.`} onChange={timer => update(s => { s.game.timer = timer; })}/></div>
       <div className="turn-tally"><span><Check size={16}/> {guessed} guessed</span><span><SkipForward size={16}/> {skipped} skipped</span><span className="turn-running"><b>+{turnScore(turn, segment.points.correct)}</b> this turn</span></div>
     </div>}
 

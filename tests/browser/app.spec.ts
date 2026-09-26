@@ -4,6 +4,13 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { acceptNextConfirm, openWelcome, personalPhotoEvent, resumeEvent, startDemo } from './helpers';
 const key = 'fun-friday-studio.session.v1';
 const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem('fun-friday-studio.demo.v1') ?? localStorage.getItem(k)!), key);
+async function expectShowMode(page: Page) {
+  await expect(page.locator('.app')).toHaveAttribute('data-mode', 'show');
+  await expect(page.locator('.app-header')).toBeHidden();
+  await expect(page.locator('.show-masthead')).toBeVisible();
+  await expect(page.locator('.event-context')).toBeHidden();
+  await expect(page.locator('.host-key-rail')).toBeVisible();
+}
 const home = openWelcome;
 test('full demo: unique sets, two-point scoring, refresh, finale and group wipe', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
@@ -288,6 +295,32 @@ test('three activities carry scores through ZIP restore and a wager changes the 
       await expect(page.getByLabel('Team 1 name', { exact: true })).toHaveCount(0);
     }
     await page.getByRole('button', { name: 'Start activity' }).click();
+    await expectShowMode(page);
+    const typeSizes = await page.evaluate(() => ({
+      body: Number.parseFloat(getComputedStyle(document.querySelector('.round-count')!).fontSize),
+      label: Number.parseFloat(getComputedStyle(document.querySelector('.question-intro .eyebrow')!).fontSize),
+    }));
+    expect(typeSizes.body).toBeGreaterThanOrEqual(20);
+    expect(typeSizes.label).toBeGreaterThanOrEqual(18);
+    const showOverflow = await page.evaluate(() => {
+      const read = (selector: string) => {
+        const el = document.querySelector<HTMLElement>(selector)!;
+        return { horizontal: el.scrollWidth > el.clientWidth + 1, vertical: el.scrollHeight > el.clientHeight + 1 };
+      };
+      return { page: { horizontal: document.documentElement.scrollWidth > innerWidth + 1, vertical: document.documentElement.scrollHeight > innerHeight + 1 }, stage: read('.game-stage'), scoreboard: read('.scoreboard') };
+    });
+    expect(showOverflow).toEqual({ page: { horizontal: false, vertical: false }, stage: { horizontal: false, vertical: false }, scoreboard: { horizontal: false, vertical: false } });
+    const showScoreboard = page.locator('.scoreboard');
+    await expect(showScoreboard.locator('.score-bar').first()).toBeHidden();
+    await expect(showScoreboard.getByRole('button', { name: /Subtract one point from/ }).first()).toBeVisible();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    const presentationSizes = await page.evaluate(() => ({
+      body: Number.parseFloat(getComputedStyle(document.querySelector('.round-count')!).fontSize),
+      label: Number.parseFloat(getComputedStyle(document.querySelector('.question-intro .eyebrow')!).fontSize),
+    }));
+    expect(presentationSizes.body).toBeGreaterThanOrEqual(20);
+    expect(presentationSizes.label).toBeGreaterThanOrEqual(18);
+    await page.setViewportSize({ width: 1280, height: 720 });
     session = await saved(page);
     expect(total(session, leader.id)).toBe([0, 2, 6][segment]);
     for (let round = 0; round < 4; round++) {
@@ -296,6 +329,7 @@ test('three activities carry scores through ZIP restore and a wager changes the 
       await page.getByRole('button', { name: round < 3 ? /^Next (?!photo)/ : 'Activity results' }).click();
     }
     await page.getByRole('button', { name: 'View overall standings' }).click();
+    await expectShowMode(page);
     await expect(page.getByText(`ACTIVITY ${segment + 1} OF 3`, { exact: false })).toBeVisible();
     session = await saved(page);
     expect(total(session, leader.id)).toBe([2, 6, 8][segment]);
@@ -311,8 +345,14 @@ test('three activities carry scores through ZIP restore and a wager changes the 
       expect(restored.segments.map((s: any) => s.id)).toEqual(session.segments.map((s: any) => s.id));
       await expect(page.locator('.storage-warning')).toHaveCount(0);
     }
-    await page.getByRole('button', { name: segment < 2 ? /^Set up next:/ : 'Continue to final wager' }).click();
+    if (segment === 0) await page.keyboard.press('Enter');
+    else await page.getByRole('button', { name: segment < 2 ? /^Set up next:/ : 'Continue to final wager' }).click();
+    if (segment < 2) {
+      await expect(page.locator('.app')).not.toHaveAttribute('data-mode', 'show');
+      await expect(page.locator('.app-header')).toBeVisible();
+    }
   }
+  await expectShowMode(page);
   await expect(page.getByRole('heading', { name: 'Place your bets.' })).toBeVisible();
   for (const team of session.teams) await page.getByLabel(`Wager for ${team.name}`).fill(team.id === leader.id ? '8' : '5');
   await page.getByRole('button', { name: 'Reveal the question' }).click();
@@ -339,11 +379,16 @@ test('three activities carry scores through ZIP restore and a wager changes the 
     }
   }
   await page.getByRole('button', { name: 'The final results' }).click();
+  await expectShowMode(page);
   await expect(page.locator('.winner-name')).toHaveText(challenger.name);
   session = await saved(page);
   expect(total(session, leader.id)).toBe(0); expect(total(session, challenger.id)).toBe(5);
   await page.reload();
   await expect(page.locator('.winner-name')).toHaveText(challenger.name);
+  await expectShowMode(page);
+  await page.locator('.host-key-rail').getByRole('button', { name: 'Event overview', exact: true }).click();
+  await expect(page.locator('.app')).not.toHaveAttribute('data-mode', 'show');
+  await expect(page.locator('.app-header')).toBeVisible();
   await page.getByRole('button', { name: 'People library', exact: true }).click();
   const pairDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export pairs', exact: true }).click();
@@ -642,7 +687,7 @@ test('a version 2 session saved before photo sets still opens with its people', 
   const doc = await readFile('tests/fixtures/event-v2.json', 'utf8');
   await page.addInitScript(([k, value]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(k, value); sessionStorage.setItem('seeded', '1'); } }, [key, doc] as const);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Fun Friday Studio home' }).click();
+  await page.locator('.host-key-rail').getByRole('button', { name: 'Event overview', exact: true }).click();
   await expect(page.locator('.storage-warning')).toHaveCount(0);
   await page.getByRole('button', { name: 'People library', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Group 1' })).toBeVisible();

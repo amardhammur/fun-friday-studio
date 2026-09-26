@@ -2,6 +2,7 @@
 export const THEMES = [
   { id: 'afterhours', name: 'After Hours' },
   { id: 'gameshow', name: 'Game Show' },
+  { id: 'ink', name: 'Ink & Paper' },
 ] as const;
 export type ThemeId = typeof THEMES[number]['id'];
 const KEY = 'studio-theme';
