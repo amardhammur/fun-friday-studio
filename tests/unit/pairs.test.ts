@@ -336,7 +336,7 @@ function demoSession(): EventSession {
   const padding = { top: 0.4, right: 0.3, bottom: 0.7, left: 0.3 };
   return {
     formatVersion: 3, id: 'session-id', title: 'Demo', createdAt: '', updatedAt: '', isDemo: false,
-    segments: [], currentSegmentIndex: 0, phase: 'lineup', correctPoints: 2, stealPoints: 1, teams: [], scoreEntries: [],
+    players: [], playersInitialized: false, segments: [], currentSegmentIndex: 0, phase: 'lineup', correctPoints: 2, stealPoints: 1, teams: [], scoreEntries: [],
     assets: {
       'now-source': { id: 'now-source', name: 'Today.png', width: 1000, height: 800, mime: 'image/png' },
       'then-source': { id: 'then-source', name: 'Childhood.webp', width: 1000, height: 800, mime: 'image/webp' },

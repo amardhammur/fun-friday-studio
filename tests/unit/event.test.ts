@@ -76,7 +76,7 @@ describe('segment view', () => {
   });
   it('sends shared fields to the event, not to the segment', () => {
     const next = apply(event(), s => {
-      s.teams = [{ id: 't9', name: 'Nines', color: '#ffffff' }];
+      s.teams = [{ id: 't9', name: 'Nines', color: '#ffffff', memberIds: [], pinnedIds: [] }];
       s.scoreEntries = [{ id: 'e1', teamId: 't9', kind: 'manual-adjustment', points: 1, active: true }];
       s.people[0].name = 'Asha B';
     });

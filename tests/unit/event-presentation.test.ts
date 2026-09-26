@@ -10,7 +10,7 @@ const noop = () => {};
 describe('event score presentation', () => {
   it('shows activity contributions and unassigned adjustments alongside final totals', () => {
     const event = createEvent();
-    event.teams = [{ id: 'a', name: 'Comets', color: '#abcdef' }];
+    event.teams = [{ id: 'a', name: 'Comets', color: '#abcdef', memberIds: [], pinnedIds: [] }];
     event.segments = [{ id: 's1', title: 'Opening game', activityId: 'act-it-out', activityVersion: 1, settings: {}, game: {}, status: 'done', setupStepId: 'game', weight: 3 }];
     event.scoreEntries = [
       { id: '1', teamId: 'a', segmentId: 's1', kind: 'round-award', points: 6, active: true },

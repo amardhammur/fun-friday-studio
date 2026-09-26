@@ -27,7 +27,7 @@
     "now": { "sourceImageId": "img-now", "cropImageId": "img-now-crop", "faceBox": { "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.2 }, "padding": { "top": 0.3, "right": 0.24, "bottom": 0.52, "left": 0.24 } },
     "then": { "sourceImageId": "img-then", "cropImageId": "img-then-crop", "faceBox": { "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.2 }, "padding": { "top": 0.3, "right": 0.24, "bottom": 0.52, "left": 0.24 } }
   }],
-  "teams": [{ "id": "t0", "name": "Coffee Breakers", "color": "#f7d873" }],
+  "teams": [{ "id": "t0", "name": "Coffee Breakers", "color": "#f7d873" }, { "id": "t1", "name": "Reply-All Crew", "color": "#eea7bb" }],
   "scoreEntries": [{ "id": "seg-1:award-round-p1", "teamId": "t0", "segmentId": "seg-1", "roundId": "round-p1", "kind": "round-award", "points": 1, "active": true }],
   "assets": {
     "img-now": { "id": "img-now", "name": "now.jpg", "width": 1200, "height": 800, "mime": "image/jpeg" },

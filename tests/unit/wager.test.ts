@@ -10,7 +10,7 @@ import { maxWager, setWagerResult } from '../../src/core/play/wager';
 function fixture(stage: 'betting' | 'question' | 'answer' | 'results' = 'betting') {
   const event = createEvent();
   event.phase = 'wager';
-  event.teams = [{ id: 'a', name: 'Comets', color: '#abcdef' }, { id: 'b', name: 'Moons', color: '#fedcba' }];
+  event.teams = [{ id: 'a', name: 'Comets', color: '#abcdef', memberIds: [], pinnedIds: [] }, { id: 'b', name: 'Moons', color: '#fedcba', memberIds: [], pinnedIds: [] }];
   event.wager = { question: 'Which planet?', answer: 'Neptune', bets: { a: 10, b: 5 }, ...{ stage } };
   event.scoreEntries = [{ id: 'base', teamId: 'a', kind: 'manual-adjustment', points: 20, active: true }];
   return event;

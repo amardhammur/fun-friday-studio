@@ -24,7 +24,8 @@ export interface FacePair {
   reviewStatus: 'suggested' | 'confirmed' | 'unmatched';
 }
 export interface Person { id: ID; name: string; funFact: string; included: boolean; facePairId: ID }
-export interface Team { id: ID; name: string; color: string }
+export interface Player { id: ID; name: string; personId?: ID }
+export interface Team { id: ID; name: string; color: string; memberIds: ID[]; pinnedIds: ID[] }
 export interface ScoreEntry { id: ID; teamId: ID; segmentId?: ID; roundId?: ID; kind: 'round-award' | 'steal-award' | 'manual-adjustment' | 'wager'; points: number; active: boolean }
 export interface Session<S = unknown, G = unknown> {
   formatVersion: 1; id: ID; title: string; activityId: string; activityVersion: number;
@@ -49,12 +50,13 @@ export interface ActivityEvent {
   id: ID; title: string; createdAt: string; updatedAt: string; isDemo: boolean;
   phase: EventSession['phase']; currentSegmentIndex: number;
   wager?: EventWager; correctPoints: number; stealPoints: number;
+  readonly players: readonly Player[]; readonly playersInitialized: boolean;
   readonly people: readonly Person[]; readonly facePairs: readonly FacePair[];
   readonly teams: readonly Team[]; readonly scoreEntries: readonly ScoreEntry[];
   readonly assets: Readonly<Record<ID, Asset>>;
   readonly photoSets: readonly PhotoSet[];
 }
-export type EventUpdate = Pick<EventSession, 'title' | 'isDemo' | 'phase' | 'wager' | 'correctPoints' | 'stealPoints' | 'people' | 'facePairs' | 'teams' | 'scoreEntries' | 'assets' | 'photoSets'>;
+export type EventUpdate = Pick<EventSession, 'title' | 'isDemo' | 'phase' | 'wager' | 'correctPoints' | 'stealPoints' | 'players' | 'playersInitialized' | 'people' | 'facePairs' | 'teams' | 'scoreEntries' | 'assets' | 'photoSets'>;
 export interface PreparedActivity<S = unknown, G = unknown> { segment: ActivitySegment<S, G>; event: EventUpdate }
 export interface ActivityContext<S = any, G = any> {
   rosterLocked?: boolean;
@@ -114,4 +116,5 @@ export interface EventSession {
   people: Person[]; facePairs: FacePair[]; teams: Team[]; scoreEntries: ScoreEntry[];
   assets: Record<ID, Asset>;
   photoSets: PhotoSet[];
+  players: Player[]; playersInitialized: boolean;
 }

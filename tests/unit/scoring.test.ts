@@ -3,7 +3,7 @@ import { setRoundAward, standings, teamScore, segmentScore, DEFAULT_CORRECT_POIN
 import { allocateRounds, furthestRound, goToRound, markResult, moveRound, startNewGame } from '../../activities/childhood-vs-now/logic/rounds';
 import type { Person, Team, ScoreEntry } from '../../src/core/types';
 import type { CVSession } from '../../activities/childhood-vs-now/types';
-const teams: Team[] = Array.from({ length: 4 }, (_, i) => ({ id: `t${i}`, name: `Team ${i}`, color: '#ffffff' }));
+const teams: Team[] = Array.from({ length: 4 }, (_, i) => ({ id: `t${i}`, name: `Team ${i}`, color: '#ffffff', memberIds: [], pinnedIds: [] }));
 const people: Person[] = Array.from({ length: 50 }, (_, i) => ({ id: `p${i}`, name: `Person ${i}`, facePairId: `f${i}`, included: true, funFact: '' }));
 describe('single-point scoring', () => {
   it('awards exactly one point and is idempotent', () => {

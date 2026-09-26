@@ -6,7 +6,7 @@ import { assertLibraryCapacity } from './pairs';
 
 export function prepareSegmentPeople(event: EventSession, index = 0) {
   const segment = event.segments[index], status = segment.status;
-  const view = activitySegment(event, index), shared: EventUpdate = { title: event.title, isDemo: event.isDemo, phase: event.phase, wager: event.wager, correctPoints: event.correctPoints, stealPoints: event.stealPoints, people: event.people, facePairs: event.facePairs, teams: event.teams, scoreEntries: event.scoreEntries, assets: event.assets, photoSets: event.photoSets };
+  const view = activitySegment(event, index), shared: EventUpdate = { title: event.title, isDemo: event.isDemo, phase: event.phase, wager: event.wager, correctPoints: event.correctPoints, stealPoints: event.stealPoints, players: event.players, playersInitialized: event.playersInitialized, people: event.people, facePairs: event.facePairs, teams: event.teams, scoreEntries: event.scoreEntries, assets: event.assets, photoSets: event.photoSets };
   getActivity(segment.activityId)?.preparePeople?.(view, shared);
   segment.settings = view.settings; segment.game = view.game; segment.setupStepId = view.setupStepId;
   Object.assign(event, shared);

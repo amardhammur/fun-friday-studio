@@ -15,7 +15,7 @@ export function allocateRounds(people: Person[], teams: Team[], shuffle: boolean
   return rounds;
 }
 export function startNewGame(session: CVSession, event?: CVEventUpdate) {
-  const legacy = !event, old = session as any; event = event ?? { people: old.people ?? [], facePairs: old.facePairs ?? [], teams: old.teams ?? [], scoreEntries: old.scoreEntries ?? [], assets: old.assets ?? {}, photoSets: old.photoSets ?? [], title: '', isDemo: false, phase: 'segment', correctPoints: old.points?.correct ?? 2, stealPoints: old.points?.steal ?? 1 };
+  const legacy = !event, old = session as any; event = event ?? { players: [], playersInitialized: false, people: old.people ?? [], facePairs: old.facePairs ?? [], teams: old.teams ?? [], scoreEntries: old.scoreEntries ?? [], assets: old.assets ?? {}, photoSets: old.photoSets ?? [], title: '', isDemo: false, phase: 'segment', correctPoints: old.points?.correct ?? 2, stealPoints: old.points?.steal ?? 1 };
   const included = event.people.filter(p => p.included);
   if (!included.length) throw new Error('Include at least one person before starting.');
   if (included.some(p => !p.name.trim())) throw new Error('Please name every included person before starting.');
@@ -28,7 +28,7 @@ export const hasProgress = (game: GameState) => game.rounds.some(r => r.revealed
 export const progressLabel = (game: GameState) => `${game.rounds.filter(r => r.result !== null).length} of ${game.rounds.length} photos played.`;
 export function reveal(session: CVSession) { const round = session.game.rounds[session.game.currentRoundIndex]; if (round) round.revealed = true; }
 export function markResult(session: CVSession, eventOrResult: CVEventUpdate | 'correct' | 'missed', resultArg?: 'correct' | 'missed') {
-  const legacy = typeof eventOrResult === 'string'; const event = legacy ? ({ people: [], facePairs: [], teams: [], scoreEntries: (session as any).scoreEntries ?? [], assets: {}, photoSets: [], title: '', isDemo: false, phase: 'segment', correctPoints: session.points.correct, stealPoints: session.points.steal } as CVEventUpdate) : eventOrResult; const result = (legacy ? eventOrResult : resultArg)!;
+  const legacy = typeof eventOrResult === 'string'; const event = legacy ? ({ players: [], playersInitialized: false, people: [], facePairs: [], teams: [], scoreEntries: (session as any).scoreEntries ?? [], assets: {}, photoSets: [], title: '', isDemo: false, phase: 'segment', correctPoints: session.points.correct, stealPoints: session.points.steal } as CVEventUpdate) : eventOrResult; const result = (legacy ? eventOrResult : resultArg)!;
   const round = session.game.rounds[session.game.currentRoundIndex];
   if (!round?.revealed) return;
   round.result = result;
@@ -37,7 +37,7 @@ export function markResult(session: CVSession, eventOrResult: CVEventUpdate | 'c
   if (legacy) (session as any).scoreEntries = event.scoreEntries;
 }
 export function markSteal(session: CVSession, eventOrTeam: CVEventUpdate | string | null, teamArg?: string | null) {
-  const legacy = typeof eventOrTeam === 'string' || eventOrTeam === null; const event = legacy ? ({ people: [], facePairs: [], teams: [], scoreEntries: (session as any).scoreEntries ?? [], assets: {}, photoSets: [], title: '', isDemo: false, phase: 'segment', correctPoints: session.points.correct, stealPoints: session.points.steal } as CVEventUpdate) : eventOrTeam; const teamId = legacy ? eventOrTeam as string | null : teamArg;
+  const legacy = typeof eventOrTeam === 'string' || eventOrTeam === null; const event = legacy ? ({ players: [], playersInitialized: false, people: [], facePairs: [], teams: [], scoreEntries: (session as any).scoreEntries ?? [], assets: {}, photoSets: [], title: '', isDemo: false, phase: 'segment', correctPoints: session.points.correct, stealPoints: session.points.steal } as CVEventUpdate) : eventOrTeam; const teamId = legacy ? eventOrTeam as string | null : teamArg;
   const round = session.game.rounds[session.game.currentRoundIndex];
   if (!round?.revealed || round.result !== 'missed') return;
   event.scoreEntries = setStealAward(event.scoreEntries, session.segmentId, round.id, round.teamId, teamId ?? null, session.points.steal);

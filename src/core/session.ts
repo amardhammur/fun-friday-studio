@@ -23,7 +23,9 @@ const schema = z.object({
   correctPoints: z.number().int().min(1).max(10), stealPoints: z.number().int().min(0).max(10),
   people: z.array(z.object({ id: z.string(), name: z.string(), funFact: z.string(), included: z.boolean(), facePairId: z.string() })).max(MAX_PEOPLE),
   facePairs: z.array(z.object({ id: z.string(), number: z.number().int().positive(), color: z.string(), setId: z.string(), now: crop.optional(), then: crop.optional(), matchMethod: z.enum(['automatic', 'manual']), reviewStatus: z.enum(['suggested', 'confirmed', 'unmatched']) })).max(MAX_FACE_PAIRS),
-  teams: z.array(z.object({ id: z.string(), name: z.string(), color: z.string().regex(/^#[0-9a-f]{6}$/i) })).min(1).max(8),
+  players: z.array(z.object({ id: z.string(), name: z.string().trim().min(1), personId: z.string().optional() })).default([]),
+  playersInitialized: z.boolean().default(false),
+  teams: z.array(z.object({ id: z.string(), name: z.string(), color: z.string().regex(/^#[0-9a-f]{6}$/i), memberIds: z.array(z.string()).default([]), pinnedIds: z.array(z.string()).default([]) })).min(2).max(8),
   scoreEntries: z.array(z.object({ id: z.string(), teamId: z.string(), segmentId: z.string().optional(), roundId: z.string().optional(), kind: z.enum(['round-award', 'steal-award', 'manual-adjustment', 'wager']), points: z.number().int(), active: z.boolean() })),
   assets: z.record(z.string(), z.object({ id: z.string(), name: z.string(), width: z.number().positive(), height: z.number().positive(), mime: z.string() })),
   photoSets: z.array(photoSet).max(MAX_PHOTO_SETS),
@@ -60,7 +62,21 @@ export function validateEvent(input: unknown): EventSession {
   }
   for (const set of session.photoSets) if (set.kind === 'single' && session.facePairs.filter(p => p.setId === set.id).length !== 1) throw new Error('A single-photo set must hold exactly one person.');
   const ids = (items: { id: string }[]) => new Set(items.map(i => i.id)).size === items.length;
-  if (![session.people, session.facePairs, session.teams, session.scoreEntries, session.segments, session.photoSets].every(ids)) throw new Error('The session contains duplicate identifiers.');
+  if (![session.players, session.people, session.facePairs, session.teams, session.scoreEntries, session.segments, session.photoSets].every(ids)) throw new Error('The session contains duplicate identifiers.');
+  const playerIds = new Set(session.players.map(p => p.id)), assigned = new Set<string>(), linked = new Set<string>();
+  for (const player of session.players) if (player.personId !== undefined) {
+    if (!session.people.some(person => person.id === player.personId)) throw new Error('A player references a missing library person.');
+    if (linked.has(player.personId)) throw new Error('A library person is linked to more than one player.');
+    linked.add(player.personId);
+  }
+  for (const team of session.teams) {
+    for (const id of team.memberIds) {
+      if (!playerIds.has(id)) throw new Error('A team references a missing player.');
+      if (assigned.has(id)) throw new Error('A player is assigned more than once.');
+      assigned.add(id);
+    }
+    if (new Set(team.pinnedIds).size !== team.pinnedIds.length || team.pinnedIds.some(id => !team.memberIds.includes(id))) throw new Error('A pin must name a unique member of its team.');
+  }
   if (session.scoreEntries.some(e => !session.teams.some(t => t.id === e.teamId))) throw new Error('A score references an unknown team.');
   if (session.scoreEntries.some(e => e.segmentId && !session.segments.some(s => s.id === e.segmentId))) throw new Error('A score references an activity that is not in this event.');
   for (const [index, segment] of session.segments.entries()) {

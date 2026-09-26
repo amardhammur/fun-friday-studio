@@ -8,7 +8,7 @@ const segment = (id: string, status: Segment['status'] = 'play'): Segment => ({ 
 
 function event(): EventSession {
   const base = createEvent();
-  base.teams = [{ id: 't0', name: 'A', color: '#ffffff' }, { id: 't1', name: 'B', color: '#000000' }];
+  base.teams = [{ id: 't0', name: 'A', color: '#ffffff', memberIds: [], pinnedIds: [] }, { id: 't1', name: 'B', color: '#000000', memberIds: [], pinnedIds: [] }];
   base.segments = [segment('seg-a'), segment('seg-b', 'pending')];
   let entries = setRoundAward([], 'seg-a', 'r1', 't0', true);
   entries = setRoundAward(entries, 'seg-a', 'r2', 't1', true);
