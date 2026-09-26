@@ -1,0 +1,28 @@
+# After Hours and Game Show stage screenshots, before vs after the Childhood vs Now Ink restyle
+# before = build of 2dfe598, after = working tree; node ux-review/diff-screens.ts
+SAME       0.000%  aio-acting-1280--afterhours.png
+SAME       0.000%  aio-acting-1920--afterhours.png
+SAME       0.000%  aio-urgent-1280--afterhours.png
+SAME       0.000%  aio-urgent-1920--afterhours.png
+SAME       0.000%  aio-urgent-8teams-1280--afterhours.png
+SAME       0.000%  aio-urgent-8teams-1920--afterhours.png
+SAME       0.000%  cvn-question-1280--afterhours.png
+SAME       0.000%  cvn-question-1920--afterhours.png
+SAME       0.000%  cvn-reveal-1280--afterhours.png
+SAME       0.000%  cvn-reveal-1920--afterhours.png
+SAME       0.000%  cvn-reveal-8teams-1280--afterhours.png
+SAME       0.000%  cvn-reveal-8teams-1920--afterhours.png
+12 of 12 identical
+SAME       0.000%  aio-acting-1280--gameshow.png
+SAME       0.000%  aio-acting-1920--gameshow.png
+SAME       0.000%  aio-urgent-1280--gameshow.png
+SAME       0.000%  aio-urgent-1920--gameshow.png
+SAME       0.000%  aio-urgent-8teams-1280--gameshow.png
+SAME       0.000%  aio-urgent-8teams-1920--gameshow.png
+SAME       0.000%  cvn-question-1280--gameshow.png
+SAME       0.000%  cvn-question-1920--gameshow.png
+SAME       0.000%  cvn-reveal-1280--gameshow.png
+SAME       0.000%  cvn-reveal-1920--gameshow.png
+SAME       0.000%  cvn-reveal-8teams-1280--gameshow.png
+SAME       0.000%  cvn-reveal-8teams-1920--gameshow.png
+12 of 12 identical

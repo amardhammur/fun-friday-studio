@@ -81,3 +81,36 @@ for (const theme of ['afterhours', 'ink']) test(`the show-mode type floor lifts 
   expect(shrunk).toEqual([]);
   expect(small).toEqual([]);
 });
+
+test('Ink: marking a photo correct lands the "+N CORRECT" stamp, and M changes it to missed', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('studio-theme', 'ink'));
+  await openWelcome(page);
+  await startDemo(page);
+  await page.keyboard.press('Enter');
+  const stamp = page.locator('.correct-stamp');
+  await expect(stamp).toHaveCount(0);
+  await page.keyboard.press('c');
+  await expect(stamp).toBeVisible();
+  const team = (await page.locator('.active-team strong').textContent())!;
+  await expect(stamp).toHaveText(`+2CORRECT${team}`);
+  expect(await stamp.evaluate(el => { const s = getComputedStyle(el); return [s.animationName, s.animationDuration, s.animationTimingFunction]; })).toEqual(['ink-stamp', '0.18s', 'ease-out']);
+
+  await page.keyboard.press('m');
+  await expect(stamp).toHaveCount(0);
+  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), demoKey);
+  expect(saved.segments[0].game.rounds[0].result).toBe('missed');
+  await page.keyboard.press('c');
+  await expect(stamp).toBeVisible();
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await stamp.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+});
+
+test('the correct stamp is Ink-only: other themes render it hidden', async ({ page }) => {
+  await openWelcome(page);
+  await startDemo(page);
+  await page.getByRole('button', { name: 'Reveal the grown-up' }).click();
+  await page.getByRole('button', { name: /^Correct/ }).click();
+  await expect(page.locator('.correct-stamp')).toHaveCount(1);
+  await expect(page.locator('.correct-stamp')).toBeHidden();
+});
