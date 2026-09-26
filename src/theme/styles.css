@@ -1,4 +1,4 @@
-@layer tokens, base, components, pages, afterhours, ink, responsive;
+@layer tokens, base, show-floor, components, pages, afterhours, ink, responsive;
 @layer tokens {
   @font-face { font-family: 'Lexend Exa'; font-style: normal; font-display: swap; font-weight: 400; src: url('/fonts/lexend-exa-latin-400-normal.woff2') format('woff2'); }
   @font-face { font-family: 'Lexend Exa'; font-style: normal; font-display: swap; font-weight: 600; src: url('/fonts/lexend-exa-latin-600-normal.woff2') format('woff2'); }
@@ -49,6 +49,13 @@
     --hand: 'Caveat', cursive; --label: 'IBM Plex Mono', monospace;
     --radius: 0; color-scheme: dark;
   }
+}
+@layer show-floor {
+  /* Lifts inherited body text to the show-mode floor. It sits below components and pages on purpose:
+     a blanket max(floor, 1em) in a later layer overrides every element's own size, which shrank the
+     Act It Out prompt, the turn timer and the scores to 20px. Explicitly small text is lifted by the
+     targeted label rules in the ink layer instead. */
+  .app[data-mode="show"] :is(p, button, input, textarea, select, small, span, strong, b, li, th, td, label, a, summary, figcaption, time, code) { font-size: max(var(--show-floor-body, 20px), 1em); }
 }
 @layer base {
   * { box-sizing: border-box; }
@@ -494,9 +501,9 @@
   .app[data-mode="show"].presentation .scoreboard .activity-score,
   .app[data-mode="show"].presentation .scoreboard .scoreboard-note { display: none; }
   .app[data-mode="show"].presentation .scoreboard .score-row { margin: 0 0 6px; padding: 8px; }
-  .app[data-mode="show"] :is(p, button, input, textarea, select, small, span, strong, b, li, th, td, label, a, summary, figcaption, time, code) { font-size: max(var(--show-floor-body, 20px), 1em); }
   .app[data-mode="show"] :is(small, .eyebrow, kbd, .active-team small, .round-count small, .point-stake > span, .score-meta, .interstitial-gain, .wager-bet small, .podium-place > strong > span, .event-score-table th) { font: 400 max(var(--show-floor-label, 18px), 1em)/1.35 var(--label); }
-  .app[data-mode="show"] :is(.round-count, .rest-results) { font-size: max(var(--show-floor-body, 20px), 1em); }
+  .app[data-mode="show"] :is(.round-count, .rest-results, .button, .score-heading strong, .reveal-name p, .turn-results li, .aio-total .muted) { font-size: max(var(--show-floor-body, 20px), 1em); }
+  .app[data-mode="show"] .pill { font-size: max(var(--show-floor-label, 18px), 1em); }
   .app[data-mode="show"] h4 { font-size: max(var(--show-floor-body, 20px), 1.1em); }
   .app[data-mode="show"].presentation .stage-layout { height: calc(100svh - 130px); }
   .app[data-mode="show"] .finale { flex: 1; min-height: 0; max-height: calc(100svh - 230px); overflow-y: auto; }
