@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { test, expect, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { openWelcome, personalPhotoEvent, resumeEvent, startDemo } from './helpers';
+import { acceptNextConfirm, openWelcome, personalPhotoEvent, resumeEvent, startDemo } from './helpers';
 const key = 'fun-friday-studio.session.v1';
 const saved = (page: Page) => page.evaluate(k => JSON.parse(localStorage.getItem('fun-friday-studio.demo.v1') ?? localStorage.getItem(k)!), key);
 const home = openWelcome;
@@ -110,9 +110,11 @@ test('setup edits, CSV mapping, local detection, crops, export and import', asyn
   await page.getByRole('button', { name: 'Apply names' }).click();
   await page.getByRole('textbox', { name: 'Name for person 1', exact: true }).fill('Asha Kumar');
   await page.getByRole('slider', { name: 'Crop padding for person 1', exact: true }).fill('0.6');
-  const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export face pairs' }).click();
-  expect((await download).suggestedFilename()).toContain('face pairs.zip');
+  await page.getByRole('button', { name: 'Prepare face pairs', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Face pairs prepared.');
   await page.getByRole('button', { name: 'Back to the library', exact: true }).click();
+  const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export pairs', exact: true }).click();
+  expect((await download).suggestedFilename()).toContain('face pairs.zip');
   await page.getByRole('button', { name: 'Your event', exact: true }).click();
   await page.getByRole('button', { name: 'Edit lineup & teams', exact: true }).click();
   await page.getByRole('textbox', { name: 'Team 1 name', exact: true }).fill('The Legends');
@@ -139,6 +141,7 @@ test('unreadable files show a clear error without removing existing photos', asy
   await personalPhotoEvent(page);
   await page.getByRole('button', { name: 'People library', exact: true }).click();
   await page.getByRole('button', { name: 'Edit photos & matches', exact: true }).click();
+  acceptNextConfirm(page);
   await page.getByLabel('Original group photo (now)', { exact: true }).setInputFiles({ name: 'broken.heic', mimeType: 'image/heic', buffer: Buffer.from('not an image') });
   await expect(page.getByRole('status')).toContainText('Convert HEIC/HEIF photos to JPEG');
   expect((await saved(page)).facePairs).toHaveLength(4);
@@ -173,6 +176,7 @@ test('4200px uploads retain source resolution, align sizes and support manual bo
     return canvas.toDataURL('image/jpeg', .9).split(',')[1];
   }, { w, h }), 'base64');
   const now = await makeImage(4200, 2400), then = await makeImage(2800, 1600);
+  acceptNextConfirm(page);
   await page.getByLabel('Original group photo (now)', { exact: true }).setInputFiles({ name: 'team-now.jpg', mimeType: 'image/jpeg', buffer: now });
   await expect(page.getByRole('dialog')).toBeHidden();
   await page.getByLabel('Childhood group photo (then)', { exact: true }).setInputFiles({ name: 'team-then.jpg', mimeType: 'image/jpeg', buffer: then });
@@ -251,8 +255,8 @@ test('stealing, retracting a steal, and reaching the event finale through the st
 test('three activities carry scores through ZIP restore and a wager changes the winner', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await personalPhotoEvent(page);
-  page.on('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Your event', exact: true }).click();
+  acceptNextConfirm(page);
   await page.getByRole('button', { name: 'Start a new event', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Plan your event.' })).toBeVisible();
   await page.getByRole('button', { name: 'People library', exact: true }).click();

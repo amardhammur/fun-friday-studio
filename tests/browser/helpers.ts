@@ -14,6 +14,9 @@ export async function openWelcome(page: Page) {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Good teams make great memories.' })).toBeVisible();
 }
+export function acceptNextConfirm(page: Page) {
+  page.once('dialog', dialog => dialog.accept());
+}
 // Photo-editing tests need an editable personal fixture, not the isolated demo.
 // Generate its real image blobs through the demo, then seed an unstarted personal event.
 export async function personalPhotoEvent(page: Page) {

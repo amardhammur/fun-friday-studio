@@ -426,7 +426,7 @@ describe('face-pair bundle transfer', () => {
     expect(payload.files['sets/02/now']).toBeDefined();
   });
 
-  it('strictly imports a complete bundle with fresh linked records', async () => {
+  it('strictly imports a complete bundle with fresh linked records and the ZIP filename for legacy groups', async () => {
     const manifest = validManifest({
       groups: {
         nowPreview: { path: 'groups/now-preview', name: 'Now preview', width: 40, height: 30, mime: 'image/jpeg' },
@@ -462,7 +462,7 @@ describe('face-pair bundle transfer', () => {
 
     expect(inspectImage).toHaveBeenCalledTimes(5);
     expect(putImage).toHaveBeenCalledTimes(5);
-    expect(imported.photoSets).toEqual([{ id: expect.any(String), name: 'Imported group', kind: 'group', nowImageId: 'fresh-1', thenImageId: 'fresh-2', previews: { 'fresh-1': 'fresh-3' }, order: 0 }]);
+    expect(imported.photoSets).toEqual([{ id: expect.any(String), name: 'pairs', kind: 'group', nowImageId: 'fresh-1', thenImageId: 'fresh-2', previews: { 'fresh-1': 'fresh-3' }, order: 0 }]);
     expect(imported.facePairs[0].setId).toBe(imported.photoSets[0].id);
     expect(imported.facePairs[0]).toMatchObject({
       number: 6, color: '#f7d873', matchMethod: 'manual', reviewStatus: 'confirmed',

@@ -89,7 +89,7 @@ export async function readFacePairsBundle(file: File): Promise<FacePairsBundle> 
   const manifestBytes = files['face-pairs.json'];
   if (!manifestBytes) throw new Error('The face pair ZIP is missing face-pairs.json.');
   let manifest: FacePairsBundleManifest;
-  try { manifest = parseFacePairsBundleManifest(JSON.parse(new TextDecoder().decode(manifestBytes))); }
+  try { manifest = parseFacePairsBundleManifest(JSON.parse(new TextDecoder().decode(manifestBytes)), file.name.replace(/\.zip$/i, '')); }
   catch (error) { if (error instanceof SyntaxError) throw new Error('face-pairs.json is not valid JSON.'); throw error; }
   const expected = new Set(['face-pairs.json', ...bundlePaths(manifest)]);
   const archivePaths = Object.keys(files).filter(path => !path.endsWith('/'));
