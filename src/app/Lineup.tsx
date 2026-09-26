@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Clock, Play, Plus, Trophy, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Clock, Monitor, Play, Plus, Trophy, X } from 'lucide-react';
 import { createSegment } from '../core/event';
 import { getActivities } from '../core/registry';
 import { libraryLocked } from '../core/people/event-library';
@@ -6,7 +6,7 @@ import { TeamEditor } from '../core/teams/TeamEditor';
 import type { EventSession } from '../core/types';
 import { estimatedMinutes, lineupIssues } from './lineup-logic';
 
-export function Lineup({ event, onChange, onStart, onReturn }: { event: EventSession; onChange: (change: (draft: EventSession) => void) => void; onStart: () => void; onReturn: () => void }) {
+export function Lineup({ event, onChange, onStart, onReturn, onShowTeams }: { event: EventSession; onChange: (change: (draft: EventSession) => void) => void; onStart: () => void; onReturn: () => void; onShowTeams: () => void }) {
   const issues = lineupIssues(event), minutes = estimatedMinutes(event), locked = libraryLocked(event);
   const move = (index: number, delta: number) => onChange(s => {
     const to = index + delta;
@@ -29,6 +29,7 @@ export function Lineup({ event, onChange, onStart, onReturn }: { event: EventSes
         <div className="lineup-add">{getActivities().map(activity => <button key={activity.id} className="button subtle" disabled={event.segments.length >= 12} onClick={() => onChange(s => { s.segments.push(createSegment(activity)); })}><Plus size={16}/> {activity.name}</button>)}</div>
       </fieldset></section>
       <section className="panel event-teams-panel" aria-label="Event teams"><div className="panel-heading"><Trophy size={21}/><h2>Event teams</h2></div><p className="muted">These teams compete across the entire lineup.</p><TeamEditor event={event} onChange={onChange}/>
+        <button className="button secondary show-teams-button" disabled={!event.teams.some(t => t.memberIds.length)} title="Put the teams on the big screen so everyone can find their team" onClick={onShowTeams}><Monitor size={18}/> Show teams on screen</button>
         <fieldset className="planning-fields" disabled={locked}><div className="panel-heading wager-heading"><h2>The final wager</h2></div><p className="muted">Optional. Teams bet their points on one last question. Leave it blank to skip it.</p>
         <input aria-label="Final wager question" placeholder="One last question…" maxLength={240} value={event.wager?.question ?? ''} onChange={e => onChange(s => { s.wager = { question: e.target.value, answer: s.wager?.answer ?? '', bets: s.wager?.bets ?? {} }; })}/>
         <input aria-label="Final wager answer" placeholder="The answer" maxLength={240} value={event.wager?.answer ?? ''} onChange={e => onChange(s => { s.wager = { question: s.wager?.question ?? '', answer: e.target.value, bets: s.wager?.bets ?? {} }; })}/>

@@ -153,3 +153,46 @@ test('CVN setup warns with the exact unavoidable own-member photo count', async 
   expect(started.segments[0].game.rounds).toHaveLength(4);
   expect(new Set(started.segments[0].game.rounds.map((r: any) => r.personId)).size).toBe(4);
 });
+
+test('the audience sees every team and its members on a show-mode screen, before and during play', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await prepare(page);
+  await expect(page.getByRole('button', { name: 'Show teams on screen', exact: true })).toBeDisabled();
+  await page.getByLabel('Player names', { exact: true }).fill('Jordan\nRiley\nSam Okafor\nPriyanka Venkataraman\nTheo\nMina\nCarlos\nWen');
+  await page.getByRole('button', { name: 'Add players', exact: true }).click();
+  await page.getByRole('button', { name: 'Shuffle', exact: true }).click();
+  await page.getByLabel('Move Asha', { exact: true }).selectOption('');
+  const planned = await saved(page);
+  await page.getByRole('button', { name: 'Show teams on screen', exact: true }).click();
+  await expect(page.locator('.app')).toHaveAttribute('data-mode', 'show');
+  await expect(page.getByRole('heading', { name: 'Find your team.', exact: true })).toBeVisible();
+  for (const team of planned.teams) {
+    const card = page.getByRole('region', { name: `${team.name} members`, exact: true });
+    const names = team.memberIds.map((id: string) => planned.players.find((p: any) => p.id === id).name).sort((a: string, b: string) => a.localeCompare(b));
+    if (names.length) await expect(card.getByRole('listitem')).toHaveText(names);
+    else await expect(card).toContainText('No players yet');
+  }
+  await expect(page.getByText('Still finding a team: Asha', { exact: true })).toBeVisible();
+  for (const [theme, next] of [['afterhours', 'Game Show'], ['gameshow', 'Ink & Paper'], ['ink', 'After Hours']]) {
+    await page.evaluate(() => Promise.all([document.fonts.ready, ...document.getAnimations().map(a => a.finished)]));
+    await page.screenshot({ path: `ux-review/teams/show-${theme}-1440.png` });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.evaluate(n => document.querySelector<HTMLButtonElement>(`[aria-label="Switch to ${n} theme"]`)!.click(), next);
+  }
+  await page.getByRole('button', { name: 'Back to planning', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Event teams', exact: true })).toBeVisible();
+  expect(await saved(page)).toMatchObject({ phase: 'lineup', teams: planned.teams, players: planned.players });
+
+  await page.getByRole('button', { name: 'Set up first activity', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Activity setup' }).getByRole('button', { name: /Game setup/ }).click();
+  await page.getByRole('button', { name: 'Start activity', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
+  const playing = await saved(page);
+  await page.getByRole('button', { name: 'Event overview', exact: true }).click();
+  await page.getByRole('button', { name: 'Show teams', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Find your team.', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to event overview', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your lineup' })).toBeVisible();
+  const after = await saved(page);
+  expect({ ...after, updatedAt: '' }).toEqual({ ...playing, updatedAt: '' });
+});

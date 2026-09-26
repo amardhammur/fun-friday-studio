@@ -1,9 +1,9 @@
-import { ArrowRight, Trophy } from 'lucide-react';
+import { ArrowRight, Monitor, Trophy } from 'lucide-react';
 import type { EventSession } from '../core/types';
 import { libraryLocked } from '../core/people/event-library';
 import { EventStandings } from './EventStandings';
 
-export function EventOverview({ event, onResume, onBuildEvent, onLibrary, onEdit, onTeams }: { event: EventSession; onResume: () => void; onBuildEvent: () => void; onLibrary: () => void; onEdit: () => void; onTeams: () => void }) {
+export function EventOverview({ event, onResume, onBuildEvent, onLibrary, onEdit, onTeams, onShowTeams }: { event: EventSession; onResume: () => void; onBuildEvent: () => void; onLibrary: () => void; onEdit: () => void; onTeams: () => void; onShowTeams: () => void }) {
   const active = !event.isDemo && (event.segments.length > 0 || event.phase !== 'lineup');
   const finished = event.phase === 'finale';
   const current = event.segments[event.currentSegmentIndex];
@@ -17,7 +17,7 @@ export function EventOverview({ event, onResume, onBuildEvent, onLibrary, onEdit
       </div><div className="event-hero-art" aria-hidden="true"><div className="event-orbit"/><Trophy size={88} strokeWidth={1.3}/><span className="hero-ticket">ONE EVENT<br/><b>ALL TO PLAY FOR</b></span></div>
     </section>
     {active ? <>
-      <div className="event-dashboard"><section className="panel event-running-order"><div className="panel-heading"><h2>Your lineup</h2>{editable && <button className="button subtle small-button" onClick={onEdit}>Edit lineup & teams</button>}{!editable && <button className="button subtle small-button" onClick={onTeams}>Manage teams</button>}</div><p className="muted">{finished ? 'Every activity contributed to the final result.' : current && event.phase !== 'lineup' ? `Current activity: ${current.title}` : 'Prepare your teams, then set up each activity as you go.'}</p><ol>{event.segments.map((s, i) => {
+      <div className="event-dashboard"><section className="panel event-running-order"><div className="panel-heading"><h2>Your lineup</h2>{editable && <button className="button subtle small-button" onClick={onEdit}>Edit lineup & teams</button>}{!editable && <button className="button subtle small-button" onClick={onTeams}>Manage teams</button>}{event.teams.some(t => t.memberIds.length) && <button className="button subtle small-button" onClick={onShowTeams}><Monitor size={15}/> Show teams</button>}</div><p className="muted">{finished ? 'Every activity contributed to the final result.' : current && event.phase !== 'lineup' ? `Current activity: ${current.title}` : 'Prepare your teams, then set up each activity as you go.'}</p><ol>{event.segments.map((s, i) => {
         const status = finished || s.status === 'done' ? 'Completed' : s.status === 'finale' || (i === event.currentSegmentIndex && event.phase === 'interstitial') ? 'Results ready' : s.status === 'play' ? 'Playing now' : s.status === 'setup' ? 'In setup' : 'Awaiting setup';
         return <li key={s.id} className={i === event.currentSegmentIndex && !finished ? 'current' : ''}><span className="lineup-number">{String(i + 1).padStart(2, '0')}</span><div><strong>{s.title}</strong><small>{status}</small></div><span className="pill">×{s.weight} points</span></li>;
       })}</ol>{event.wager?.question.trim() && <p className="event-wager-note"><Trophy size={16}/> Final wager after the last activity</p>}</section><EventStandings event={event}/></div>
