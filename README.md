@@ -1,6 +1,6 @@
 # Fun Friday Studio
 
-A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and the After Hours theme: midnight ink, electric lime, and soft lilac. The header palette button switches between After Hours and Game Show; the choice is saved on this laptop.
+A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and the After Hours theme: midnight ink, electric lime, and soft lilac. The header palette button switches between After Hours, Game Show, and Ink & Paper; the choice is saved on this laptop.
 
 The first activity is **Childhood vs Now**. Each team gets its own unique batch of childhood portraits and plays its batch in turn. The host reveals the current portrait and name, then marks **Correct (+2)** or **Missed (0)**. A person appears **only once in the entire game**. There are no hints, clarity levels, zoom puzzles, or timers.
 
@@ -57,7 +57,7 @@ This copies the installed WASM files and downloads the pinned BlazeFace model on
 
 ## Host workflow
 
-0. **Build the line-up.** Choose the activities in running order, set a points multiplier for later rounds, name your teams, and optionally write one final wager question. Or start a single activity straight from its card on the home screen.
+0. **Build the line-up and teams.** Choose activities in running order and their points multipliers. In **Event teams**, included library people are pulled in on your first visit. Use **Pull from people library** to add people later, or **Add players** to type a name or paste one name per line; photos are optional. Blank lines and duplicate pasted names are skipped. Remove a player here without changing their photos. Choose 2–8 teams, edit names and colours, then **Shuffle**. **Shuffle again** changes membership while keeping team identity. Pin a player to keep them on their team, or use their team menu to move them manually. Impossible pinned splits show an explanation; unpin players or reduce the team count to enable a balanced shuffle. Unassigned players appear in **Not on a team** and do not block setup. Optionally write one final wager question.
 1. **Upload photos.** Drop one file into each zone. Replacing a photo clears its old matches and game progress after confirmation.
 2. **Match people.** Detect both images locally. Overlapping image tiles help with small faces in a large group. Review all automatic suggestions; edited faces may be missed. Adjust the matching tolerance before detection if needed.
    - **Adjust:** select a box, drag it, or resize from its bottom-right handle. Numeric crop fields provide keyboard access.
@@ -66,7 +66,7 @@ This copies the installed WASM files and downloads the pinned BlazeFace model on
    - **Delete this face:** remove a false detection. Unmatched faces are visibly flagged and excluded by default.
    - **Overlay:** blend both photos and choose which layer to edit.
 3. **Name people.** Enter names, optionally add a fun fact for after the reveal, adjust hair/shoulder padding, or exclude/delete people. Focusing a name highlights the same numbered person in both photos.
-4. **Game setup.** Edit 1–8 teams (four by default), choose shuffle, and review photo counts. The first teams receive any remainder: 50 people across four teams yields 13, 13, 12, 12. For equal opportunities, choose a divisible number of people or teams. Each team needs at least one photo to start.
+4. **Game setup.** Review your teams and member names, choose whether to shuffle photos, and review photo counts. The first teams receive any remainder: 50 people across four teams yields 13, 13, 12, 12. For equal opportunities, choose a divisible number of people or teams. Each team needs at least one photo to start. Childhood vs Now avoids dealing a team its own members’ photos where possible, while keeping the photo counts balanced. If that cannot be avoided, setup warns how many photos must go to their own team.
 5. **Play.** Show the childhood portrait, reveal the current portrait and name, then mark the assigned team’s result. Correct is two points. If the assigned team misses, the round opens to the other teams and a steal is worth one point. Marking the owning team Correct afterwards retracts the steal, so a round can never pay out twice. The scoreboard also provides manual ±1 adjustments.
 6. **Finale.** See the winner(s), podium, and other scores. The group reveal starts with the full childhood image. Move the slider to reveal the original photo, or spotlight a named person. Play again starts a new shuffled game and resets scores.
 7. **Standings.** Between activities, the leaderboard shows the running total, what each team gained in that round, and the biggest climber.
@@ -102,7 +102,7 @@ Names map by the horizontal centre of the **current** face, left to right (verti
 ## Storage and backups
 
 - Image blobs live in **IndexedDB** through `idb`.
-- The line-up, names, settings, team definitions, score entries, and per-activity progress live in **localStorage** as a versioned event document. Sessions saved before the event format are not restored; set the game up again. Face crops and names survive independently via **Export pairs**.
+- The line-up, names, settings, player roster, team memberships and pins, score entries, and per-activity progress live in **localStorage** as a versioned event document. Sessions saved before the event format are not restored; set the game up again. Face crops and names survive independently via **Export pairs**.
 - Every meaningful change is saved immediately. Refresh restores the game, revealed state, unique team assignment, and scores.
 - Private browsing restrictions, quota errors, or blocked storage produce a persistent warning. The current session remains usable in memory; export before closing the tab.
 - Browser storage belongs to the specific origin. Different ports, browsers, or deployment URLs have separate libraries. Move between them using a ZIP.
@@ -116,7 +116,7 @@ The People library belongs to the whole event and is available even before activ
 
 **Export pairs** saves every set in one ZIP. **Import pairs → Add to library** adds a ZIP's sets after your own (matching names are flagged first: Add anyway, Skip duplicates or Cancel); **Replace library** swaps the whole library after confirmation and resets all activity progress, scores and wager bets, keeping the line-up, activity settings, teams and wager question. Older single-group exports still import; the group is named after the ZIP file.
 
-After an activity has started, the roster is locked to protect its saved rounds; only Replace library changes it. Names can still be edited. Starting or replaying one activity clears only that segment's score entries. The Childhood vs Now whole team reveal shows one wipe per group that had players in the game, in library order, and a final "Also in the game" slide for people added from single photos.
+After an activity has started, including while paused, photo-library inclusion and team reassignment are locked to protect saved rounds and scores. From **Your event → Manage teams**, add a late arrival directly to an existing team; shuffling, moving and removing players remain disabled. Resume with **Return to event**. The lock message points to **Import pairs → Replace library** to reset the event; starting over the only activity that has run also unlocks setup. Library names can still be edited and update linked roster names. Excluding or deleting a library person before play removes their linked player, membership and pin. A player deliberately removed from the event roster stays removed until explicitly pulled again. Starting or replaying one activity clears only that segment's score entries. The Childhood vs Now whole team reveal shows one wipe per group that had players in the game, in library order, and a final "Also in the game" slide for people added from single photos.
 
 ## How to add a new activity
 

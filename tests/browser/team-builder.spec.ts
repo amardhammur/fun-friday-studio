@@ -47,6 +47,11 @@ test('roster builder: library, paste, four teams, pin and reshuffle persist thro
   await page.getByRole('button', { name: 'Start activity', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
   const playing = await saved(page);
+  for (const round of playing.segments[0].game.rounds) {
+    const team = playing.teams.find((t: any) => t.id === round.teamId);
+    const ownPeople = team.memberIds.map((id: string) => playing.players.find((p: any) => p.id === id)?.personId);
+    expect(ownPeople).not.toContain(round.personId);
+  }
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
   const reloaded = await saved(page);
@@ -132,4 +137,19 @@ test('pins explain impossible balance, team removal confirms, and library edits 
   expect(excluded.players.some((p: any) => p.id === id)).toBe(false);
   expect(excluded.teams.flatMap((t: any) => [...t.memberIds, ...t.pinnedIds])).not.toContain(id);
   expect(excluded.people.find((p: any) => p.id === asha.id)).toMatchObject({ name: 'Priya', included: false });
+});
+
+
+test('CVN setup warns with the exact unavoidable own-member photo count', async ({ page }) => {
+  await prepare(page);
+  const event = await saved(page);
+  for (const name of ['Asha', 'Leo', 'Maya', 'Dev']) await page.getByLabel(`Move ${name}`, { exact: true }).selectOption(event.teams[0].id);
+  await page.getByRole('button', { name: 'Set up first activity', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Activity setup' }).getByRole('button', { name: /Game setup/ }).click();
+  await expect(page.getByText('1 photo must be dealt to its own team to keep photo sets balanced.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start activity', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Start activity', exact: true }).click();
+  const started = await saved(page);
+  expect(started.segments[0].game.rounds).toHaveLength(4);
+  expect(new Set(started.segments[0].game.rounds.map((r: any) => r.personId)).size).toBe(4);
 });
