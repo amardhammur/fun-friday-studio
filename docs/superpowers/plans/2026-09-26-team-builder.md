@@ -75,3 +75,5 @@ Consumes players/member IDs. Extends `allocateRounds` with optional players afte
 - Baseline: 248 unit tests pass. Branch: feat/team-builder; work in the shared checkout to retain the supplied untracked design references.
 - Approved: implementation and infeasible-pin rejection. Backward compatibility waived by user.
 - Interface review: tasks 2–4 consume task 1 arrays; roster reconciliation must also prune pins; CVN consumes person links, not names.
+- Task 1 complete: f74ad02; 256/256 unit tests, production build passed. Existing v2 fixture now has two teams to exercise its original migration/reference tests under the new minimum.
+- Task 2 complete: 264/264 unit tests and TypeScript pass. Seeded shuffle, pin feasibility (including excess ceiling slots), identity, confirmation, and single-player cases covered.
