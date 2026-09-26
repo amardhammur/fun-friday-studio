@@ -449,3 +449,4 @@
     .activity-copy h2 { font-size: 30px; }
   }
 }
+.csv-preview small { display: block; color: var(--muted); margin-top: 3px; font-size: 12px; }

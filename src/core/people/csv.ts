@@ -23,7 +23,7 @@ export function parseNames(text: string) {
   const header = rows[0]?.map(s => s.toLowerCase());
   const nameColumn = header?.indexOf('name') ?? -1;
   const factColumn = header?.findIndex(s => s === 'fun fact' || s === 'funfact') ?? -1;
-  return (nameColumn >= 0 ? rows.slice(1) : rows).map(row => ({ name: row[nameColumn >= 0 ? nameColumn : 0]?.trim() ?? '', funFact: factColumn >= 0 ? row[factColumn] ?? '' : row[1] ?? '' }));
+  return (nameColumn >= 0 ? rows.slice(1) : rows).map(row => ({ name: row[nameColumn >= 0 ? nameColumn : 0]?.trim() ?? '', funFact: factColumn >= 0 ? row[factColumn] ?? '' : nameColumn < 0 ? row[1] ?? '' : '' }));
 }
 export function exportNames(names: string[]): string[] {
   const used = new Set<string>();

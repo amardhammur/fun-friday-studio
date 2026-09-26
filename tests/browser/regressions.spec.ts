@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openWelcome, startDemo } from './helpers';
+import { openWelcome, personalPhotoEvent, startDemo } from './helpers';
 
 const sessionKey = 'fun-friday-studio.demo.v1';
 
@@ -51,4 +51,20 @@ test('Host settings resumes Childhood vs Now without clearing scores', async ({ 
   expect(after.segments[0].status).toBe('play');
   expect(after.segments[0].game).toEqual(before.segments[0].game);
   expect(after.scoreEntries).toEqual(before.scoreEntries);
+});
+
+test('CSV import preview shows the fun facts that will be applied', async ({ page }) => {
+  await personalPhotoEvent(page);
+  await page.getByRole('button', { name: 'People library', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit photos & matches' }).click();
+  await page.getByRole('button', { name: 'Match people', exact: true }).click();
+  await page.getByRole('button', { name: 'Name people', exact: true }).click();
+
+  await page.locator('input[aria-label="Import names CSV"]').setInputFiles({
+    name: 'names.csv', mimeType: 'text/csv',
+    buffer: Buffer.from('Name,Fun fact\nAsha,An artist\nLeo,A dancer\nMaya,A reader\nDev,A runner'),
+  });
+
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByText('An artist', { exact: true })).toBeVisible();
 });

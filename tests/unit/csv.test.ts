@@ -11,4 +11,8 @@ describe('name imports and filenames', () => {
     expect(exportNames(['Asha', 'asha', 'Asha (2)', '../Dev', ''])).toEqual(['Asha', 'asha (2)', 'Asha (2) (2)', '..-Dev', 'Person 5']);
   });
   it('recognizes headers regardless of column order', () => { expect(parseNames('Fun fact,Name\nDancer,Asha')).toEqual([{ name: 'Asha', funFact: 'Dancer' }]); });
+  it('recognizes the compact FunFact header', () => { expect(parseNames('Name,Email,FunFact\nAsha,asha@example.com,Dancer')).toEqual([{ name: 'Asha', funFact: 'Dancer' }]); });
+  it('does not treat a non-fun-fact column as a fun fact when headers are present', () => {
+    expect(parseNames('Name,Email\nAsha,asha@example.com')).toEqual([{ name: 'Asha', funFact: '' }]);
+  });
 });
