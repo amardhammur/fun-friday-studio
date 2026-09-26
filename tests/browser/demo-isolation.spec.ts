@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { openWelcome, startDemo, setupPhotoEvent } from './helpers';
 const key = 'fun-friday-studio.session.v1';
 
 test('demo preserves an imported library through reload, exit and normal setup', async ({ page }) => {
   page.on('dialog', dialog => dialog.accept());
-  await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Exit demo', exact: true })).toBeVisible();
+  await openWelcome(page);
+  await startDemo(page);
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export session', exact: true }).click();
+  await page.getByRole('button', { name: 'Export event', exact: true }).click();
   const path = await (await download).path();
   await page.locator('input[aria-label="Choose session ZIP"]').setInputFiles(path!);
   await expect(page.getByRole('status')).toContainText('Session restored');
@@ -19,18 +20,17 @@ test('demo preserves an imported library through reload, exit and normal setup',
   }, key);
   await page.reload();
   const before = await page.evaluate(k => localStorage.getItem(k), key);
-  await page.getByRole('button', { name: 'Try the demo', exact: true }).first().click();
+  await startDemo(page);
   await expect(page.getByRole('button', { name: 'Exit demo', exact: true })).toBeVisible();
   expect(await page.evaluate(k => localStorage.getItem(k), key)).toBe(before);
   await page.reload();
   await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
   await page.getByRole('button', { name: 'People library', exact: true }).click();
   await expect(page.locator('input[value="Imported colleague"]')).toBeVisible();
-  await page.getByRole('button', { name: 'Activity library', exact: true }).click();
-  await page.getByRole('button', { name: 'Try the demo', exact: true }).first().click();
+  await startDemo(page);
   await expect(page.getByRole('button', { name: 'Use my photos', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
-  await page.locator('.activity-card', { has: page.getByRole('heading', { name: 'Childhood vs Now', exact: true }) }).getByRole('button', { name: 'Set up your game', exact: true }).click();
+  await setupPhotoEvent(page);
   await page.getByRole('navigation', { name: 'Activity setup' }).getByRole('button', { name: /People/ }).click();
   await expect(page.getByRole('heading', { name: 'Who’s playing today?' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Imported colleague now', exact: true })).toBeVisible();
@@ -50,7 +50,7 @@ test('demo preserves an imported library through reload, exit and normal setup',
   await expect(page.getByRole('heading', { name: 'Friday friends', exact: true })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Imported colleague now', exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/game-setup-preview.png', fullPage: true });
-  await page.getByRole('button', { name: 'Start new game', exact: true }).click();
+  await page.getByRole('button', { name: 'Start activity', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
   const playing = await page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key);
   expect(playing.isDemo).toBe(false);
@@ -58,10 +58,9 @@ test('demo preserves an imported library through reload, exit and normal setup',
 });
 
 test('normal setup starts an empty group and requires real uploads', async ({ page }) => {
-  await page.goto('/');
+  await openWelcome(page);
   await expect(page.getByRole('button', { name: 'Use my photos', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
-  await page.locator('.activity-card', { has: page.getByRole('heading', { name: 'Childhood vs Now', exact: true }) }).getByRole('button', { name: 'Set up your game', exact: true }).click();
+  await setupPhotoEvent(page);
   await expect(page.getByRole('heading', { name: 'Name this group.' })).toBeVisible();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Match people', exact: true })).toBeDisabled();
@@ -74,7 +73,8 @@ test('normal setup starts an empty group and requires real uploads', async ({ pa
 
 test('demo host settings show the prepared roster without reopening photo matching', async ({ page }) => {
   page.on('dialog', dialog => dialog.accept());
-  await page.goto('/');
+  await openWelcome(page);
+  await startDemo(page);
   await page.getByRole('button', { name: 'Host settings', exact: true }).click();
   await page.getByRole('navigation', { name: 'Activity setup' }).getByRole('button', { name: /People/ }).click();
   await expect(page.getByRole('heading', { name: 'Who’s playing today?' })).toBeVisible();
@@ -85,11 +85,9 @@ test('demo host settings show the prepared roster without reopening photo matchi
 });
 
 test('non-photo activities share demo isolation and Exit demo', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
+  await openWelcome(page);
   const before = await page.evaluate(k => localStorage.getItem(k), key);
-  const card = page.locator('.activity-card', { has: page.getByRole('heading', { name: 'Act It Out', exact: true }) });
-  await card.getByRole('button', { name: 'Try the demo', exact: true }).click();
+  await startDemo(page, 'Act It Out');
   await expect(page.getByRole('button', { name: 'Start the turn', exact: true })).toBeVisible();
   expect(await page.evaluate(k => localStorage.getItem(k), key)).toBe(before);
   await page.reload();
@@ -101,10 +99,9 @@ test('non-photo activities share demo isolation and Exit demo', async ({ page })
 
 test('abandoned photo setup stays visibly incomplete and can be resumed or removed', async ({ page }) => {
   page.on('dialog', dialog => dialog.accept());
-  await page.goto('/');
+  await openWelcome(page);
   await expect(page.getByRole('button', { name: 'Use my photos', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
-  await page.locator('.activity-card', { has: page.getByRole('heading', { name: 'Childhood vs Now', exact: true }) }).getByRole('button', { name: 'Set up your game', exact: true }).click();
+  await setupPhotoEvent(page);
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('button', { name: 'Activities', exact: true }).click();
   await page.reload();
@@ -120,7 +117,8 @@ test('abandoned photo setup stays visibly incomplete and can be resumed or remov
 });
 
 test('going back to the activity library ends the demo and shows no library photos', async ({ page }) => {
-  await page.goto('/');
+  await openWelcome(page);
+  await startDemo(page);
   await expect(page.getByRole('heading', { name: 'Recognise this little legend?' })).toBeVisible();
   await page.getByRole('button', { name: 'Fun Friday Studio home', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Exit demo', exact: true })).toHaveCount(0);

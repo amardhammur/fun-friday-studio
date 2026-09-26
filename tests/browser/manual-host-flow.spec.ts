@@ -1,11 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
+import { personalPhotoEvent, resumeEvent } from './helpers';
 const key = 'fun-friday-studio.session.v1';
 
-async function aioHome(page: Page) {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Fun Friday Studio home' }).click();
-  await expect(page.getByRole('heading', { name: 'What are we playing?' })).toBeVisible();
-}
 
 async function image(page: Page, w: number, h: number) {
   return Buffer.from(await page.evaluate(({ w, h }) => {
@@ -17,7 +13,7 @@ async function image(page: Page, w: number, h: number) {
 
 test('manual host flow: add a group and a person, play, reveal all slides', async ({ page }) => {
   test.setTimeout(180_000);
-  await aioHome(page);
+  await personalPhotoEvent(page);
   await page.getByRole('button', { name: 'People library', exact: true }).click();
   const initialPlayers = await page.evaluate(k => JSON.parse(localStorage.getItem(k)!).people.filter((p: any) => p.included).length, key);
   const firstPairNumber = await page.evaluate(k => Math.max(0, ...JSON.parse(localStorage.getItem(k)!).facePairs.map((p: any) => p.number)) + 1, key);
@@ -72,13 +68,12 @@ test('manual host flow: add a group and a person, play, reveal all slides', asyn
   const session = await page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key);
   const playerCount = session.people.filter((p: any) => p.included).length;
   expect(playerCount).toBe(initialPlayers + 3);
-  await page.getByRole('button', { name: 'Activity library', exact: true }).click();
-  await page.getByRole('button', { name: 'Continue event', exact: true }).click();
-  await page.getByRole('button', { name: 'Start new game' }).click();
+  await resumeEvent(page);
+  await page.getByRole('button', { name: 'Start activity' }).click();
   for (let i = 0; i < playerCount; i++) {
     await page.getByRole('button', { name: /Reveal the grown-up/ }).click();
     await page.getByRole('button', { name: /^Missed/ }).click();
-    await page.getByRole('button', { name: /^(Next (?!photo)|Final results)/ }).click();
+    await page.getByRole('button', { name: /^(Next (?!photo)|Activity results)/ }).click();
   }
   await page.getByRole('button', { name: 'The whole team reveal' }).click();
   await expect(page.getByText(/Demo team \(1 of 3\)/)).toBeVisible();

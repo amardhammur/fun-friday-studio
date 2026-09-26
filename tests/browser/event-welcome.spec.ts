@@ -73,17 +73,17 @@ test('explicit demos preserve the planned event and return to the welcome screen
   expect({ ...after, updatedAt: original.updatedAt }).toEqual(original);
 });
 
-test('the header switches to the Game Show theme and remembers it', async ({ page }) => {
+test('the header switches themes and remembers the choice', async ({ page }) => {
   await page.goto('/');
   const board = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(await board()).toBe('rgb(255, 248, 236)');
+  expect(await board()).toBe('rgb(21, 24, 39)');
   await page.getByRole('button', { name: 'Switch to Game Show theme' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'gameshow');
   expect(await board()).toBe('rgb(26, 43, 122)');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'gameshow');
   await page.screenshot({ path: 'test-results/welcome-gameshow.png', fullPage: true });
-  await page.getByRole('button', { name: 'Switch to Festival theme' }).click();
+  await page.getByRole('button', { name: 'Switch to After Hours theme' }).click();
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
-  expect(await board()).toBe('rgb(255, 248, 236)');
+  expect(await board()).toBe('rgb(21, 24, 39)');
 });
