@@ -6,6 +6,7 @@ import { rules } from '../rules';
 import type { Context } from '../types';
 export function GameSetupStep({ segment, event, update, updateEvent }: Context) {
   const { settings } = segment, turns = event.teams.length * settings.roundsPerTeam;
+  const hasProgress = event.scoreEntries.some(entry => entry.segmentId === segment.segmentId) || segment.game.cursor > 0 || segment.game.turns.some(turn => turn.status !== 'pending' || turn.results.length > 0);
   const valid = event.teams.length > 0 && event.teams.every(t => t.name.trim()) && eligiblePrompts(settings).length >= cardsNeeded(event.teams.length, settings.roundsPerTeam);
   const start = () => {
     const staged = eventDraft(event);
@@ -32,6 +33,6 @@ export function GameSetupStep({ segment, event, update, updateEvent }: Context) 
     <section className="allocation"><div><span className="eyebrow">THE RUNNING ORDER</span><h3>{turns} turns. About {Math.ceil(turns * (settings.turnSeconds + 40) / 60)} minutes.</h3></div>
       <div className="allocation-teams">{event.teams.map(t => <div key={t.id}><span className="team-dot" style={{ background: t.color }}/><span>{t.name || 'Unnamed team'}</span><b>{settings.roundsPerTeam} turn{settings.roundsPerTeam === 1 ? '' : 's'}</b></div>)}</div>
     </section>
-    <div className="setup-footer"><span className="privacy-note"><Check size={17}/> Everything is saved on this laptop</span><button className="button primary large" disabled={!valid} onClick={start}><Play size={20}/> Start activity</button></div>
+    <div className="setup-footer"><span className="privacy-note"><Check size={17}/> Everything is saved on this laptop</span><div className="button-row">{hasProgress && <button className="button secondary large" onClick={() => update(s => { s.phase = 'play'; })}><Play size={20}/> Resume activity</button>}<button className="button primary large" disabled={!valid} onClick={start}><Play size={20}/> {hasProgress ? 'Restart activity (clears its scores)' : 'Start activity'}</button></div></div>
   </div>;
 }
