@@ -1,18 +1,18 @@
 // The look is a per-laptop preference, not part of the event, so it lives outside the session.
 export const THEMES = [
-  { id: 'festival', name: 'Festival' },
+  { id: 'afterhours', name: 'After Hours' },
   { id: 'gameshow', name: 'Game Show' },
 ] as const;
 export type ThemeId = typeof THEMES[number]['id'];
 const KEY = 'studio-theme';
 
 export function readTheme(): ThemeId {
-  try { const saved = localStorage.getItem(KEY); return THEMES.some(t => t.id === saved) ? saved as ThemeId : 'festival'; }
-  catch { return 'festival'; }
+  try { const saved = localStorage.getItem(KEY); return THEMES.some(t => t.id === saved) ? saved as ThemeId : 'afterhours'; }
+  catch { return 'afterhours'; }
 }
 
 export function applyTheme(theme: ThemeId) {
-  if (theme === 'festival') delete document.documentElement.dataset.theme;
+  if (theme === 'afterhours') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
   try { localStorage.setItem(KEY, theme); } catch { /* the choice still applies for this visit */ }
 }

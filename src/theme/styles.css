@@ -1,8 +1,19 @@
-@layer tokens, base, components, pages, festival, responsive;
+@layer tokens, base, components, pages, afterhours, responsive;
 @layer tokens {
-  :root { --board: #fff8ec; --board-deep: #f6eddf; --surface: #fffdf7; --surface-light: #f3e6d2; --chalk: #263c38; --muted: #62695e; --line: color-mix(in srgb, var(--chalk) 16.1%, transparent); --yellow: #b93f30; --pink: #b93f30; --blue: #246a79; --mint: #176c63; --ink: #263c38; --festival-gold: #efbc51; --festival-teal: #176c63; --festival-coral: #d95643; --accent-ink: #fffdf7; --accent-shadow: #823327; --accent-hover: #9e3529; --surface-hover: #f1e7d7; --danger: #aa302a; --warning: #865516; --notice: #f9e7b5; --wash: #e3eee1; --invite: #f6ecd9; --accent-wash: #fbe8dd; --team-text-mix: 30%; --team-text-base: #263c38; --emblem-shadow: #efbc5166; --heading: 'Bricolage Grotesque', sans-serif; --body: 'Atkinson Hyperlegible', sans-serif; --hand: 'Caveat', cursive; --radius: 12px; color-scheme: light; }
+  :root {
+    --board: #151827; --board-deep: #10131f; --surface: #1e2235; --surface-light: #292e44;
+    --chalk: #f5f4ef; --muted: #a9aec3; --line: #383d53;
+    --yellow: #d7fa52; --pink: #b9acff; --blue: #a5c9ff; --mint: #a9e7c5; --ink: #151827;
+    --accent-ink: #151827; --accent-shadow: #a5c52c; --accent-hover: #e3ff84; --surface-hover: #292e44;
+    --danger: #ff999f; --warning: #f3d18c; --notice: #302c27; --wash: #252d35; --accent-wash: #d7fa5210;
+    --team-text-mix: 75%; --team-text-base: #ffffff;
+    --poster: #b9acff; --poster-ink: #151827; --poster-flower: #d7fa52;
+    --heading: 'Bricolage Grotesque', sans-serif; --body: 'Atkinson Hyperlegible', sans-serif;
+    --hand: 'Caveat', cursive; --label: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --radius: 10px; color-scheme: dark;
+  }
   /* Game Show: royal-blue studio, marquee gold, buzzer red. */
-  :root[data-theme=gameshow] { --board: #1a2b7a; --board-deep: #14226a; --surface: #22368f; --surface-light: #2d44a6; --chalk: #fff9ea; --muted: #bcc6ee; --yellow: #f7c948; --pink: #ff7a6e; --blue: #7fd3ff; --mint: #6fe3b5; --ink: #1a1f4a; --festival-gold: #f7c948; --festival-teal: #7fd3ff; --festival-coral: #ff7a6e; --accent-ink: #1a1f4a; --accent-shadow: #a07e1e; --accent-hover: #ffd766; --surface-hover: #2d44a6; --danger: #ff9a91; --warning: #f7c948; --notice: #2d44a6; --wash: #2a40a0; --invite: #22368f; --accent-wash: #f7c94826; --team-text-mix: 100%; --team-text-base: #fff9ea; --emblem-shadow: #0f1a55; color-scheme: dark; }
+  :root[data-theme=gameshow] { --board: #1a2b7a; --board-deep: #14226a; --surface: #22368f; --surface-light: #2d44a6; --chalk: #fff9ea; --muted: #bcc6ee; --yellow: #f7c948; --pink: #ff7a6e; --blue: #7fd3ff; --mint: #6fe3b5; --ink: #1a1f4a; --accent-ink: #1a1f4a; --accent-shadow: #a07e1e; --accent-hover: #ffd766; --surface-hover: #2d44a6; --danger: #ff9a91; --warning: #f7c948; --notice: #2d44a6; --wash: #2a40a0; --accent-wash: #f7c94826; --team-text-mix: 100%; --team-text-base: #fff9ea; color-scheme: dark; }
 }
 @layer base {
   * { box-sizing: border-box; }
@@ -193,23 +204,6 @@
 @layer pages {
   .main-nav { gap: 20px; margin-left: 30px; }
   .main-nav button { white-space: nowrap; }
-  .welcome-hero { display: grid; grid-template-columns: 1.65fr 1fr; gap: 50px; align-items: center; min-height: min(650px, 72vh); padding: 70px 0 60px; }
-  .welcome-copy .eyebrow { display: flex; gap: 10px; align-items: center; color: var(--yellow); }
-  .welcome-copy h1 { font-size: clamp(44px, 5.5vw, 82px); line-height: 1.05; margin: 24px 0; }
-  .welcome-copy h1 > span { color: var(--yellow); }
-  .welcome-copy > p { color: var(--muted); font-size: clamp(18px, 1.6vw, 24px); line-height: 1.65; margin: 0 0 30px; }
-  .welcome-copy .hero-details { margin-top: 28px; }
-  .welcome-art { position: relative; text-align: center; padding: 35px 10px; }
-  .welcome-emblem { aspect-ratio: 1; max-width: 330px; margin: auto; border: 1px solid #f7d87360; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; background: radial-gradient(circle, #eea7bb15, #f7d87305 70%); box-shadow: 0 0 0 15px color-mix(in srgb, var(--chalk) 0.8%, transparent), 0 0 0 16px color-mix(in srgb, var(--chalk) 2.7%, transparent); color: var(--yellow); }
-  .welcome-emblem > span { font-size: 12px; letter-spacing: .2em; line-height: 2; }
-  .welcome-emblem b { color: var(--chalk); }
-  .welcome-art > p { font-size: 29px; margin-top: 30px; color: var(--pink); transform: rotate(-4deg); }
-  .welcome-star { position: absolute; color: var(--pink); font-size: 50px; }
-  .star-one { top: 5px; right: 10px; } .star-two { bottom: 80px; left: 0; font-size: 65px; color: var(--yellow); }
-  .welcome-invitation { padding: 36px 0 42px; border-top: 1px solid var(--line); text-align: center; }
-  .welcome-invitation h2 { font-size: clamp(23px, 2.4vw, 34px); line-height: 1.4; margin: 15px 0; }
-  .welcome-invitation h2 span { color: var(--muted); font-weight: 400; }
-  .welcome-invitation > p { color: var(--pink); }
   .event-hero { padding: 48px 0 36px; display: flex; align-items: center; gap: 35px; }
   .event-hero > div:first-child { flex: 1; min-width: 0; }
   .event-hero h1 { margin: 14px 0; overflow-wrap: anywhere; }
@@ -299,64 +293,159 @@
   }
 }
 
-/* Warm festival: cream paper, coral invitations, teal wayfinding. */
-@layer festival {
-  .app-header { background: var(--board); }
-  .brand-mark { color: var(--festival-teal); }
-  .primary { background: var(--yellow); color: var(--accent-ink); box-shadow: 0 3px 0 var(--accent-shadow); }
-  .primary:hover:not(:disabled) { background: var(--accent-hover); }
-  .secondary { background: var(--surface); border-color: var(--line); }
-  .secondary:hover:not(:disabled) { background: var(--surface-hover); border-color: color-mix(in srgb, var(--chalk) 33.3%, transparent); }
+/* After Hours: an editorial club poster, with a shared dark studio interface. */
+@layer afterhours {
+  h1, h2, h3, h4 { font-weight: 700; }
+  h1 { letter-spacing: -.055em; }
+  .eyebrow { font-family: var(--label); font-weight: 500; font-size: 10px; letter-spacing: .12em; }
+  .app-header { background: var(--board); height: 90px; }
+  .brand { font-size: 24px; letter-spacing: -.06em; gap: 10px; }
+  .brand-mark { display: grid; place-items: center; width: 39px; height: 39px; border: 1px solid var(--yellow); border-radius: 50%; color: var(--yellow); }
+  .brand-studio { font-family: var(--label); font-weight: 400; font-size: 8px; letter-spacing: .38em; }
+  .main-nav { gap: 5px; align-items: center; }
+  .main-nav button { padding: 10px 13px; border-radius: 6px; font-size: 13px; transition: background .15s, color .15s; }
+  .main-nav button:hover { background: var(--surface); color: var(--chalk); }
+  .main-nav button.active { color: var(--yellow); background: var(--accent-wash); }
+  .main-nav button.active::after { display: none; }
+  .button { border-radius: 6px; padding: 12px 20px; font-weight: 700; }
+  .button.large { padding: 16px 24px; min-height: 54px; font-size: 16px; }
+  .primary { background: var(--yellow); color: var(--accent-ink); box-shadow: none; }
+  .primary:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 4px 18px color-mix(in srgb, var(--yellow) 12%, transparent); }
+  .primary:active:not(:disabled) { transform: translateY(1px); }
+  .secondary { background: transparent; border-color: var(--line); }
+  .secondary:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--muted); }
+  .subtle { color: var(--chalk); }
+  .icon-button { border: 1px solid var(--line); border-radius: 6px; width: 38px; height: 38px; }
+  .icon-button:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--muted); }
+  .header-export { padding: 9px 12px; }
   .danger { color: var(--danger); }
   .panel, .library-person, .people-preview-group { background: var(--surface); }
-  .panel, .event-standings, .activity-card { box-shadow: 0 4px 0 color-mix(in srgb, var(--chalk) 2.7%, transparent); }
-  .welcome-copy .eyebrow { color: var(--festival-teal); }
-  .welcome-copy h1 { font-weight: 700; letter-spacing: -.055em; }
-  .welcome-copy h1 > span { color: var(--festival-coral); }
-  .welcome-copy .hero-details { color: var(--muted); }
-  .welcome-copy .button { border-radius: 50px; }
-  .welcome-art { isolation: isolate; }
-  .welcome-emblem { position: relative; border-radius: 160px 160px 28px 28px; border: 2px solid var(--festival-teal); background: var(--wash); box-shadow: 12px 12px 0 var(--emblem-shadow); color: var(--festival-teal); transform: rotate(4deg); }
-  .welcome-emblem > svg { background: var(--festival-gold); box-sizing: content-box; padding: 22px; border-radius: 50%; width: 65px; height: 65px; }
-  .welcome-emblem > span { letter-spacing: .16em; color: var(--festival-teal); }
-  .welcome-emblem b { color: var(--festival-teal); font-size: 14px; }
-  .welcome-art::before, .welcome-art::after { content: ''; position: absolute; width: 12px; height: 32px; background: var(--festival-coral); border-radius: 3px; transform: rotate(-24deg); z-index: -1; }
-  .welcome-art::before { top: 16px; left: 38px; }
-  .welcome-art::after { bottom: 105px; right: -3px; height: 22px; background: var(--festival-teal); transform: rotate(28deg); }
-  .welcome-art > p { color: var(--festival-teal); margin-top: 35px; }
-  .welcome-star { color: var(--festival-coral); }
-  .star-two { color: var(--festival-gold); }
-  .welcome-invitation { position: relative; background: var(--invite); border: 0; border-radius: 20px; padding: 34px 24px; margin-bottom: 28px; }
-  .welcome-invitation::before { content: ''; position: absolute; height: 6px; left: 24px; right: 24px; top: 0; background: repeating-linear-gradient(90deg, var(--festival-coral) 0 30px, transparent 30px 42px, var(--festival-gold) 42px 72px, transparent 72px 84px, var(--festival-teal) 84px 114px, transparent 114px 126px); border-radius: 3px; }
-  .welcome-invitation .eyebrow { color: var(--festival-teal); }
-  .welcome-invitation > p { color: var(--yellow); }
-  .activity-visual { background: #e3eee1; }
-  .activity-label { background: #fff8eced; color: #176c63; }
-  .aio-art { background: #f4d8c4; }
-  .aio-card { background: var(--surface); border: 1px solid #d3ac91; }
-  .aio-actor { color: #176c63; }
-  .event-hero-art { color: var(--festival-teal); }
-  .event-context { background: var(--wash); }
-  .event-context-heading > span, .event-context li.current { color: var(--festival-teal); }
-  .event-context li.current { border-bottom-color: var(--festival-teal); }
-  .event-running-order li.current { background: color-mix(in srgb, var(--wash) 50%, transparent); }
+  .panel, .event-standings, .activity-card { box-shadow: none; }
+  .panel-heading > svg { color: var(--pink); }
+  .pill { font-family: var(--label); border-radius: 5px; font-size: 11px; background: var(--surface); }
+  .step-badge { font: 600 13px var(--label); border-radius: 5px; transform: none; }
+  .welcome-page { padding-top: 26px; }
+  .welcome-masthead { display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font: 9px var(--label); letter-spacing: .14em; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .welcome-hero { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); align-items: center; padding: 55px 0 62px; }
+  .welcome-copy { min-width: 0; }
+  .welcome-copy > .eyebrow { display: flex; gap: 10px; align-items: center; color: var(--pink); overflow-wrap: anywhere; }
+  .welcome-copy .status-dot { background: var(--pink); width: 6px; height: 6px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--pink) 10%, transparent); }
+  .welcome-copy h1 { font-size: clamp(48px, 5.5vw, 82px); line-height: .99; letter-spacing: -.065em; margin: 27px 0 26px; max-width: 720px; }
+  .welcome-copy h1 > span { color: var(--yellow); }
+  .welcome-copy > p { font-size: 18px; line-height: 1.6; color: var(--muted); margin: 0 0 28px; }
+  .welcome-copy .button-row { gap: 8px; }
+  .welcome-copy .hero-details { margin-top: 28px; font-size: 11px; gap: 20px; flex-wrap: wrap; }
+  .hero-details svg { color: var(--pink); }
+  .club-poster { position: relative; background: var(--poster); color: var(--poster-ink); border-radius: 4px; padding: 25px 28px 0; transform: rotate(3deg); margin: 6px 13px 6px 6px; box-shadow: 10px 12px 0 var(--board-deep); }
+  .poster-topline { display: flex; align-items: center; justify-content: space-between; font: 10px var(--label); letter-spacing: .08em; border-bottom: 1px solid #15182745; padding-bottom: 12px; }
+  .poster-title { position: relative; z-index: 1; font: 700 clamp(38px, 4.5vw, 64px)/.91 var(--heading); letter-spacing: -.065em; padding-top: 21px; }
+  .poster-art { position: relative; margin: -9px 0 -3px; }
+  .club-flower { display: block; width: 86%; max-height: 260px; margin: auto; overflow: visible; transform: rotate(-9deg); }
+  .club-flower ellipse { fill: var(--poster-flower); stroke: var(--poster-ink); stroke-width: 1.3; }
+  .flower-center { fill: var(--poster-ink); }
+  .flower-smile { stroke: var(--poster-flower); stroke-width: 6; stroke-linecap: round; }
+  .poster-sticker { position: absolute; right: -13px; bottom: 13px; width: 92px; height: 92px; border-radius: 50%; background: var(--poster-ink); color: var(--chalk); display: flex; flex-direction: column; justify-content: center; align-items: center; transform: rotate(12deg); font: 700 24px/1.1 var(--heading); }
+  .poster-sticker b { font: 8px var(--label); letter-spacing: .03em; margin-top: 4px; }
+  .poster-ticket { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 18px 0 20px; border-top: 1px dashed #15182770; font: 9px/1.8 var(--label); letter-spacing: .08em; }
+  .poster-ticket b { font: 400 12px var(--body); letter-spacing: 0; }
+  .ticket-bars { width: 72px; height: 30px; background: repeating-linear-gradient(90deg, var(--poster-ink) 0 2px, transparent 2px 4px, var(--poster-ink) 4px 5px, transparent 5px 9px); }
+  .welcome-invitation { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; border-top: 1px solid var(--line); padding: 30px 0 10px; gap: 28px; text-align: left; }
+  .invitation-heading h2 { font-size: 29px; letter-spacing: -.045em; line-height: 1.1; margin-top: 17px; }
+  .invitation-step { position: relative; border-left: 1px solid var(--line); padding-left: 25px; padding-top: 3px; }
+  .invitation-step .eyebrow { display: block; font-size: 9px; margin-top: 20px; }
+  .invitation-step h3 { font-size: 19px; margin-top: 9px; }
+  .invitation-step p { color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 0; max-width: 240px; }
+  .invitation-icon { color: var(--pink); }
+  .invitation-step:nth-child(3) .invitation-icon { color: var(--yellow); }
+  .invitation-step:nth-child(4) .invitation-icon { color: var(--mint); }
+  .activity-card { border-radius: var(--radius); }
+  .activity-card-top .eyebrow { color: var(--pink); }
+  .activity-card-top > svg { color: var(--muted); }
+  .activity-visual { background: var(--poster); }
+  .activity-label { background: #151827; color: #f5f4ef; border-radius: 4px; padding: 7px 10px; font-family: var(--label); }
+  .activity-tags > span { border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; }
+  .activity-tags { gap: 6px; }
+  .activity-copy h2 { font-size: 36px; letter-spacing: -.05em; }
+  .activity-art { color: #151827; }
+  .art-grid { background-image: linear-gradient(#1518270d 1px, transparent 1px), linear-gradient(90deg, #1518270d 1px, transparent 1px); }
+  .mini-polaroid { background: #f5f4ef; box-shadow: 4px 6px 0 #15182735; }
+  .placeholder-portrait { color: #151827; background: #a9e7c5; }
+  .art-doodle, .art-arrow { color: #151827; }
+  .aio-art { background: #d7fa52; }
+  .aio-card { background: #f5f4ef; border: 1px solid #151827; box-shadow: 5px 5px 0 #151827; }
+  .aio-actor { color: #151827; }
+  .event-hero-art { color: var(--pink); border: 1px solid var(--line); border-radius: var(--radius); }
+  .event-context { background: var(--board-deep); }
+  .event-context-heading > span, .event-context li.current { color: var(--yellow); }
+  .event-context li.current { border-bottom-color: var(--yellow); }
+  .event-running-order li.current { background: var(--accent-wash); }
+  .event-score-table thead { background: var(--board-deep); }
+  .event-score-table thead th { font-family: var(--label); font-size: 10px; }
+  .event-score-table th:first-child { padding-left: 10px; }
   .setup-steps { background: transparent; }
   .setup-steps .current > span, .category-tile.on .category-check { color: var(--accent-ink); }
   .category-tile.on { background: var(--accent-wash); }
-  .segmented button[aria-pressed='true'] { background: var(--wash); color: var(--festival-teal); }
+  .segmented button[aria-pressed='true'] { background: var(--surface-light); color: var(--yellow); }
+  .drop-zone { border-color: var(--line); background: var(--surface); }
+  .drop-zone.dragging { background: var(--accent-wash); border-color: var(--yellow); }
+  .upload-symbol { border-color: var(--line); transform: none; border-radius: 12px; color: var(--pink); }
+  .info-strip { color: var(--muted); }
+  .photo-editor, .drop-zone.has-image > img { background: var(--board-deep); }
   .correct.selected { color: var(--accent-ink); }
-  .switch::before { background: var(--surface); }
+  .switch::before { background: var(--chalk); }
   .switch:checked::before { background: var(--accent-ink); }
-  .score-row.active { background: var(--wash); border-color: color-mix(in srgb, var(--festival-teal) 25%, transparent); }
+  .score-row.active { background: var(--accent-wash); border-color: var(--yellow); }
   .active-team strong, .podium-place h3, .podium-block { color: color-mix(in srgb, var(--team-color) var(--team-text-mix), var(--team-text-base)); }
-  .team-dot { outline: 1px solid color-mix(in srgb, var(--chalk) 22%, transparent); outline-offset: 1px; }
-  .prompt-card { background: #f9e4ae; border: 1px solid #c99a44; border-radius: 16px; box-shadow: 0 8px 0 #c99a4425; }
-  .prompt-card.spent { border-color: var(--line); }
-  .wipe-label { color: #fff8ec; }
+  .team-dot { outline: 1px solid var(--line); outline-offset: 1px; }
+  .prompt-card { background: var(--poster); color: var(--poster-ink); border: 1px solid var(--poster-ink); border-radius: 10px; box-shadow: 8px 8px 0 var(--board-deep); }
+  .prompt-card .eyebrow, .prompt-card small { color: #353348; }
+  .prompt-card.spent { background: var(--surface); border-color: var(--line); color: var(--chalk); box-shadow: none; }
+  .prompt-card.spent .eyebrow { color: var(--muted); }
+  .wipe-label { color: #f5f4ef; }
   .spotlight-box > span { color: var(--accent-ink); }
   .warning-text { color: var(--warning); }
-  .demo-banner { color: var(--muted); background: var(--notice); border-color: #c99a4440; }
-  .storage-warning { color: var(--chalk); background: var(--notice); }
+  .demo-banner, .storage-warning { color: var(--chalk); background: var(--notice); border-color: var(--line); }
   .image-missing { color: var(--muted); }
   .import-menu-list { background: var(--surface); }
+  .toast { background: var(--chalk); color: var(--ink); border-radius: 6px; }
+  .busy-overlay, .modal-backdrop { background: #10131fcc; }
+  .app-footer { font-family: var(--label); font-size: 10px; margin-top: 20px; }
+}
+
+@layer responsive {
+  @media (max-width: 1150px) {
+    .main-nav { gap: 3px; }
+    .main-nav button { padding: 9px 10px; }
+    .welcome-hero { gap: 32px; }
+    .welcome-copy h1 { font-size: clamp(45px, 6vw, 66px); }
+    .invitation-heading h2 { font-size: 25px; }
+    .welcome-invitation { gap: 20px; }
+    .invitation-step { padding-left: 20px; }
+  }
+  @media (max-width: 760px) {
+    .app-header { height: auto; }
+    .brand { font-size: 23px; }
+    .brand-mark { width: 32px; height: 32px; }
+    .brand-mark svg { width: 24px; }
+    .main-nav { padding-bottom: 4px; gap: 4px; }
+    .main-nav button { padding: 10px 12px; font-size: 12px; }
+    .welcome-page { padding-top: 21px; }
+    .welcome-masthead { font-size: 8px; }
+    .welcome-masthead > span:last-child { display: none; }
+    .welcome-hero { grid-template-columns: 1fr; padding: 36px 0; gap: 34px; }
+    .welcome-copy h1 { font-size: clamp(46px, 10vw, 70px); max-width: 550px; }
+    .welcome-copy > p { font-size: 17px; }
+    .welcome-copy .hero-details { gap: 13px; margin-top: 22px; }
+    .club-poster { width: min(360px, calc(100% - 22px)); margin: 6px auto 12px; padding: 22px 24px 0; transform: rotate(2deg); }
+    .poster-title { font-size: 52px; }
+    .club-flower { max-height: 235px; }
+    .welcome-invitation { grid-template-columns: 1fr; gap: 24px; padding-top: 26px; }
+    .invitation-heading h2 { font-size: 30px; }
+    .invitation-heading h2 br { display: none; }
+    .invitation-step { padding: 0 0 0 48px; border-left: 0; }
+    .invitation-icon { position: absolute; left: 0; top: 2px; }
+    .invitation-step .eyebrow { margin-top: 0; }
+    .invitation-step p { max-width: none; }
+    .activity-copy h2 { font-size: 30px; }
+  }
 }

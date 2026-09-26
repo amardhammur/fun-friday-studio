@@ -1,6 +1,6 @@
 # Fun Friday Studio
 
-A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and a warm game-night theme.
+A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and the After Hours theme: midnight ink, electric lime, and soft lilac. The header palette button switches between After Hours and Game Show; the choice is saved on this laptop.
 
 The first activity is **Childhood vs Now**. Each team gets its own unique batch of childhood portraits and plays its batch in turn. The host reveals the current portrait and name, then marks **Correct (+2)** or **Missed (0)**. A person appears **only once in the entire game**. There are no hints, clarity levels, zoom puzzles, or timers.
 
