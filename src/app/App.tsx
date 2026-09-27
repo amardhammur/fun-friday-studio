@@ -110,7 +110,7 @@ export function App({ initialSession, personalSession }: { initialSession: Event
   };
   const buildEvent = () => {
     const personal = session.isDemo ? personalRef.current : session;
-    if ((personal.segments.length || personal.scoreEntries.length || personal.wager) && !window.confirm('Start a fresh event? Your current activities and scores will be cleared, but your people and teams will stay.')) return;
+    if ((personal.segments.length || personal.scoreEntries.length || personal.wager) && !window.confirm('Start a fresh event? Your current activities and scores will be cleared. Your people stay on their teams; use Shuffle again for new teams.')) return;
     if (session.isDemo) exitDemo('session');
     updateEvent(s => { s.segments = []; s.scoreEntries = []; s.wager = undefined; s.currentSegmentIndex = 0; s.phase = 'lineup'; s.isDemo = false; s.title = defaultEventTitle(); });
     setRoute('session');

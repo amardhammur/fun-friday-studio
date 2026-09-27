@@ -196,3 +196,24 @@ test('the audience sees every team and its members on a show-mode screen, before
   const after = await saved(page);
   expect({ ...after, updatedAt: '' }).toEqual({ ...playing, updatedAt: '' });
 });
+
+test('a new event keeps players on their teams until the host shuffles again', async ({ page }) => {
+  await prepare(page);
+  await page.getByRole('textbox', { name: 'Team 1 name', exact: true }).fill('Agni Squad');
+  await page.getByRole('button', { name: 'Shuffle', exact: true }).click();
+  await page.getByRole('button', { name: 'Pin Asha', exact: true }).click();
+  const before = await saved(page);
+  await page.getByRole('button', { name: 'Your event', exact: true }).click();
+  acceptNextConfirm(page);
+  await page.getByRole('button', { name: 'Start a new event', exact: true }).click();
+  const fresh = await saved(page);
+  expect(fresh.teams).toEqual(before.teams);
+  expect(fresh.players).toEqual(before.players);
+  await page.getByRole('button', { name: 'Childhood vs Now', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Show teams on screen', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Shuffle again', exact: true }).click();
+  const reshuffled = await saved(page);
+  expect(reshuffled.teams.map(({ id, name, color }: any) => ({ id, name, color }))).toEqual(before.teams.map(({ id, name, color }: any) => ({ id, name, color })));
+  expect(reshuffled.teams.flatMap((t: any) => t.memberIds).sort()).toEqual(before.players.map((p: any) => p.id).sort());
+  expect(reshuffled.teams.find((t: any) => t.pinnedIds.length).id).toBe(before.teams.find((t: any) => t.pinnedIds.length).id);
+});
