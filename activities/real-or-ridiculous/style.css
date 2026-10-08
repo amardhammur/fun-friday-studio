@@ -1,0 +1,98 @@
+.rr-preview { min-height: 340px; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 58px 32px 28px; gap: 18px; background: var(--board-deep); color: var(--chalk); }
+.rr-preview-seals { display: flex; gap: 14px; font: 700 13px var(--label); color: var(--yellow); }
+.rr-preview-seals span { display: flex; align-items: center; gap: 7px; }
+.rr-preview strong { font: 700 clamp(35px, 3.5vw, 55px)/1.02 var(--heading); letter-spacing: -.04em; }
+.rr-preview strong em { color: var(--yellow); font-style: normal; }
+.rr-preview-letters { display: flex; gap: 10px; }
+.rr-preview-letters b { border: 1px solid var(--line); border-radius: 7px; padding: 10px 20px; transform: rotate(-5deg); font: 700 24px var(--heading); }
+.rr-preview-letters b:nth-child(2) { transform: rotate(4deg); }
+.rr-note { padding: 20px; margin: 20px 0; border: 1px solid var(--line); border-radius: 10px; }
+.rr-note p { margin: 8px 0 0; line-height: 1.5; }
+.rr-rules { padding-left: 1.3em; line-height: 1.45; }
+.rr-rules li { padding-left: 5px; margin: 13px 0; }
+.rr-stage { width: 100%; }
+.app[data-mode="show"].presentation .rr-stage { height: calc(100svh - 130px); min-height: 0; }
+.app[data-mode="show"].presentation .rr-stage .game-stage, .rr-stage .game-stage { display: flex; flex-direction: column; gap: 14px; overflow: hidden; min-height: 0; }
+.rr-round-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex: 0 0 auto; }
+.rr-round-head .eyebrow { font-size: 15px; }
+.rr-step { display: flex; gap: 8px; align-items: center; margin-top: 7px; font: 600 18px var(--label); }
+.rr-step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); }
+.rr-clock { display: flex; align-items: baseline; gap: 12px; font-variant-numeric: tabular-nums; }
+.rr-clock > b { font: 600 42px var(--heading); }
+.rr-clock > small { font-size: 15px; }
+.app[data-mode="show"].presentation .rr-stage .game-stage > .rr-scene, .rr-scene { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.rr-question { font: 700 clamp(28px, 2.5vw, 44px)/1.15 var(--heading); margin: 7px 0 18px; letter-spacing: -.025em; }
+.rr-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.rr-card { border: 1px solid var(--line); border-radius: 12px; padding: clamp(16px, 1.6vw, 28px); background: var(--surface); display: flex; flex-direction: column; min-width: 0; }
+.rr-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); }
+.rr-letter { font: 700 34px var(--heading); color: var(--chalk); }
+.rr-card h2 { font: 700 clamp(24px, 2vw, 34px)/1.12 var(--heading); margin: 16px 0 12px; }
+.rr-card > p { font-size: clamp(21px, 1.65vw, 27px); line-height: 1.35; margin: 0 0 16px; }
+.rr-evidence { margin-top: auto; display: flex; flex-direction: column; gap: 8px; font-size: 17px; line-height: 1.35; }
+.rr-evidence a { color: var(--chalk); text-underline-offset: 4px; }
+.rr-evidence > b { color: var(--muted); }
+.rr-clue, .rr-wonder { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--line); border-radius: 10px; margin-top: 16px; }
+.rr-clue > svg, .rr-wonder > svg { flex-shrink: 0; color: var(--yellow); }
+.rr-clue b { font: 600 16px var(--label); }
+.rr-clue p, .rr-wonder p { font-size: clamp(21px, 1.7vw, 28px); line-height: 1.3; margin: 6px 0 0; }
+.rr-wonder p { margin: 0; }
+.rr-cue { font-size: clamp(21px, 1.6vw, 26px); margin: 18px 0 0; line-height: 1.35; }
+.rr-vote-cue { border-left: 4px solid var(--yellow); padding-left: 14px; }
+.rr-awards { flex: 0 0 auto; }
+.rr-awards > span { font-size: 17px; }
+.rr-awards > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.rr-awards .button { min-height: 42px; padding: 8px 11px; }
+.rr-awards .button > span { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rr-awards [aria-pressed="true"] { outline: 2px solid var(--yellow); outline-offset: -2px; }
+.rr-actions { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 0; }
+.rr-actions > span { max-width: 55%; font-size: 16px; line-height: 1.4; color: var(--muted); }
+.rr-actions > button { white-space: nowrap; }
+.rr-brief h1 { font: 700 clamp(36px, 4vw, 64px)/1.06 var(--heading); letter-spacing: -.03em; margin: 10px 0 24px; }
+.rr-brief .rr-rules { font-size: clamp(21px, 1.8vw, 29px); }
+.rr-brief > p { font-size: 19px; line-height: 1.4; }
+.rr-definition { padding-top: 14px; border-top: 1px solid var(--line); }
+.app[data-mode="show"].presentation .rr-stage .scoreboard { overflow-y: auto; min-height: 0; }
+.rr-stage .score-heading strong { font-size: 21px; }
+.rr-stage .score-heading b { font-size: 30px; }
+.rr-finale { width: min(1100px, 95%); margin: 25px auto; padding: 25px; }
+.rr-finale > h1 { font: 700 clamp(36px, 4vw, 64px) var(--heading); }
+.rr-finale > p { font-size: 25px; margin-bottom: 25px; }
+.rr-finale-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.rr-finale details { margin: 24px 0; font-size: 21px; }
+.rr-source-list article { padding: 18px 0; border-bottom: 1px solid var(--line); }
+.rr-source-list p { line-height: 1.4; }
+@media (max-height: 800px) and (min-width: 1000px) {
+  .app[data-mode="show"].presentation .rr-stage .game-stage { gap: 10px; }
+  .rr-round-head { min-height: 54px; }
+  .rr-question { font-size: 28px; margin: 0 0 12px; }
+  .rr-card { padding: 14px; }
+  .rr-card h2 { font-size: 24px; margin: 10px 0; }
+  .rr-card > p { font-size: 21px; margin-bottom: 12px; }
+  .rr-letter { font-size: 28px; }
+  .rr-clue, .rr-wonder { padding: 12px; margin-top: 12px; }
+  .rr-clue p, .rr-wonder p, .rr-cue { font-size: 21px; }
+  .rr-stage .score-row { padding-top: 8px; padding-bottom: 8px; margin-bottom: 5px; }
+  .rr-brief h1 { font-size: 36px; margin-bottom: 16px; }
+  .rr-brief .rr-rules { font-size: 21px; }
+}
+@media (max-width: 800px) {
+  .rr-cards, .rr-finale-grid { grid-template-columns: 1fr; }
+  .app[data-mode="show"].presentation .rr-stage { height: auto; }
+  .rr-actions { flex-wrap: wrap; } .rr-actions > span { max-width: none; }
+  .rr-clock { gap: 5px; } .rr-clock > b { font-size: 32px; }
+}
+@media (max-width: 800px) { .rr-reveal-cards { grid-template-columns: 1fr; } }
+.rr-reveal-cards { grid-template-columns: 1fr; gap: 10px; }
+.rr-proof { border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; background: var(--surface); }
+.rr-proof-heading { display: flex; gap: 14px; align-items: center; }
+.rr-proof-heading h2 { font: 700 27px/1.15 var(--heading); margin: 0; }
+.rr-proof-heading .rr-evidence { margin: 0 0 0 auto; flex-direction: row; align-items: center; gap: 16px; white-space: nowrap; }
+.rr-proof > p { font-size: clamp(21px, 1.65vw, 27px); line-height: 1.3; margin: 8px 0 0; }
+.rr-scene:has(.rr-reveal-cards) .rr-wonder { border: 0; padding: 0; margin-top: 12px; }
+@media (max-height: 800px) and (min-width: 1000px) {
+  .rr-proof { padding: 10px 14px; }
+  .rr-proof-heading h2 { font-size: 24px; }
+  .rr-proof > p { font-size: 21px; margin-top: 5px; }
+  .rr-actions > .button.large { padding: 12px 18px; min-height: 48px; }
+}
+@media (max-width: 800px) { .rr-proof-heading { flex-wrap: wrap; } .rr-proof-heading .rr-evidence { margin-left: 0; } }

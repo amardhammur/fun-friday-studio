@@ -75,6 +75,8 @@ export interface Activity<S = any, G = any> {
   setupSteps: { id: string; title: string; View: ComponentType<ActivityContext<S, G>>; validate: (segment: ActivitySegment<S, G>, event: ActivityEvent) => string[] }[];
   settingsSchema: z.ZodType<S>; stateSchema: z.ZodType<G>; settingsFields: SettingsField[];
   Stage: ComponentType<ActivityContext<S, G>>; Finale?: ComponentType<ActivityContext<S, G>>;
+  /** Retained for saved events, but omitted from the library and new lineups. */
+  archived?: boolean;
   estimatedMinutes?: number;
   /** Running order in the activity cupboard, and which activity greets a first-time visitor.
       Filename order must not decide this: discovery is alphabetical by path. */

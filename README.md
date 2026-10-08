@@ -4,6 +4,8 @@ A private, offline activity studio for office events. Built from an empty reposi
 
 The first activity is **Childhood vs Now**. Each team gets its own unique batch of childhood portraits and plays its batch in turn. The host reveals the current portrait and name, then marks **Correct (+2)** or **Missed (0)**. A person appears **only once in the entire game**. There are no hints, clarity levels, zoom puzzles, or timers.
 
+**Real or Ridiculous?** adds a no-prop team discovery game: two documented inventions, one fictional pitch, an extra clue, and a final vote. Six rounds take about 20 minutes. See the [host and content guide](activities/real-or-ridiculous/README.md).
+
 Activities run as an **event**: the host builds a line-up, and every activity shares one set of teams and one running leaderboard. Standings appear between activities, and the event can end with a final wager where teams bet their points on one last question.
 
 ## Quick start

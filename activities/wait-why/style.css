@@ -1,0 +1,39 @@
+.why-preview { min-height: 290px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 30px; text-align: center; background: var(--surface); color: var(--text); }
+.why-preview strong { font-size: clamp(32px, 3vw, 52px); line-height: 1.05; }
+.why-stage .game-stage { display: flex; flex-direction: column; gap: 16px; min-width: 0; overflow-y: auto; }
+.why-top, .why-actions { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.why-top { min-height: 70px; }
+.why-top .eyebrow { font-size: 15px; }
+.why-brief h1, .why-finale h1 { font-size: clamp(36px, 4vw, 62px); }
+.why-rules { padding-left: 1.4em; line-height: 1.5; }
+.why-rules li { margin: 12px 0; }
+.why-brief .why-rules { font-size: clamp(21px, 1.8vw, 29px); }
+.why-puzzle h1 { font-size: clamp(27px, 2.4vw, 42px); line-height: 1.18; margin: 0 0 20px; text-wrap: pretty; }
+.why-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.why-option { display: flex; align-items: center; gap: 12px; border: 2px solid var(--line); border-radius: 12px; padding: 18px; font-size: clamp(21px, 1.9vw, 30px); overflow-wrap: anywhere; }
+.why-option > b { font-size: 30px; }
+.why-option.correct { border-color: currentColor; background: var(--surface); box-shadow: inset 0 0 0 2px currentColor; }
+.why-explanation { padding: 18px 0 0; }
+.why-explanation h2 { display: flex; gap: 10px; align-items: center; font-size: 23px; margin: 0; }
+.why-explanation p, .why-cue { font-size: clamp(21px, 1.8vw, 29px); line-height: 1.35; margin: 12px 0; }
+.why-wonder { font-style: italic; }
+.why-awards > div { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.why-awards [aria-pressed="true"] { outline: 2px solid currentColor; }
+.why-actions { margin-top: auto; padding: 12px 0; }
+.why-frozen-clock { font-size: 40px; font-variant-numeric: tabular-nums; }
+.why-frozen-clock small { font-size: 14px; }
+.why-stage .score-heading strong { font-size: 21px; }
+.why-stage .score-heading b { font-size: 30px; }
+.why-finale { max-width: 1000px; margin: 24px auto; padding: 24px; }
+.why-finale > p { font-size: 24px; }
+.why-finale details { margin: 24px 0; font-size: 20px; }
+.why-finale article { border-bottom: 1px solid var(--line); padding: 12px 0; }
+.app[data-mode="show"].presentation .why-stage { height: auto; min-height: calc(100svh - 130px); }
+@media (max-width: 800px) { .why-options { grid-template-columns: 1fr; } .why-actions { flex-wrap: wrap; } }
+@media (min-width: 1000px) and (max-height: 800px) { .why-stage .game-stage { gap: 10px; } .why-top { min-height: 50px; } .why-puzzle h1 { font-size: 27px; margin-bottom: 12px; } .why-option { padding: 12px; font-size: 22px; } .why-explanation p, .why-cue { font-size: 21px; margin: 8px 0; } .why-stage .score-row { padding-top: 8px; padding-bottom: 8px; } }
+/* Reserve space for host controls even when a long explanation needs scrolling. */
+.app[data-mode="show"].presentation .why-stage { height: calc(100svh - 130px); min-height: 0; }
+.app[data-mode="show"].presentation .why-stage .game-stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; overflow: hidden; min-height: 0; }
+.why-stage .why-puzzle, .why-stage .why-brief { min-height: 0; overflow-y: auto; }
+.app[data-mode="show"].presentation .why-stage .scoreboard { overflow-y: auto; }
+.why-stage .why-actions { margin-top: 0; }

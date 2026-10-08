@@ -1,0 +1,298 @@
+[
+  {
+    "id": "tiny-cleaner",
+    "title": "The Tiny Cleaner",
+    "pitch": "A working vacuum cleaner made mainly from a ballpoint pen, capable of sucking up dust.",
+    "clue": "The proposed suction comes from a tiny motor turning a fan inside the body.",
+    "explanation": "Tapala Nadamuni built it using a pen and a tiny motor. Guinness documented it in 2024; the device really picked up dust.",
+    "kind": "real",
+    "status": "Prototype",
+    "source": {
+      "label": "Guinness World Records",
+      "url": "https://www.guinnessworldrecords.com/news/2024/9/indian-student-builds-worlds-smallest-vacuum-cleaner-using-a-pen"
+    },
+    "summary": "Tapala Nadamuni built a working pen-based vacuum. Guinness documented its dust-picking ability in 2024."
+  },
+  {
+    "id": "designer-stick",
+    "title": "The Designer Stick",
+    "pitch": "A patented dog toy shaped like a branch, designed to float and glow in the dark.",
+    "clue": "The design addresses toys sinking in water and owners losing sight of them in the dark.",
+    "explanation": "US6360693B1 describes a branch-shaped toy with floating and glowing versions. The patent documents the design; it does not establish commercial sales.",
+    "kind": "real",
+    "status": "Patented design",
+    "source": {
+      "label": "US6360693B1 · original patent",
+      "url": "https://patents.google.com/patent/US6360693B1/en"
+    },
+    "summary": "The patent describes a branch-shaped dog toy with floating and glowing versions. It documents an idea, not sales."
+  },
+  {
+    "id": "salt-spoon",
+    "title": "The Flavour Spoon",
+    "pitch": "A spoon that uses a weak electric current to make low-salt food taste saltier.",
+    "clue": "The pitch changes the eating experience rather than adding seasoning to the bowl.",
+    "explanation": "Kirin launched the Electric Salt Spoon in 2024. It uses a weak current to enhance salty and umami taste; the effect varies by person and dish.",
+    "kind": "real",
+    "status": "Product",
+    "source": {
+      "label": "Kirin · 2024 launch",
+      "url": "https://www.kirinholdings.com/en/newsroom/release/2024/0520_01.html"
+    },
+    "summary": "Kirin launched this electric spoon in 2024. It enhances salty and umami taste; experiences vary by person and dish."
+  },
+  {
+    "id": "wearable-cooler",
+    "title": "The Personal Thermostat",
+    "pitch": "A wearable device that sits against your upper back and can cool or warm that spot.",
+    "clue": "It works through a contact plate rather than blowing chilled air around the room.",
+    "explanation": "Sony’s REON POCKET directly cools or warms the area it touches. It is a local thermal device, not a whole-room air conditioner.",
+    "kind": "real",
+    "status": "Product",
+    "source": {
+      "label": "Sony · REON POCKET",
+      "url": "https://www.sony.com/en/SonyInfo/blog/2025/08/06/"
+    },
+    "summary": "Sony’s REON POCKET cools or warms the area it touches. It does not cool the whole room."
+  },
+  {
+    "id": "travelling-fridge",
+    "title": "The Fridge That Visits",
+    "pitch": "A refrigerator designed to bring itself to you when you call it.",
+    "clue": "The proposed appliance maps the room so it can avoid obstacles on the way.",
+    "explanation": "Panasonic demonstrated an autonomous movable fridge concept at IFA 2017. Its sensors let it navigate to a requested location.",
+    "kind": "real",
+    "status": "Prototype",
+    "source": {
+      "label": "Panasonic · IFA 2017",
+      "url": "https://news.panasonic.com/global/press/en170831-1"
+    },
+    "summary": "Panasonic demonstrated an autonomous movable fridge at IFA 2017. Sensors helped it navigate around the room."
+  },
+  {
+    "id": "memory-tyre",
+    "title": "The Metal Bicycle Tyre",
+    "pitch": "An airless bicycle tyre made with flexible metal that springs back after deformation.",
+    "clue": "Instead of trapped air, the load is carried by a structure made from a special alloy.",
+    "explanation": "NASA developed a shape-memory-alloy tyre structure and prototyped it for a bicycle. Its flexibility comes from the metal structure, not pressurised air.",
+    "kind": "real",
+    "status": "Prototype",
+    "source": {
+      "label": "NASA · tyre technology",
+      "url": "https://technology.nasa.gov/patent/LEW-TOPS-161"
+    },
+    "summary": "NASA prototyped a bicycle tyre using shape-memory metal. Its structure supports weight without pressurised air."
+  },
+  {
+    "id": "runaway-clock",
+    "title": "The Alarm That Escapes",
+    "pitch": "An alarm clock with wheels that rolls away beeping so you have to get out of bed.",
+    "clue": "The wheels are part of the wake-up routine, not a way to move the clock between rooms.",
+    "explanation": "Clocky is sold as a wheeled alarm that runs away sounding its alarm. The inconvenient feature is the point: you must get up to catch it.",
+    "kind": "real",
+    "status": "Product",
+    "source": {
+      "label": "Clocky · original product",
+      "url": "https://clocky.com/products/clocky"
+    },
+    "summary": "Clocky really rolls away sounding its alarm. Getting out of bed to catch it is the intended feature."
+  },
+  {
+    "id": "nap-pillow",
+    "title": "The Wearable Nap",
+    "pitch": "A padded pillow worn over your head, with openings for breathing and resting your hands.",
+    "clue": "The design targets short naps at a desk rather than replacing a bed pillow.",
+    "explanation": "Ostrichpillow’s Original Napping Pillow cushions the head and blocks light. Its unusual shape creates a small personal resting space.",
+    "kind": "real",
+    "status": "Product",
+    "source": {
+      "label": "Ostrichpillow · product details",
+      "url": "https://help.ostrichpillow.com/en-US/original-napping-pillow-product-details-894136"
+    },
+    "summary": "Ostrichpillow sells this head-covering napping pillow. The padding cushions the head and blocks light."
+  },
+  {
+    "id": "colour-car",
+    "title": "The Car That Changes Shade",
+    "pitch": "A car prototype whose outer surface switches between black and white at the push of a button.",
+    "clue": "The outer surface uses technology related to electronic paper, rather than a fresh coat of paint.",
+    "explanation": "BMW showed the iX Flow featuring E Ink in 2022. Electrically controlled pigments changed its appearance; this was a research vehicle.",
+    "kind": "real",
+    "status": "Prototype",
+    "source": {
+      "label": "BMW · iX Flow",
+      "url": "https://www.bmwgroup.com/en/news/general/2022/ixflow.html"
+    },
+    "summary": "BMW demonstrated the iX Flow in 2022. Electronic-paper technology changed the research vehicle’s exterior shade."
+  },
+  {
+    "id": "music-lollipop",
+    "title": "The Singing Sweet",
+    "pitch": "A lollipop that lets you hear music through vibrations while you enjoy the candy.",
+    "clue": "The proposed sound path goes through contact with your teeth, rather than earbuds.",
+    "explanation": "Lollipop Star markets candy with bone-conduction audio. Vibrations carry the sound while you eat; it is not an ordinary loudspeaker in the wrapper.",
+    "kind": "real",
+    "status": "Product",
+    "source": {
+      "label": "Lollipop Star · maker’s description",
+      "url": "https://www.lollipopstar.com/pages/about-us"
+    },
+    "summary": "Lollipop Star sells candy with bone-conduction audio. Contact vibrations deliver the sound while you enjoy the sweet."
+  },
+  {
+    "id": "banana-case",
+    "title": "The Banana Bodyguard",
+    "pitch": "A rigid, banana-shaped travel case made to protect a single banana in your bag.",
+    "clue": "The shell is meant to protect the fruit from pressure during a journey.",
+    "explanation": "SafeBanana sells a protective banana case. Its maker says it fits most bananas: a deliberately specific solution to bruised packed lunches.",
+    "kind": "real",
+    "status": "Product",
+    "source": {
+      "label": "SafeBanana · product",
+      "url": "https://safebanana.com/"
+    },
+    "summary": "SafeBanana sells a rigid banana protector. Its maker says the travel case fits most bananas."
+  },
+  {
+    "id": "wearable-umbrella",
+    "title": "The Hands-Free Canopy",
+    "pitch": "An umbrella design supported by a wearable harness instead of a handle you hold.",
+    "clue": "The support transfers the canopy’s weight to the wearer, leaving both hands available.",
+    "explanation": "US8944300B1 documents a wearable umbrella supported on the body. This evidence establishes a patented design, not how well every version works.",
+    "kind": "real",
+    "status": "Patented design",
+    "source": {
+      "label": "US8944300B1 · original patent",
+      "url": "https://patents.google.com/patent/US8944300B1/en"
+    },
+    "summary": "The patent documents an umbrella supported on the body. It establishes the design, not proof of commercial success."
+  },
+  {
+    "id": "parking-slippers",
+    "title": "The Self-Parking Slippers",
+    "pitch": "Slippers fitted with technology that lets them return to their designated spots at a button press.",
+    "clue": "The proposed parking happens while nobody is wearing them.",
+    "explanation": "Nissan demonstrated self-parking slippers at a Japanese inn in 2018. Tables and floor cushions also returned to their places in the demonstration.",
+    "kind": "real",
+    "status": "Prototype",
+    "source": {
+      "label": "Nissan · ProPILOT Park Ryokan",
+      "url": "https://global.nissannews.com/en/releases/180125-01-e"
+    },
+    "summary": "Nissan demonstrated self-parking slippers at a Japanese inn in 2018. Unoccupied slippers returned to their designated places."
+  },
+  {
+    "id": "robot-room",
+    "title": "The Room That Rearranges",
+    "pitch": "Robotic furniture that changes a small room between sleeping, working and social space.",
+    "clue": "The space changes by moving furniture, not by making the building physically larger.",
+    "explanation": "MIT’s CityHome work led to transformable robotic furniture. Furniture and partitions move so one area can serve different purposes.",
+    "kind": "real",
+    "status": "Prototype",
+    "source": {
+      "label": "MIT · robotic interiors",
+      "url": "https://robotics.mit.edu/robotic-interiors/"
+    },
+    "summary": "MIT’s CityHome project developed transformable robotic furniture, letting the same room serve different purposes."
+  },
+  {
+    "id": "aerogel-jacket",
+    "title": "The Space-Material Jacket",
+    "pitch": "A jacket insulated with aerogel, a material also used in space applications.",
+    "clue": "The pitch relies on insulation that slows heat transfer, rather than a battery-powered heater.",
+    "explanation": "NASA describes aerogel technology being adapted into thinner insulated outerwear. The connection is the material; the jacket is not a spacesuit.",
+    "kind": "real",
+    "status": "Product",
+    "source": {
+      "label": "NASA Spinoff · aerogel outerwear",
+      "url": "https://spinoff.nasa.gov/Spinoff2018/cg_5.html"
+    },
+    "summary": "NASA describes aerogel insulation adapted into thin outerwear. The space connection is the material, not a spacesuit."
+  },
+  {
+    "id": "sound-fork",
+    "title": "The Soundtrack Fork",
+    "pitch": "A fork designed to detect noodle slurping and trigger a phone to play sounds over it.",
+    "clue": "A microphone would detect the sound; a phone app would provide the covering audio.",
+    "explanation": "Nissin announced Otohiko in 2017 with a microphone and phone app. Sales depended on a preorder target; this source establishes the announced concept.",
+    "kind": "real",
+    "status": "Announced concept",
+    "source": {
+      "label": "Nissin · Otohiko announcement (Japanese)",
+      "url": "https://www.nissin.com/jp/company/news/6504/"
+    },
+    "summary": "Nissin announced Otohiko in 2017. The fork triggered covering audio from a phone; sales depended on a preorder target."
+  },
+  {
+    "id": "compliment-mug",
+    "title": "The Compliment Mug",
+    "pitch": "A travel mug whose lid unlocks only after you say something nice to it.",
+    "clue": "The pitch uses a microphone and a small latch, not a temperature sensor.",
+    "explanation": "We wrote this pitch for the game. The voice-controlled latch sounds plausible, but we are not presenting it as a documented invention.",
+    "wonder": "Which of these would you actually use—even the made-up one?",
+    "kind": "fiction"
+  },
+  {
+    "id": "crumb-keys",
+    "title": "The Lunch-Break Keyboard",
+    "pitch": "A keyboard that tips its keys sideways each evening to empty crumbs into a removable tray.",
+    "clue": "The proposed cleaning cycle would run only when the computer is locked.",
+    "explanation": "This exact keyboard pitch was written for this game. Plausible moving parts are not evidence that the product exists.",
+    "wonder": "Which everyday annoyance deserves a surprisingly elaborate solution?",
+    "kind": "fiction"
+  },
+  {
+    "id": "scent-bookmark",
+    "title": "The Chapter Bookmark",
+    "pitch": "A bookmark that releases a different scent at each chapter when it reads a tiny printed code.",
+    "clue": "The proposed bookmark carries replaceable scent cartridges; the paper itself is unscented.",
+    "explanation": "We invented this chapter-and-scent pitch. A detailed explanation can make an unverified idea sound like a finished product.",
+    "wonder": "Would adding another sense make this experience better or more distracting?",
+    "kind": "fiction"
+  },
+  {
+    "id": "meeting-coaster",
+    "title": "The Meeting Coaster",
+    "pitch": "A coaster that raises your mug a little each time a meeting runs five minutes over schedule.",
+    "clue": "The pitch connects a calendar timer to a small lifting platform under the mug.",
+    "explanation": "This calendar-connected coaster is our fictional pitch. We are not claiming nobody has ever imagined something similar.",
+    "wonder": "Which invention here solves the problem, and which just makes it more noticeable?",
+    "kind": "fiction"
+  },
+  {
+    "id": "quiet-zip",
+    "title": "The Library Backpack",
+    "pitch": "A backpack with a zip that slows itself down when a microphone detects a quiet room.",
+    "clue": "The proposed zip uses a small brake to resist sudden pulling rather than playing masking noise.",
+    "explanation": "We wrote this noise-sensitive zip pitch for the game. Its explanation is part of the fiction, not evidence of a tested product.",
+    "wonder": "When would an automatic feature become an annoyance?",
+    "kind": "fiction"
+  },
+  {
+    "id": "weather-hanger",
+    "title": "The Forecast Hanger",
+    "pitch": "A wardrobe hanger that pushes one outfit forward each morning based on the weather forecast.",
+    "clue": "The pitch combines a forecast feed with a motorised clothes rail; it does not inspect your plans.",
+    "explanation": "This particular outfit-selecting hanger pitch is made up for the game. It borrows familiar ingredients to sound convincing.",
+    "wonder": "What information would this invention need before you would trust it?",
+    "kind": "fiction"
+  },
+  {
+    "id": "queue-shoes",
+    "title": "The Queue Shoes",
+    "pitch": "Shoes that gently tap your heels when the person ahead moves, using sensors in the toes.",
+    "clue": "The proposed sensors measure distance ahead; the shoes do not identify people or read a queue number.",
+    "explanation": "These queue-monitoring shoes are an authored fictional pitch. A believable use case does not establish a real product.",
+    "wonder": "Which would you borrow for one day but never buy?",
+    "kind": "fiction"
+  },
+  {
+    "id": "bookmark-light",
+    "title": "The Reading-Time Lamp",
+    "pitch": "A desk lamp that dims whenever it sees you skip a page, then brightens when you turn back.",
+    "clue": "The pitch tracks printed page numbers with a camera rather than tracking your eyes.",
+    "explanation": "We made up this page-policing lamp for the game. Its claimed mechanism is invented too, rather than a report of working hardware.",
+    "wonder": "Which of these ideas gives the user more control—and which takes it away?",
+    "kind": "fiction"
+  }
+]
