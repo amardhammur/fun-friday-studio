@@ -5,6 +5,7 @@ import type { EventSession, Segment } from './types';
 import { migrateEventV2 } from './migrate';
 import { MAX_PHOTO_SETS } from './people/photo-sets';
 import { MAX_FACE_PAIRS, MAX_PEOPLE } from './people/limits';
+import { removeRetiredActivities } from './retired-activities';
 export { newTeams, teamColors } from './event';
 const rect = z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().positive().max(1), height: z.number().positive().max(1) }).refine(r => r.x + r.width <= 1.00001 && r.y + r.height <= 1.00001, 'Crop lies outside the image');
 const crop = z.object({ sourceImageId: z.string(), faceBox: rect, padding: z.object({ top: z.number().min(0).max(3), right: z.number().min(0).max(3), bottom: z.number().min(0).max(3), left: z.number().min(0).max(3) }), cropImageId: z.string().optional() });
@@ -37,6 +38,9 @@ export function validateEvent(input: unknown): EventSession {
   if (version === 2) raw = migrateEventV2(raw as Record<string, unknown>);
   else if (version !== 3) throw new Error('This session needs a newer version of Fun Friday Studio.');
   const event = schema.parse(raw);
+  if (event.segments.length && event.currentSegmentIndex >= event.segments.length) throw new Error('The event points at an activity that is not in its line-up.');
+  if (new Set(event.segments.map(s => s.id)).size !== event.segments.length) throw new Error('The session contains duplicate identifiers.');
+  removeRetiredActivities(event);
   const segments: Segment[] = event.segments.map(segment => {
     const activity = getActivity(segment.activityId);
     if (!activity) throw new Error(`This session uses an activity that is not installed: ${segment.activityId}.`);
@@ -47,7 +51,6 @@ export function validateEvent(input: unknown): EventSession {
     return { ...segment, setupStepId: stepIds.includes(segment.setupStepId) ? segment.setupStepId : stepIds[0], activityVersion: activity.version, settings: activity.settingsSchema.parse(data.settings), game: activity.stateSchema.parse(data.game) };
   });
   const session: EventSession = { ...event, segments };
-  if (session.segments.length && session.currentSegmentIndex >= session.segments.length) throw new Error('The event points at an activity that is not in its line-up.');
   for (const pair of session.facePairs) for (const face of [pair.now, pair.then]) {
     if (face && (!session.assets[face.sourceImageId] || (face.cropImageId && !session.assets[face.cropImageId]))) throw new Error('A face references a missing image in this session.');
   }

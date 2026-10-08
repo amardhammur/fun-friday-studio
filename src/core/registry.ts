@@ -12,3 +12,6 @@ export async function discoverActivities() {
   const modules = import.meta.glob('../../activities/*/index.ts');
   await Promise.all(Object.values(modules).map(load => load()));
 }
+// Folder changes invalidate the glob. Restart discovery with fresh index modules,
+// rather than replacing this map underneath an already mounted React app.
+if (import.meta.hot) import.meta.hot.accept(() => window.location.reload());

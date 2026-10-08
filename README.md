@@ -4,7 +4,7 @@ A private, offline activity studio for office events. Built from an empty reposi
 
 The first activity is **Childhood vs Now**. Each team gets its own unique batch of childhood portraits and plays its batch in turn. The host reveals the current portrait and name, then marks **Correct (+2)** or **Missed (0)**. A person appears **only once in the entire game**. There are no hints, clarity levels, zoom puzzles, or timers.
 
-**Real or Ridiculous?** adds a no-prop team discovery game: two documented inventions, one fictional pitch, an extra clue, and a final vote. Six rounds take about 20 minutes. See the [host and content guide](activities/real-or-ridiculous/README.md).
+**Commercial Clash** opens with a product wheel on stage, then turns the drawn product into funny team skits. Every team performs its ad, then votes aloud for the funniest ad, most creative idea and best sales pitch. The host records each team's choices on screen. Each vote earns the chosen team +2 base points. Five teams take about 37 minutes. See the [host guide](activities/product-in-disguise/README.md).
 
 Activities run as an **event**: the host builds a line-up, and every activity shares one set of teams and one running leaderboard. Standings appear between activities, and the event can end with a final wager where teams bet their points on one last question.
 
@@ -158,7 +158,7 @@ import { yourActivity } from './activity';
 registerActivity(yourActivity);
 ```
 
-`import.meta.glob('../../activities/*/index.ts')` discovers entries at build time. Each activity is bundled separately; the production service worker precaches all chunks so discovery also works offline.
+`import.meta.glob('../../activities/*/index.ts')` discovers entries at build time. Changing activity folders in development reloads the app so registration starts fresh. Each activity is bundled separately; the production service worker precaches all chunks so discovery also works offline.
 
 Views receive an `ActivityContext`: the typed session, an immutable-draft `update` action, `runTask` for async work, notifications, and navigation. Use the shared image store, worker client, People library, team editor, score ledger, projector controls, and ZIP tools. Keep heavy activity-specific work in that activity’s own worker; the core workers contain no imports from activity folders.
 
@@ -190,6 +190,7 @@ npm test
 npm run build
 npx playwright install chromium
 npm run test:browser
+node --test tests/dev/activity-discovery.test.mjs
 ```
 
 Vitest covers pairing (including global assignment conflicts), crop boundaries and sizes, CSV parsing, safe filenames, scoring, unique balanced team sets, segment views, v2 document validation, steal and wager invariants, and line-up validation. Playwright uses the production build to cover a full game, refresh recovery, offline reload/detection, storage failures, setup editing, CSV, ZIP round-trips, invalid files, event standings, final wagers, and phone layouts. Screenshots are written into `test-results/`.

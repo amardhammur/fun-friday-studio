@@ -1,0 +1,151 @@
+import { test, expect, type Page } from '@playwright/test';
+import { openWelcome, startDemo, resumeEvent, personalKey } from './helpers';
+import { products } from '../../activities/product-in-disguise/content';
+const demoKey = 'fun-friday-studio.demo.v1';
+const labels = ['Funniest ad', 'Most creative idea', 'Best sales pitch'];
+
+async function drawProduct(page: Page) {
+  await page.getByRole('button', { name: 'Spin the wheel', exact: true }).click();
+  await expect(page.locator('.cc-product-reveal')).toBeVisible();
+  const product = await page.locator('.cc-product-reveal h1').innerText();
+  await page.getByRole('button', { name: 'Start preparation', exact: true }).click();
+  return product;
+}
+async function performAll(page: Page, count: number) {
+  await page.getByRole('button', { name: 'Start first ad', exact: true }).click();
+  for (let i = 0; i < count; i++) await page.getByRole('button', { name: i === count - 1 ? 'Start voting' : 'Next team', exact: true }).click();
+}
+async function enterVotes(page: Page, key: string, collected = false) {
+  if (!collected) await page.getByRole('button', { name: 'Record votes', exact: true }).click();
+  const teams = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).teams, key);
+  for (let i = 0; i < teams.length; i++) {
+    for (const label of labels) {
+      const select = page.getByLabel(label, { exact: true });
+      await expect(select.locator(`option[value="${teams[i].id}"]`)).toHaveCount(0);
+      await select.selectOption(teams[i === 0 ? 1 : 0].id);
+    }
+    await page.getByRole('button', { name: i === teams.length - 1 ? 'Lock votes' : 'Next ballot', exact: true }).click();
+  }
+  return teams;
+}
+
+for (const theme of ['afterhours', 'gameshow', 'ink']) test(`performance, public voting and award reveals (${theme})`, async ({ page }) => {
+  await page.addInitScript(t => localStorage.setItem('studio-theme', t), theme);
+  await openWelcome(page); await startDemo(page, 'Commercial Clash');
+  const product = await drawProduct(page);
+  await expect(page.getByRole('heading', { name: 'Make your ad.', exact: true })).toBeVisible();
+  await expect(page.locator('.cc-stage')).toContainText(product);
+  await expect(page.locator('.cc-stage')).not.toContainText('guess');
+  await page.screenshot({ path: `test-results/cc-${theme}-prepare.png` });
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.getByRole('button', { name: 'Resume activity', exact: true }).click();
+  await performAll(page, 3);
+  await expect(page.getByRole('heading', { name: 'Vote.', exact: true })).toBeVisible();
+  await page.screenshot({ path: `test-results/cc-${theme}-vote.png` });
+  await page.getByRole('button', { name: 'Record votes', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Next ballot', exact: true })).toBeDisabled();
+  await page.screenshot({ path: `test-results/cc-${theme}-ballots.png` });
+  const teams = await enterVotes(page, demoKey, true);
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).scoreEntries.length, demoKey)).toBe(0);
+  await expect(page.getByRole('button', { name: 'Next award', exact: true })).toHaveCount(0);
+  for (let i = 0; i < 3; i++) {
+    await expect(page.getByRole('heading', { name: labels[i], exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Reveal winner', exact: true }).click();
+    await expect(page.locator('.cc-award-reveal')).toContainText(teams[0].name);
+    if (i === 0) {
+      await page.reload();
+      await expect(page.locator('.cc-award-reveal')).toContainText(teams[0].name);
+      await page.locator('.cc-award-card').evaluate(async el => { await Promise.all(el.getAnimations().map(a => a.finished)); });
+      await page.screenshot({ path: `test-results/cc-${theme}-award.png` });
+    }
+    await page.getByRole('button', { name: i === 2 ? 'See results' : 'Next award', exact: true }).click();
+  }
+  await expect(page.getByRole('heading', { name: 'That’s a wrap!', exact: true })).toBeVisible();
+  const event = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), demoKey);
+  expect(event.scoreEntries.filter((e: any) => e.active)).toHaveLength(9);
+  expect(event.scoreEntries.filter((e: any) => e.teamId === teams[0].id).reduce((sum: number, e: any) => sum + e.points, 0)).toBe(12);
+});
+
+test('resumes a version-one game with its old award keys and upgrades on Start over', async ({ page }) => {
+  await openWelcome(page); await startDemo(page, 'Commercial Clash');
+  await page.evaluate(({ key, products }) => {
+    const event = JSON.parse(localStorage.getItem(key)!);
+    const segment = event.segments[0]; segment.activityVersion = 1;
+    segment.settings = { preparationMinutes: 10, performanceSeconds: 75, guessSeconds: 45, briefsShared: true };
+    segment.game = { rounds: event.teams.map((t: any, i: number) => ({ id: `commercial-${t.id}`, teamId: t.id, product: products[i], cluesConfirmed: true, guessesLocked: true, revealed: i === 0, results: Object.fromEntries(event.teams.filter((other: any) => other.id !== t.id).map((other: any) => [other.id, null])) })), index: 0, step: 'reveal', timer: { durationMs: 45000, pausedRemainingMs: 0 } };
+    localStorage.setItem(key, JSON.stringify(event));
+  }, { key: demoKey, products });
+  await page.reload();
+  await expect(page.locator('.pid-product-reveal')).toContainText('Stapler');
+  await page.keyboard.press('2');
+  await expect(page.locator('.pid-awards [aria-pressed="true"]')).toHaveCount(1);
+  await page.keyboard.press('m'); await page.keyboard.press('n');
+  await expect(page.getByRole('heading', { name: 'Your commercial starts now.', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Start over', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Commercial Clash.', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Start activity', exact: true }).click();
+  await drawProduct(page);
+  await expect(page.getByRole('heading', { name: 'Make your ad.', exact: true })).toBeVisible();
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).scoreEntries.length, demoKey)).toBe(0);
+});
+
+test('simple setup, live product draw, vote corrections and real event standings', async ({ page }) => {
+  await openWelcome(page);
+  await page.getByRole('button', { name: 'Build your Friday', exact: true }).click();
+  await page.getByRole('button', { name: 'Commercial Clash', exact: true }).click();
+  await page.getByRole('button', { name: 'Set up first activity', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Commercial Clash.', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Product', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start activity', exact: true }).click();
+  const product = await drawProduct(page);
+  await expect(page.locator('.cc-product')).toContainText(product);
+  await performAll(page, 5); await enterVotes(page, personalKey);
+  await page.getByRole('button', { name: 'Reveal winner', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit votes', exact: true }).click();
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).scoreEntries.length, personalKey)).toBe(0);
+  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: i === 4 ? 'Lock votes' : 'Next ballot', exact: true }).click();
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole('button', { name: 'Reveal winner', exact: true }).click();
+    await page.getByRole('button', { name: i === 2 ? 'See results' : 'Next award', exact: true }).click();
+  }
+  await page.getByRole('button', { name: 'View overall standings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Every activity complete.', exact: true })).toBeVisible();
+  await page.evaluate(key => {
+    const event = JSON.parse(localStorage.getItem(key)!);
+    event.segments[0].status = 'done';
+    const next = structuredClone(event.segments[0]); next.id = crypto.randomUUID(); next.status = 'setup';
+    next.game = { mode: 'commercial-clash', teamIds: [], performanceIndex: 0, performedCount: 0, step: 'wheel', ballots: {}, ballotIndex: 0, awardIndex: 0, revealedCount: 0, timer: { durationMs: 720000 } };
+    event.segments.push(next); event.currentSegmentIndex = 1; event.phase = 'segment';
+    localStorage.setItem(key, JSON.stringify(event));
+  }, personalKey);
+  await page.reload(); await resumeEvent(page);
+  await expect(page.getByRole('button', { name: 'Start activity', exact: true })).toBeEnabled();
+});
+
+test('projector controls and simple screens fit at 720p and 1080p', async ({ page }) => {
+  await openWelcome(page); await startDemo(page, 'Commercial Clash');
+  for (const viewport of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
+    await page.setViewportSize(viewport);
+    for (const step of ['wheel', 'product', 'prepare', 'perform', 'vote', 'ballots', 'reveal']) {
+      if (step === 'product') { await page.keyboard.press('s'); await expect(page.locator('.cc-product-reveal')).toBeVisible(); }
+      if (step === 'prepare') await page.getByRole('button', { name: 'Start preparation', exact: true }).click();
+      if (step === 'perform') await page.getByRole('button', { name: 'Start first ad', exact: true }).click();
+      if (step === 'vote') for (let i = 0; i < 3; i++) await page.keyboard.press('n');
+      if (step === 'ballots') await page.getByRole('button', { name: 'Record votes', exact: true }).click();
+      if (step === 'reveal') { await enterVotes(page, demoKey, true); await page.keyboard.press('r'); }
+      const position = await page.locator('.cc-actions .primary').evaluate(el => {
+        const r = el.getBoundingClientRect(), cover = document.elementFromPoint(r.x + r.width / 2, r.bottom - 2);
+        return { visible: el.contains(cover), bottom: r.bottom, height: innerHeight };
+      });
+      expect(position.visible, `${viewport.width}px ${step}: ${JSON.stringify(position)}`).toBe(true);
+      const dimensions = await page.locator('.cc-scene').evaluate(el => ({ content: el.scrollHeight, available: el.clientHeight }));
+      expect(dimensions.content, `${viewport.width}px ${step}`).toBeLessThanOrEqual(dimensions.available + 1);
+      if (step === 'wheel' || step === 'product') await page.screenshot({ path: `test-results/cc-projector-${viewport.width}-${step}.png` });
+    }
+    await page.screenshot({ path: `test-results/cc-projector-${viewport.width}.png` });
+    await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
+    await startDemo(page, 'Commercial Clash');
+  }
+});

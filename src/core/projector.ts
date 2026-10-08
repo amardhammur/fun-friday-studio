@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Activity, ActivityContext } from './types';
-export function useShortcuts(activity: Activity | undefined, context: ActivityContext | undefined, enabled: boolean) {
+export function useShortcuts(activity: Pick<Activity, 'shortcuts'> | undefined, context: ActivityContext | undefined, enabled: boolean) {
   useEffect(() => {
     if (!enabled || !activity || !context) return;
     const listener = (event: KeyboardEvent) => {

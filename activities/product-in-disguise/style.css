@@ -1,0 +1,108 @@
+.pid-preview { min-height: 340px; height: 100%; padding: 52px 32px 28px; display: flex; flex-direction: column; justify-content: center; gap: 16px; background: var(--board-deep); color: var(--chalk); }
+.pid-preview > svg, .pid-preview em { color: var(--yellow); }
+.pid-preview strong { font: 700 clamp(35px, 3.5vw, 55px)/1.02 var(--heading); letter-spacing: -.04em; }
+.pid-preview em { font-style: normal; }
+.pid-preview > .handwritten { font-size: 23px; }
+.pid-setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.pid-setting { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.pid-setting small { display: block; color: var(--muted); margin-top: 4px; }
+.pid-note { padding: 16px; border-left: 3px solid var(--yellow); background: var(--surface); line-height: 1.5; }
+.pid-rules { padding-left: 1.3em; line-height: 1.45; }
+.pid-rules li { padding-left: 4px; margin: 10px 0; }
+.pid-briefs { margin-top: 24px; }
+.pid-brief-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+.pid-brief { border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.pid-brief summary { cursor: pointer; font-weight: 700; }
+.pid-brief summary > span { float: right; font-weight: 400; }
+.pid-brief label { display: grid; gap: 6px; margin: 18px 0; }
+.pid-brief li { margin: 7px 0; }
+.pid-brief .handwritten { font-size: 23px; }
+.pid-confirm { display: flex; align-items: center; gap: 12px; margin: 20px 0; cursor: pointer; line-height: 1.4; }
+.pid-confirm input { width: 22px; height: 22px; flex-shrink: 0; }
+.pid-stage { width: 100%; }
+/* This game's shortcuts can wrap. Reserve the rail's actual height through flex
+   layout instead of assuming a fixed footer height. Other activities keep theirs. */
+.app[data-mode="show"]:has(.pid-stage, .pid-finale) { padding-bottom: 0; }
+.app[data-mode="show"]:has(.pid-stage, .pid-finale) .host-key-rail { position: static; flex: 0 0 auto; }
+.app[data-mode="show"].presentation .pid-stage { height: auto; min-height: 0; flex: 1 1 0; grid-template-rows: minmax(0, 1fr); }
+.pid-stage .game-stage { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: hidden; }
+.pid-round-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex: 0 0 auto; }
+.pid-round-head .eyebrow { font-size: 15px; }
+.pid-step { display: flex; align-items: center; gap: 8px; font: 600 18px var(--label); margin-top: 7px; }
+.pid-stake { font: 700 38px/1 var(--heading); color: var(--yellow); }
+.pid-stake small { display: block; margin-top: 6px; font: 15px var(--body); color: var(--muted); }
+.pid-stage .game-stage > .pid-scene { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 0; }
+.pid-intro h1, .pid-on-air h1 { font: 700 clamp(32px, 3.7vw, 60px)/1.08 var(--heading); letter-spacing: -.035em; margin: 12px 0 20px; }
+.pid-intro .pid-rules { font-size: clamp(21px, 1.65vw, 27px); }
+.pid-intro > p, .pid-on-air > p { font-size: clamp(21px, 1.6vw, 27px); line-height: 1.4; }
+.pid-story-beats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+.pid-story-beats article { padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.pid-story-beats article > b { color: var(--yellow); font: 700 32px var(--heading); }
+.pid-story-beats h2 { font-size: 25px; margin-top: 10px; }
+.pid-story-beats p { font-size: 21px; line-height: 1.4; }
+.pid-on-air { text-align: center; padding: clamp(10px, 2vw, 34px) 0; }
+.pid-air-sign { display: inline-flex; gap: 12px; align-items: center; color: var(--yellow); border: 2px solid currentColor; border-radius: 8px; padding: 8px 16px; font: 700 24px var(--label); }
+.pid-on-air .pid-team-name { font: 700 clamp(28px, 2.7vw, 44px) var(--heading); margin-top: 20px; }
+.pid-on-air .pid-confirm { justify-content: center; font-size: 21px; margin-bottom: 8px; }
+.pid-on-air .pid-host-note { font-size: 18px; }
+.pid-locked { display: flex; gap: 12px; align-items: center; justify-content: center; color: var(--mint); }
+.pid-product-reveal { display: grid; grid-template-columns: minmax(180px, .65fr) minmax(0, 1.35fr); align-items: center; gap: 24px; padding: 15px 8px; }
+.pid-polaroid { width: 100%; height: auto; padding: 16px 16px 4px; rotate: 3deg; }
+.pid-product-picture { display: block; width: 100%; max-height: 230px; color: var(--ink); background: #f5f4ef; padding: 12px; }
+.pid-polaroid .polaroid-caption { display: block; font-size: 24px; text-align: center; }
+.pid-product-reveal .reveal-name { margin: 0; max-width: none; text-align: left; }
+.pid-product-reveal .reveal-name h1 { font-size: clamp(36px, 3.5vw, 60px); }
+.pid-product-reveal .reveal-name > p { font-size: 21px; line-height: 1.4; }
+.pid-reveal-clues { margin-top: 18px; }
+.pid-reveal-clues p { display: flex; align-items: flex-start; gap: 9px; font-size: 21px; line-height: 1.35; }
+.pid-reveal-clues svg { color: var(--mint); margin-top: 4px; }
+.pid-product-reveal .reveal-name .pid-accepted { font-size: 17px; color: var(--muted); }
+.pid-awards { flex: 0 0 auto; }
+.pid-awards > span { font-size: 17px; }
+.pid-awards > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.pid-awards .button { min-height: 42px; padding: 8px 11px; }
+.pid-awards .button > span { max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pid-awards [aria-pressed="true"] { outline: 2px solid var(--yellow); outline-offset: -2px; }
+.pid-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 0 0 auto; padding: 6px 0; }
+.pid-actions > span { font-size: 16px; line-height: 1.4; color: var(--muted); max-width: 50%; }
+.pid-actions .button { white-space: nowrap; }
+.pid-round-navigation { display: flex; flex-wrap: wrap; gap: 7px; flex: 0 0 auto; }
+.pid-round-navigation [aria-current="step"] { border-color: var(--yellow); }
+.pid-stage .scoreboard { overflow-y: auto; min-height: 0; }
+.pid-finale { width: min(1100px, 95%); margin: 25px auto; padding: 25px; }
+.pid-finale > h1 { font-size: clamp(36px, 4vw, 64px); }
+.pid-finale > .handwritten { font-size: 30px; }
+.pid-results { margin: 24px 0; }
+.pid-result-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 14px 0; font-size: 23px; }
+.pid-result-row b { margin-left: auto; }
+.pid-recap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.pid-recap h2 { margin-top: 10px; }
+.pid-recap .pid-product-picture { margin-bottom: 18px; border-radius: 8px; max-height: 160px; }
+@media (max-height: 800px) and (min-width: 1000px) {
+  .pid-stage .game-stage { gap: 10px; }
+  .pid-stage .game-stage > .pid-scene { padding: 0; }
+  .pid-intro h1, .pid-on-air h1 { font-size: 36px; margin: 8px 0 14px; }
+  .pid-story-beats { margin: 12px 0; }
+  .pid-story-beats article { padding: 12px; }
+  .pid-story-beats h2 { font-size: 23px; }
+  .pid-story-beats p { margin-bottom: 0; }
+  .pid-product-reveal { gap: 18px; padding: 8px; }
+  .pid-polaroid { padding: 10px 10px 2px; }
+  .pid-product-picture { max-height: 170px; }
+  .pid-product-reveal .reveal-name h1 { font-size: 38px; }
+  .pid-reveal-clues { margin-top: 10px; }
+  .pid-round-navigation .button { min-height: 30px; padding: 3px 9px; }
+  .pid-stage .score-row { padding-top: 8px; padding-bottom: 8px; margin-bottom: 5px; }
+  .pid-actions > .button.large { padding: 12px 18px; min-height: 48px; }
+}
+@media (max-width: 800px) {
+  .pid-setup-grid, .pid-brief-grid, .pid-story-beats, .pid-recap, .pid-product-reveal { grid-template-columns: 1fr; }
+  .app[data-mode="show"].presentation .pid-stage { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; overflow-y: auto; }
+  .pid-stage .game-stage { overflow: visible; }
+  .pid-stage .game-stage > .pid-scene { overflow: visible; }
+  .pid-actions { flex-wrap: wrap; }
+  .pid-actions > span { max-width: none; }
+  .pid-product-reveal .pid-polaroid { width: min(270px, 90%); justify-self: center; }
+  .pid-stake { font-size: 28px; }
+  .pid-setting { flex-wrap: wrap; }
+}
