@@ -16,7 +16,7 @@ function removed(id: string, status: Segment['status'] = 'pending'): Segment {
 function kept() { return createSegment(getActivity('act-it-out')!); }
 
 it('removes both retired games from discovery and the installed registry', () => {
-  expect(getActivities().map(a => a.name)).toEqual(['Childhood vs Now', 'Act It Out', 'Commercial Clash']);
+  expect(getActivities().map(a => a.name)).toEqual(['Childhood vs Now', 'Act It Out', 'Commercial Clash', 'Selfie Bottle Challenge']);
   expect(getActivity('wait-why')).toBeUndefined();
   expect(getActivity('real-or-ridiculous')).toBeUndefined();
 });

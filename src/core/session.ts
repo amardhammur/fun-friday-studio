@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { getActivity } from './registry';
 import { activitySegment, activityEvent } from './event';
 import type { EventSession, Segment } from './types';
-import { migrateEventV2 } from './migrate';
+import { migrateDefaultTeamNames, migrateEventV2 } from './migrate';
 import { MAX_PHOTO_SETS } from './people/photo-sets';
 import { MAX_FACE_PAIRS, MAX_PEOPLE } from './people/limits';
 import { removeRetiredActivities } from './retired-activities';
@@ -38,6 +38,7 @@ export function validateEvent(input: unknown): EventSession {
   if (version === 2) raw = migrateEventV2(raw as Record<string, unknown>);
   else if (version !== 3) throw new Error('This session needs a newer version of Fun Friday Studio.');
   const event = schema.parse(raw);
+  migrateDefaultTeamNames(event.teams);
   if (event.segments.length && event.currentSegmentIndex >= event.segments.length) throw new Error('The event points at an activity that is not in its line-up.');
   if (new Set(event.segments.map(s => s.id)).size !== event.segments.length) throw new Error('The session contains duplicate identifiers.');
   removeRetiredActivities(event);

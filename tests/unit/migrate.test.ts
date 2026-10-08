@@ -3,9 +3,33 @@ import eventV2 from '../fixtures/event-v2.json';
 import { discoverActivities } from '../../src/core/registry';
 import { migrateEventV2 } from '../../src/core/migrate';
 import { validateEvent } from '../../src/core/session';
+import { createEvent } from '../../src/core/event';
 
 beforeAll(async () => { await discoverActivities(); });
 const v2 = () => structuredClone(eventV2) as Record<string, any>;
+
+describe('default element team names', () => {
+  it('updates saved defaults while preserving team order, players, pins and points', () => {
+    const raw = createEvent();
+    const oldDefaults = [['Prithvi', '#f7d873'], ['Jal', '#8fcbe0'], ['Agni', '#F0B085'], ['Vayu', '#9edbbd'], ['Akash', '#d2b5f2']];
+    raw.teams = raw.teams.map((team, i) => ({ ...team, name: oldDefaults[i][0], color: oldDefaults[i][1] }));
+    raw.players = [{ id: 'player', name: 'Asha' }]; raw.playersInitialized = true;
+    raw.teams[0].memberIds = ['player']; raw.teams[0].pinnedIds = ['player'];
+    raw.scoreEntries = [{ id: 'score', teamId: raw.teams[0].id, kind: 'manual-adjustment', points: 7, active: true }];
+    const before = structuredClone(raw), names = ['Earth', 'Water', 'Fire', 'Air', 'Space'];
+    const restored = validateEvent(raw);
+    expect(restored).toEqual({ ...before, teams: before.teams.map((team, i) => ({ ...team, name: names[i] })) });
+    expect(raw).toEqual(before);
+    expect(validateEvent(restored)).toEqual(restored);
+  });
+
+  it('keeps custom names and colours when restoring a session', () => {
+    const raw = createEvent();
+    raw.teams[0].name = 'Prithvi'; raw.teams[0].color = '#ffffff';
+    raw.teams[1].name = 'Jal Squad';
+    expect(validateEvent(raw).teams).toEqual(raw.teams);
+  });
+});
 
 describe('migrateEventV2', () => {
   it('turns the Childhood vs Now group photos into Group 1 and assigns every face pair', () => {

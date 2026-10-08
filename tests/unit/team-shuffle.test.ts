@@ -54,14 +54,14 @@ describe('team shuffle', () => {
   });
   it('names the default teams after the five elements, each in its own colour', () => {
     const teams = newTeams();
-    expect(teams.map(t => t.name)).toEqual(['Prithvi', 'Jal', 'Agni', 'Vayu', 'Akash']);
+    expect(teams.map(t => t.name)).toEqual(['Earth', 'Water', 'Air', 'Fire', 'Space']);
     expect(new Set(teams.map(t => t.color)).size).toBe(5);
   });
   it('adds the next unused element name before falling back to numbered teams', () => {
     const renamed = newTeams().slice(0, 2); renamed[0].name = 'Earth Movers';
-    expect(resizeTeams(renamed, 4).map(t => t.name)).toEqual(['Earth Movers', 'Jal', 'Prithvi', 'Agni']);
+    expect(resizeTeams(renamed, 4).map(t => t.name)).toEqual(['Earth Movers', 'Water', 'Earth', 'Air']);
     const eight = resizeTeams(newTeams(), 8);
-    expect(eight.map(t => t.name)).toEqual(['Prithvi', 'Jal', 'Agni', 'Vayu', 'Akash', 'Team 6', 'Team 7', 'Team 8']);
+    expect(eight.map(t => t.name)).toEqual(['Earth', 'Water', 'Air', 'Fire', 'Space', 'Team 6', 'Team 7', 'Team 8']);
     expect(new Set(eight.map(t => t.color)).size).toBe(8);
   });
   it('requires confirmation to remove a team with pins', () => {

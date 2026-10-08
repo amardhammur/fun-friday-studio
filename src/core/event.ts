@@ -2,8 +2,8 @@ import type { Activity, ActivityEvent, ActivitySegment, AnySession, EventSession
 export type { EventSession } from './types';
 // The five elements (Pancha Mahabhoota) name the default teams, each in a colour that suits it.
 export const elementTeams = [
-  { name: 'Prithvi', color: '#f7d873' }, { name: 'Jal', color: '#8fcbe0' }, { name: 'Agni', color: '#f0b085' },
-  { name: 'Vayu', color: '#9edbbd' }, { name: 'Akash', color: '#d2b5f2' },
+  { name: 'Earth', color: '#f7d873' }, { name: 'Water', color: '#8fcbe0' }, { name: 'Air', color: '#9edbbd' },
+  { name: 'Fire', color: '#f0b085' }, { name: 'Space', color: '#d2b5f2' },
 ] as const;
 export const teamColors = [...elementTeams.map(e => e.color), '#eea7bb', '#b8d685', '#c2c9ed'];
 export const newTeams = () => elementTeams.map(({ name, color }) => ({ id: crypto.randomUUID(), name: name as string, color: color as string, memberIds: [] as string[], pinnedIds: [] as string[] }));

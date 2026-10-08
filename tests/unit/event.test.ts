@@ -97,7 +97,7 @@ describe('createEvent', () => {
     expect(fresh.formatVersion).toBe(3);
     expect(fresh.phase).toBe('lineup');
     expect(fresh.segments).toEqual([]);
-    expect(fresh.teams.map(t => t.name)).toEqual(['Prithvi', 'Jal', 'Agni', 'Vayu', 'Akash']);
+    expect(fresh.teams.map(t => t.name)).toEqual(['Earth', 'Water', 'Air', 'Fire', 'Space']);
     expect(fresh.photoSets).toEqual([]);
   });
 });

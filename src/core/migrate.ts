@@ -1,4 +1,15 @@
-import type { PhotoSet } from './types';
+import { elementTeams } from './event';
+import type { PhotoSet, Team } from './types';
+
+const legacyElementNames: Record<string, string> = { Prithvi: 'Earth', Jal: 'Water', Agni: 'Fire', Vayu: 'Air', Akash: 'Space' };
+
+// Rename unchanged defaults on restore without changing team identity, order or membership.
+export function migrateDefaultTeamNames(teams: Team[]) {
+  for (const team of teams) {
+    const replacement = elementTeams.find(element => element.name === legacyElementNames[team.name] && element.color === team.color.toLowerCase());
+    if (replacement) team.name = replacement.name;
+  }
+}
 
 const CHILDHOOD = 'childhood-vs-now';
 const PHOTO_FIELDS = ['originalImageId', 'childhoodImageId', 'childhoodUploadId', 'previews'];
