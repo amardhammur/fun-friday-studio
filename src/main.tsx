@@ -11,11 +11,11 @@ import { checkStorage, saveSession } from './core/storage';
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error?: string }> {
   state: { error?: string } = {};
   static getDerivedStateFromError(error: Error) { return { error: error.message }; }
-  render() { return this.state.error ? <main className="empty-state"><h1>We hit a pause.</h1><p>{this.state.error}</p><p>Your saved session is still on this laptop.</p><button className="button primary" onClick={() => location.reload()}>Reload Studio</button></main> : this.props.children; }
+  render() { return this.state.error ? <main className="empty-state"><h1>We hit a pause.</h1><p>{this.state.error}</p><p>Your saved session is still on this laptop.</p><button className="button primary" onClick={() => location.reload()}>Reload Friday Live</button></main> : this.props.children; }
 }
 applyTheme(readTheme());
 const root = createRoot(document.getElementById('root')!);
-root.render(<div className="boot-screen"><span>✦</span><h1>fun friday studio</h1><p>Getting the good times ready…</p></div>);
+root.render(<div className="boot-screen"><span>✦</span><h1>friday live</h1><p>Getting the good times ready…</p></div>);
 async function boot() {
   await discoverActivities(); await checkStorage();
   const { session, personalSession, rejected } = restoreStartup();
@@ -29,4 +29,4 @@ async function boot() {
       }}>Back up originals and continue</button></main>);
   } else { saveSession(session); open(); }
 }
-boot().catch(error => root.render(<div className="empty-state"><h1>Studio couldn’t open.</h1><p>{String(error)}</p><button className="button primary" onClick={() => location.reload()}>Try again</button></div>));
+boot().catch(error => root.render(<div className="empty-state"><h1>Friday Live couldn’t open.</h1><p>{String(error)}</p><button className="button primary" onClick={() => location.reload()}>Try again</button></div>));

@@ -26,7 +26,7 @@ test('changing activity folders keeps the library populated during development',
     page.on('console', message => { if (message.text().includes('calling ReactDOMClient.createRoot()')) repeatedBoots.push(message.text()); });
     await page.goto(server.resolvedUrls.local[0]);
     await page.getByRole('button', { name: 'Activities', exact: true }).click();
-    const names = ['Childhood vs Now', 'Act It Out', 'Commercial Clash', 'Selfie Bottle Challenge'];
+    const names = ['Childhood vs Now', 'Act It Out', 'Commercial Clash', 'Selfie Bottle Challenge', 'Sharmila Awards', 'Clip to Stage'];
     await expect(page.locator('.activity-card h2')).toHaveText(names);
     const hotUpdate = Promise.race([
       page.waitForEvent('console', { predicate: msg => msg.text().includes('[vite] hot updated:'), timeout: 10000 }),

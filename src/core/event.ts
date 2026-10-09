@@ -8,7 +8,7 @@ export const elementTeams = [
 export const teamColors = [...elementTeams.map(e => e.color), '#eea7bb', '#b8d685', '#c2c9ed'];
 export const newTeams = () => elementTeams.map(({ name, color }) => ({ id: crypto.randomUUID(), name: name as string, color: color as string, memberIds: [] as string[], pinnedIds: [] as string[] }));
 export function defaultEventTitle() {
-  return `Fun Friday · ${new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date())}`;
+  return `Friday Live · ${new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date())}`;
 }
 // Segment status and the phase activities read are the same vocabulary apart from
 // 'pending' and 'done', which only the event itself ever sets.

@@ -1,10 +1,14 @@
-# Fun Friday Studio
+# Friday Live
 
 A private, offline activity studio for office events. Built from an empty repository with React, TypeScript, Vite, and the After Hours theme: midnight ink, electric lime, and soft lilac. The header palette button switches between After Hours, Game Show, and Ink & Paper; the choice is saved on this laptop.
 
 The first activity is **Childhood vs Now**. Each team gets its own unique batch of childhood portraits and plays its batch in turn. The host reveals the current portrait and name, then marks **Correct (+2)** or **Missed (0)**. A person appears **only once in the entire game**. There are no hints, clarity levels, zoom puzzles, or timers.
 
-**Commercial Clash** opens with a product wheel on stage, then turns the drawn product into funny team skits. Every team performs its ad, then votes aloud for the funniest ad, most creative idea and best sales pitch. The host records each team's choices on screen. Each vote earns the chosen team +2 base points. Five teams take about 37 minutes. See the [host guide](activities/product-in-disguise/README.md).
+**Commercial Clash** opens with a product wheel on stage, then turns the drawn product into funny team skits. Every team performs its ad, and the judge panel scores offline. The host enters each team's total on screen, saves the scores and shows the results. Five teams take about 34 minutes. See the [host guide](activities/product-in-disguise/README.md).
+
+**Clip to Stage** shows one song or performance clip to every team, then gives them shared practice time and one timed performance each. Choose singing, dance, or both. The judge panel scores offline; the host enters whole-point totals, including zero, and can correct them after saving. YouTube video, Shorts, and clip links need internet. An uploaded MP4 or WebM works fully offline, survives refresh and Start over, and travels with session ZIP exports. See the [host guide](activities/clip-to-stage/README.md).
+
+**Sharmila Awards — Wrong answers. Full confidence.** Teams spin a question wheel and give funny, deliberately wrong explanations. The editable starter list has 40 short, simple questions such as “What is Java?”, “What is a lever?”, “What is electricity?”, and “What is the unit of power?” **Use starter questions** loads this list into an existing setup. There is one round with one turn per team, and questions never repeat. The panel discusses its score outside the app, then the host picks **Thumbs up (+1)** or **Thumbs down (0)** and clicks **Save & Next team**. The activity multiplier applies once. **Saved results & corrections** uses the same buttons to update an existing result without awarding twice, and final team standings appear after the last team’s turn. Questions, selections, and results survive refresh, offline play, and session ZIP transfers. Older saves drop an unstarted second round while retaining confirmed scores; a second round already in progress stays recoverable until restart. **Restart awards** clears only this activity’s progress and points and starts the next game with one round.
 
 **Selfie Bottle Challenge** uses a bottle on a table, toothpicks, and each player's phone camera app. Players face away and aim using the selfie preview; no touching the bottle or turning around. Start without selecting players: the activity automatically takes 3 different players from each team’s roster (or 1–2 equally for all teams). Give each player 10 toothpicks and 60 seconds (45 seconds optional). Choose one team at a time (default), or alternate teams. The play screen shows team names and player numbers; the host narrates the rules. Prepare the phone and props before starting each turn. Release one toothpick at a time; teammates may give verbal directions. The host confirms 0–10 valid toothpicks inside the bottle, counting only releases before the buzzer. Each earns 1 base point; the team sum receives the activity multiplier once. Misses and invalid drops earn zero, and ties stand. Timers, draft counts and confirmed results survive refreshes. Pause/Resume preserves time, corrections update scores, and restarting clears only this activity's progress and points. No in-app camera is used.
 
@@ -32,7 +36,7 @@ Open `http://127.0.0.1:4173`. The output is the standalone `dist/` directory; th
 
 ## Running offline
 
-All runtime assets are local: JavaScript, fonts, the MediaPipe runtime, WASM, and the face detector model. No CDN or API key is needed. Photos are never sent to a server. The detection worker rejects external network requests, including telemetry from dependencies.
+All app runtime assets are local: JavaScript, fonts, the MediaPipe runtime, WASM, and the face detector model. No CDN or API key is needed. Photos and uploaded videos are never sent to a server. Clip to Stage contacts YouTube only when the host loads the online player or opens its link. The detection worker rejects external network requests, including telemetry from dependencies.
 
 1. Install dependencies and build before the event. Internet is required for the initial `npm ci`, not for subsequent local use.
 2. Run the production preview server at the same URL you used to prepare the game.
@@ -105,14 +109,14 @@ Names map by the horizontal centre of the **current** face, left to right (verti
 
 ## Storage and backups
 
-- Image blobs live in **IndexedDB** through `idb`.
+- Image and uploaded video blobs live in **IndexedDB** through `idb`.
 - The line-up, names, settings, player roster, team memberships and pins, score entries, and per-activity progress live in **localStorage** as a versioned event document. Sessions saved before the event format are not restored; set the game up again. Face crops and names survive independently via **Export pairs**.
 - Every meaningful change is saved immediately. Refresh restores the game, revealed state, unique team assignment, and scores.
 - Private browsing restrictions, quota errors, or blocked storage produce a persistent warning. The current session remains usable in memory; export before closing the tab.
 - Browser storage belongs to the specific origin. Different ports, browsers, or deployment URLs have separate libraries. Move between them using a ZIP.
 - Clearing site data or browser eviction can remove images. A ZIP is the portable backup. Source images are not copied into localStorage.
 
-**Export session** includes the full source images, aligned image, previews, crops, and all game data in a `.zip`. Import validates the version, activity schemas, references, paths, and archive size before switching the session. Imported images are staged under fresh IDs so a failed import cannot overwrite the active photos. Maximum import: 512 MB compressed / 800 MB expanded.
+**Export session** includes the full source images, aligned image, previews, crops, uploaded reference videos, and all game data in a `.zip`. Import validates the version, activity schemas, references, paths, and archive size before switching the session. Imported media are staged under fresh IDs so a failed import cannot overwrite the active media. Maximum import: 512 MB compressed / 800 MB expanded.
 
 **Export face pairs** downloads matched faces as `<Name> - then.jpg` and `<Name> - now.jpg`. Filename characters are sanitized; duplicate names receive suffixes. Exporting pairs does not export game progress.
 
@@ -142,6 +146,7 @@ Export an `Activity<Settings, GameState>` definition in `activity.ts`. The inter
 - Zod settings/state schemas and settings-field metadata.
 - `Stage`, `Finale`, initial state/settings, new-game behaviour, keyboard shortcuts, and migration handling.
 - `remapImages(game, ids)` to rewrite only your activity’s image references during ZIP import; preserve user-entered text.
+- Optional `remapSettings(settings, ids)` for configured media references stored in activity settings.
 - Optional session-reference validation, a home-card `Preview`, and a local `createDemo` generator.
 - Optional `preparePeople(session, previews)` to initialise activity-specific state from shared people and photos. It runs when entering a new segment and after a library replacement has reset each segment with `createInitialState()`. Honour `ActivityContext.rosterLocked` for controls that change shared people or teams.
 - `Finale` is optional and closes your activity before the leaderboard; omit it to go straight to the standings.

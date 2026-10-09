@@ -1,6 +1,6 @@
 .cc-setup { max-width: 980px; margin-inline: auto; }
 .cc-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.cc-settings label, .cc-ballots label { display: grid; gap: 10px; font-weight: 700; }
+.cc-settings label { display: grid; gap: 10px; font-weight: 700; }
 .cc-team-summary { margin-top: 28px; font-size: 22px; }
 .cc-team-chips { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-bottom: 28px; }
 .cc-team-chips > span { display: flex; align-items: center; gap: 8px; }
@@ -31,37 +31,21 @@
 .cc-product .pid-product-picture { max-height: 190px; background: transparent; }
 .cc-product strong { font: 600 36px var(--handwriting, var(--heading)); }
 .cc-beats { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; color: var(--yellow); font: 700 25px var(--heading); margin: 28px 0; }
-.cc-scene .cc-role-note, .cc-scene .cc-vote-note { color: var(--muted); font-size: 19px; }
+.cc-scene .cc-role-note, .cc-scene .cc-score-note { color: var(--muted); font-size: 19px; }
 .cc-on-air { text-align: center; width: 100%; }
 .cc-on-air h1 { font-size: clamp(50px, 6vw, 96px); }
 .cc-air-sign { display: inline-flex; align-items: center; gap: 12px; border: 2px solid currentColor; padding: 8px 16px; border-radius: 6px; color: var(--yellow); font: 700 24px var(--label); }
-.cc-vote { text-align: center; width: min(1100px, 100%); }
-.cc-award-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 26px 0; }
-.cc-award-options > div { border: 1px solid var(--line); background: var(--surface); padding: 22px 12px; border-radius: 10px; }
-.cc-award-options svg { color: var(--yellow); }
-.cc-award-options h2 { font-size: 26px; margin: 12px 0 0; }
-.cc-ballots { width: min(760px, 100%); }
-.cc-ballots h1 { font-size: clamp(32px, 3.5vw, 54px); }
-.cc-ballots > div { display: grid; gap: 18px; }
-.cc-ballots label { grid-template-columns: 1fr 1fr; align-items: center; font-size: 23px; }
-.cc-ballots select { font-size: 20px; width: 100%; }
-.cc-award-hidden, .cc-award-reveal { display: grid; grid-template-columns: minmax(160px, .6fr) minmax(0, 1.4fr); align-items: center; gap: 45px; width: min(1050px, 100%); }
-.cc-award-card { width: 100%; height: auto; padding: 30px 16px 16px; display: flex; flex-direction: column; align-items: center; gap: 24px; rotate: -3deg; }
-.cc-award-card > svg { color: #856600; }
-.cc-award-card .handwritten { font-size: 26px; text-align: center; }
-.cc-award-reveal .reveal-name { max-width: none; margin: 0; text-align: left; }
-.cc-award-reveal .reveal-name h1 { font-size: clamp(32px, 3.2vw, 54px); }
-.cc-scene .cc-winner-name { font: 700 clamp(32px, 4vw, 64px)/1.1 var(--heading); color: var(--yellow); margin: 18px 0; overflow-wrap: anywhere; }
-.cc-scene .cc-winner-votes { font-size: 22px; color: var(--muted); }
+.cc-judging { width: min(1000px, 100%); }
+.cc-score-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 24px 0; }
+.cc-score-fields label { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; font-size: 22px; font-weight: 700; }
+.cc-score-fields label > span { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.cc-score-fields input { width: 110px; min-width: 0; flex: 0 0 110px; font-size: 22px; }
 .cc-actions { padding-top: 8px; }
 .cc-actions > div { color: var(--muted); font-size: 17px; }
 .cc-actions .primary { white-space: nowrap; }
 .cc-finale { width: min(1100px, 95%); margin: 22px auto; padding: 20px; }
 .cc-finale > h1 { font-size: clamp(36px, 4vw, 64px); margin: 12px 0; }
 .cc-champion { display: flex; align-items: center; gap: 12px; font: 700 28px var(--heading); color: var(--yellow); }
-.cc-final-awards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
-.cc-final-awards h2 { font-size: 21px; }
-.cc-final-awards p { font-size: 23px; font-weight: 700; margin-bottom: 0; }
 .cc-results > div { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 22px; }
 .cc-results > div:last-child { border: 0; }
 .cc-results b { margin-left: auto; }
@@ -71,16 +55,13 @@
   .cc-wheel-holder { width: min(320px, 100%); }
   .cc-drawn-product { max-width: 280px; justify-self: center; }
   .cc-on-air h1 { font-size: 64px; }
-  .cc-award-options { margin: 16px 0; }
-  .cc-award-options > div { padding: 16px 12px; }
   .cc-product .pid-product-picture { max-height: 150px; }
-  .cc-scene .cc-winner-name { font-size: 42px; }
-  .cc-award-card { padding-top: 22px; gap: 16px; }
-  .cc-ballots > div { gap: 14px; }
+  .cc-score-fields { margin: 16px 0; gap: 10px 18px; }
+  .cc-score-fields label { padding: 8px 12px; }
 }
 @media (max-width: 800px) {
   .app[data-mode="show"]:has(.cc-stage, .cc-finale) { height: auto; overflow: visible; }
-  .cc-settings, .cc-final-awards { grid-template-columns: 1fr; }
+  .cc-settings, .cc-score-fields { grid-template-columns: 1fr; }
   .cc-wheel-layout, .cc-product-reveal { grid-template-columns: 1fr; text-align: center; gap: 20px; }
   .cc-wheel-holder { width: min(330px, 100%); }
   .cc-drawn-product { width: min(270px, 100%); justify-self: center; }
@@ -88,13 +69,7 @@
   .cc-prepare { grid-template-columns: 1fr; text-align: center; gap: 20px; }
   .cc-product { width: min(280px, 100%); justify-self: center; }
   .cc-beats { justify-content: center; }
-  .cc-award-options { gap: 8px; }
-  .cc-award-options > div { padding: 14px 6px; }
-  .cc-award-options h2 { font-size: 18px; }
-  .cc-ballots label { grid-template-columns: 1fr; gap: 6px; font-size: 19px; }
-  .cc-award-hidden, .cc-award-reveal { grid-template-columns: 1fr; gap: 20px; text-align: center; }
-  .cc-award-card { width: min(230px, 100%); justify-self: center; }
-  .cc-award-reveal .reveal-name { text-align: center; }
+  .cc-score-fields label { font-size: 19px; }
   .cc-actions { flex-wrap: wrap; }
   .app[data-mode="show"].presentation .cc-stage { height: auto; flex: 1 0 auto; grid-template-rows: auto; }
   .cc-stage .game-stage { overflow: visible; }

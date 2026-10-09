@@ -34,9 +34,9 @@ const schema = z.object({
 export function validateEvent(input: unknown): EventSession {
   let raw = input;
   const version = (raw as { formatVersion?: unknown })?.formatVersion;
-  if (version === 1) throw new Error('This session was saved before Fun Friday Studio learned to run events. Please set up your game again — your photos and names are safe in Export pairs.');
+  if (version === 1) throw new Error('This session was saved before Friday Live learned to run events. Please set up your game again — your photos and names are safe in Export pairs.');
   if (version === 2) raw = migrateEventV2(raw as Record<string, unknown>);
-  else if (version !== 3) throw new Error('This session needs a newer version of Fun Friday Studio.');
+  else if (version !== 3) throw new Error('This session needs a newer version of Friday Live.');
   const event = schema.parse(raw);
   migrateDefaultTeamNames(event.teams);
   if (event.segments.length && event.currentSegmentIndex >= event.segments.length) throw new Error('The event points at an activity that is not in its line-up.');
@@ -45,7 +45,7 @@ export function validateEvent(input: unknown): EventSession {
   const segments: Segment[] = event.segments.map(segment => {
     const activity = getActivity(segment.activityId);
     if (!activity) throw new Error(`This session uses an activity that is not installed: ${segment.activityId}.`);
-    if (segment.activityVersion > activity.version) throw new Error('This session needs a newer version of Fun Friday Studio.');
+    if (segment.activityVersion > activity.version) throw new Error('This session needs a newer version of Friday Live.');
     const data = segment.activityVersion < activity.version ? activity.migrate(segment, segment.activityVersion) : segment;
     // Setup steps can be renamed between versions; an unknown step falls back to the first one.
     const stepIds = activity.setupSteps.map(step => step.id);

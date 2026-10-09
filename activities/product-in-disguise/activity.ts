@@ -9,6 +9,7 @@ import { Stage } from './performance/Stage';
 import { Finale } from './performance/Finale';
 import { Preview } from './performance/Preview';
 import * as play from './performance/logic';
+import { migrateVotingGame } from './performance/migration';
 import { defaultSettings, initialState, settingsSchema, stateSchema, type Settings, type Game, type Context, type Segment } from './performance/types';
 import './performance/style.css';
 
@@ -22,10 +23,10 @@ const performanceContext = (ctx: SavedContext) => ctx as Context;
 // Keep a running version-one game playable. Fresh setups and Start over use the
 // performance game; neither migration nor loading rewrites historical scores.
 export const productInDisguise: Activity<SavedSettings, SavedGame> = {
-  id: legacy.id, version: 3, order: 3, name: 'Commercial Clash',
-  description: 'Turn an everyday product into a funny skit. Perform your ad and win the audience awards.',
-  icon: Clapperboard, estimatedMinutes: 37,
-  card: { label: 'THE AD BREAK', eyebrow: 'BIG DRAMA. TINY PRODUCT.', tags: [{ icon: Users, text: '15–30 people' }, { icon: Trophy, text: 'Audience awards' }, { text: '30–45 minutes' }] },
+  id: legacy.id, version: 4, order: 3, name: 'Commercial Clash',
+  description: 'Turn an everyday product into a funny skit. Perform your ad and let the judge panel score it offline.',
+  icon: Clapperboard, estimatedMinutes: 34,
+  card: { label: 'THE AD BREAK', eyebrow: 'BIG DRAMA. TINY PRODUCT.', tags: [{ icon: Users, text: '15–30 people' }, { icon: Trophy, text: 'Judge panel' }, { text: '30–45 minutes' }] },
   setupSteps: [{ id: 'game', title: 'Game setup', View: ctx => isLegacy(ctx.segment.game) ? createElement(legacy.setupSteps[0].View, legacyContext(ctx)) : createElement(Setup, performanceContext(ctx)), validate: (s, e) => isLegacy(s.game) ? legacy.setupSteps[0].validate(s as ActivitySegment<LegacySettings, LegacyGame>, e) : play.validTeams(e) ? [] : ['Use 3–8 named event teams.'] }],
   settingsSchema: z.union([settingsSchema, legacy.settingsSchema]), stateSchema: z.union([stateSchema, legacy.stateSchema]), settingsFields: [],
   Stage: ctx => isLegacy(ctx.segment.game) ? createElement(legacy.Stage, legacyContext(ctx)) : createElement(Stage, performanceContext(ctx)),
@@ -52,19 +53,18 @@ export const productInDisguise: Activity<SavedSettings, SavedGame> = {
       const started = ['play', 'finale', 'done'].includes(phase.status ?? phase.phase ?? '');
       return started || legacy.hasProgress!(data.game) ? data : { settings: defaultSettings(), game: initialState() };
     }
-    if (version === 2 || version === 3) {
-      const s = saved as { settings: unknown; game: unknown };
-      const settings = productInDisguise.settingsSchema.parse(s.settings);
-      const game = s.game as { mode?: string; teamIds?: unknown[] };
-      return { settings, game: version === 2 && game.mode === 'commercial-clash' && game.teamIds?.length === 0 ? initialState() : productInDisguise.stateSchema.parse(s.game) };
+    if (version === 2 || version === 3 || version === 4) {
+      const s = saved as { settings: unknown; game: unknown; status?: string; phase?: string };
+      if (version < 4 && (s.game as { mode?: string }).mode === 'commercial-clash') return migrateVotingGame(s, version);
+      return { settings: productInDisguise.settingsSchema.parse(s.settings), game: productInDisguise.stateSchema.parse(s.game) };
     }
     throw new Error(`Commercial Clash version ${version} is not supported.`);
   },
   createDemo: async (segment, event) => ({ segment, event: { ...event, isDemo: true, teams: event.teams.slice(0, 3) } }),
   shortcuts: [
     { key: 's', label: 'Spin', run: ctx => { if (!isLegacy(ctx.segment.game)) play.spin(performanceContext(ctx)); } },
-    { key: 'n', label: 'Next', run: ctx => { if (isLegacy(ctx.segment.game)) legacy.shortcuts.find(s => s.key === 'n')!.run(legacyContext(ctx)); else ctx.update(s => play.advance(s as Segment)); } },
-    { key: 'r', label: 'Reveal', run: ctx => { if (isLegacy(ctx.segment.game)) legacy.shortcuts.find(s => s.key === 'r')!.run(legacyContext(ctx)); else play.reveal(performanceContext(ctx)); } },
+    { key: 'n', label: 'Next', run: ctx => { if (isLegacy(ctx.segment.game)) legacy.shortcuts.find(s => s.key === 'n')!.run(legacyContext(ctx)); else play.next(performanceContext(ctx)); } },
+    { key: 'r', label: 'Results', run: ctx => { if (isLegacy(ctx.segment.game)) legacy.shortcuts.find(s => s.key === 'r')!.run(legacyContext(ctx)); else play.finishJudging(performanceContext(ctx)); } },
     { key: 't', label: 'Timer', run: ctx => { if (isLegacy(ctx.segment.game)) legacy.shortcuts.find(s => s.key === 't')!.run(legacyContext(ctx)); else ctx.update(s => play.toggleClock(s as Segment)); } },
   ],
 };

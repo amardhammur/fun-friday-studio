@@ -4,7 +4,7 @@ import type { EventSession } from '../core/types';
 export function Home({ event, onResume, onBuildEvent, onLibrary }: { event: EventSession; onResume: () => void; onBuildEvent: () => void; onLibrary: () => void }) {
   const active = !event.isDemo && (event.segments.length > 0 || event.phase !== 'lineup');
   return <main className="home-page welcome-page">
-    <div className="welcome-masthead"><span>THE OFF-THE-CLOCK CLUB</span><span>GOOD COMPANY. FRIENDLY COMPETITION.</span></div>
+    <div className="welcome-masthead"><span>THE OFF-THE-CLOCK CLUB</span><span>YOUR TEAM. YOUR STAGE.</span></div>
     <section className="welcome-hero">
       <div className="welcome-copy">
         <span className="eyebrow"><span className="status-dot"/> {active ? event.title : 'YOUR FRIDAY STARTS HERE'}</span>
@@ -14,7 +14,7 @@ export function Home({ event, onResume, onBuildEvent, onLibrary }: { event: Even
         <div className="hero-details"><span><Monitor size={16}/> One laptop. One big screen.</span><span><Users size={16}/> The whole team.</span></div>
       </div>
       <div className="club-poster" aria-hidden="true">
-        <div className="poster-topline"><span>FUN FRIDAY STUDIO</span><ArrowUpRight size={24}/></div>
+        <div className="poster-topline"><span>FRIDAY LIVE</span><ArrowUpRight size={24}/></div>
         <div className="poster-title">ALL PLAY.<br/>NO WORK.</div>
         <div className="poster-art">
           <svg className="club-flower" viewBox="0 0 320 320" fill="none">

@@ -162,7 +162,7 @@ test('storage failures fall back to a playable temporary session with a warning'
   await startDemo(page);
   await expect(page.getByRole('img', { name: 'The childhood face to guess' })).toBeVisible();
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export now', exact: true }).click();
-  expect((await download).suggestedFilename()).toMatch(/Fun Friday.*zip/);
+  expect((await download).suggestedFilename()).toMatch(/Friday Live.*zip/);
 });
 test('phone layout stays usable without horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await home(page);
@@ -283,7 +283,7 @@ test('three activities carry scores through ZIP restore and a wager changes the 
   expect(session.phase).toBe('segment');
   expect(session.segments[0].status).toBe('setup');
   expect(session.wager.question).toContain('biscuits');
-  await page.getByRole('button', { name: 'Fun Friday Studio home' }).click();
+  await page.getByRole('button', { name: 'Friday Live home' }).click();
   await expect(page.getByRole('button', { name: 'Let’s get together', exact: true })).toBeVisible();
   await resumeEvent(page);
   const total = (s: any, teamId: string) => s.scoreEntries.filter((e: any) => e.active && e.teamId === teamId).reduce((n: number, e: any) => n + e.points, 0);

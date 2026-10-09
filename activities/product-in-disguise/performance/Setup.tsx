@@ -4,9 +4,9 @@ import type { Context } from './types';
 
 export function Setup(ctx: Context) {
   const { segment, event, update } = ctx, settings = segment.settings;
-  const minutes = Math.round(settings.preparationMinutes + event.teams.length * settings.performanceSeconds / 60 + settings.votingSeconds / 60 + 7);
+  const minutes = Math.round(settings.preparationMinutes + event.teams.length * settings.performanceSeconds / 60 + 7);
   return <div className="setup-content cc-setup">
-    <div className="section-heading"><span className="eyebrow">THE AD BREAK</span><h1>Commercial Clash<span className="accent">.</span></h1><p>Make an ad. Perform. Vote for your favourites.</p></div>
+    <div className="section-heading"><span className="eyebrow">THE AD BREAK</span><h1>Commercial Clash<span className="accent">.</span></h1><p>Make an ad. Perform. The judge panel scores offline.</p></div>
     <section className="panel cc-settings">
       <label>Preparation<select aria-label="Preparation" value={settings.preparationMinutes} onChange={e => update(s => { s.settings.preparationMinutes = +e.target.value; })}>{[5, 8, 10, 12, 15].map(n => <option key={n} value={n}>{n} minutes</option>)}</select></label>
       <label>Each ad<select aria-label="Each ad" value={settings.performanceSeconds} onChange={e => update(s => { s.settings.performanceSeconds = +e.target.value; })}>{[120, 180, 240].map(n => <option key={n} value={n}>{n / 60} minutes</option>)}</select></label>

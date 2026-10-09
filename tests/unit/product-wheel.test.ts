@@ -85,16 +85,16 @@ it('rejects draws without snapshots and post-draw phases without a product', () 
   expect(activity.stateSchema.safeParse(badClock).success).toBe(false);
 });
 
-it('keeps a version-two game’s selected product, timer and votes during migration', () => {
+it('keeps a version-two game’s selected product, timer and performance progress during migration', () => {
   const { activity, event } = started();
   event.phase = 'segment'; event.segments[0].activityVersion = 2; event.segments[0].status = 'play';
   event.segments[0].settings = { mode: 'commercial-clash', productId: 'stapler', preparationMinutes: 12, performanceSeconds: 180, votingSeconds: 180 };
   const ids = event.teams.map(t => t.id);
   event.segments[0].game = { mode: 'commercial-clash', product: products[0], teamIds: ids, performanceIndex: 0, performedCount: 0, step: 'prepare', ballots: Object.fromEntries(ids.map(id => [id, { funniest: null, creative: null, pitch: null }])), ballotIndex: 0, awardIndex: 0, revealedCount: 0, timer: { durationMs: 720000, deadlineAt: 1234567 } };
-  const oldGame = structuredClone(event.segments[0].game);
   const restored = validateEvent(event);
-  expect(restored.segments[0].activityVersion).toBe(3);
-  expect(restored.segments[0].game).toEqual(oldGame);
+  expect(restored.segments[0].activityVersion).toBe(4);
+  expect(restored.segments[0].game).toMatchObject({ product: products[0], step: 'prepare', timer: { durationMs: 720000, deadlineAt: 1234567 }, performanceIndex: 0, performedCount: 0 });
+  expect(restored.segments[0].game).not.toHaveProperty('ballots');
   expect(restored.segments[0].settings).not.toHaveProperty('productId');
   expect(activity.hasProgress!(restored.segments[0].game)).toBe(true);
 });

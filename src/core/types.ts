@@ -89,6 +89,8 @@ export interface Activity<S = any, G = any> {
   createDemo?: (segment: ActivitySegment<S, G>, event: EventUpdate) => Promise<PreparedActivity<S, G>>;
   validateSession?: (segment: ActivitySegment<S, G>, event: ActivityEvent) => string[];
   remapImages: (game: G, ids: Record<string, string>) => G;
+  /** Remap configured local media when a session ZIP receives fresh asset IDs. */
+  remapSettings?: (settings: S, ids: Record<string, string>) => S;
   shortcuts: { key: string; label: string; run: (ctx: ActivityContext<S, G>) => void }[];
   createInitialState: () => G; defaultSettings: () => S;
   preparePeople?: (segment: ActivitySegment<S, G>, event: EventUpdate) => void;

@@ -1,12 +1,21 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import eventDoc from '../fixtures/event-v2.json';
-import { discoverActivities } from '../../src/core/registry';
+import { discoverActivities, registerActivity } from '../../src/core/registry';
+import type { Activity } from '../../src/core/types';
 import { validateEvent } from '../../src/core/session';
 import { remapEventImages } from '../../src/core/transfer';
 
 beforeAll(async () => { await discoverActivities(); });
 
 describe('per-segment image remapping', () => {
+  it('remaps configured media references in activity settings', () => {
+    registerActivity({ id: 'settings-media-remap', remapImages: (game: unknown) => game, remapSettings: (settings: any, ids: Record<string, string>) => ({ ...settings, videoAssetId: ids[settings.videoAssetId] }) } as unknown as Activity);
+    const event = validateEvent(eventDoc);
+    event.segments[0].activityId = 'settings-media-remap';
+    event.segments[0].settings = { videoAssetId: 'old-video', clipTitle: 'Friday chorus' };
+    remapEventImages(event, { 'old-video': 'new-video' });
+    expect(event.segments[0].settings).toEqual({ videoAssetId: 'new-video', clipTitle: 'Friday chorus' });
+  });
   it('rewrites every segment game and leaves user text alone', () => {
     const event = validateEvent(eventDoc);
     event.segments.push({ ...event.segments[0], id: 'seg-b' });

@@ -14,7 +14,7 @@ export function storageWarning(message: string) {
 async function database() {
   db ??= openDB('fun-friday-studio-images', 1, {
     upgrade(database) { database.createObjectStore('images'); },
-    blocked() { storageWarning('Image storage is blocked by another tab. Close other Studio tabs and reload.'); },
+    blocked() { storageWarning('Image storage is blocked by another tab. Close other Friday Live tabs and reload.'); },
   });
   return db;
 }

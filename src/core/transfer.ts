@@ -36,19 +36,19 @@ export async function exportSession(session: EventSession) {
   const files: Record<string, Uint8Array> = {};
   for (const id of Object.keys(session.assets)) files[`images/${id}`] = new Uint8Array(await (await imageStore.get(id)).arrayBuffer());
   const bytes = await archiveJob<Uint8Array>({ type: 'zip', files, manifest: session });
-  download(bytes, `Fun Friday - ${new Date().toISOString().slice(0, 10)}.zip`);
+  download(bytes, `Friday Live - ${new Date().toISOString().slice(0, 10)}.zip`);
 }
 export async function importSession(file: File): Promise<EventSession> {
   if (file.size > 512 * 1024 * 1024) throw new Error('Please use a session ZIP smaller than 512 MB.');
   const { manifest, files } = await archiveJob<{ manifest: unknown; files: Record<string, Uint8Array> }>({ type: 'unzip', bytes: new Uint8Array(await file.arrayBuffer()) });
   const session = validateEvent(manifest);
   for (const [id, asset] of Object.entries(session.assets)) {
-    if (id !== asset.id || !files[`images/${id}`]) throw new Error('The session ZIP is missing one or more images.');
-    if (!asset.mime.startsWith('image/')) throw new Error('The session contains an unsupported image type.');
+    if (id !== asset.id || !files[`images/${id}`]) throw new Error('The session ZIP is missing one or more media files.');
+    if (!asset.mime.startsWith('image/') && !['video/mp4', 'video/webm'].includes(asset.mime)) throw new Error('The session contains an unsupported media type.');
   }
-  // Stage every asset under a fresh ID; an invalid import never overwrites active images.
+  // Stage every asset under a fresh ID; an invalid import never overwrites active media.
   const remap: Record<string, string> = {};
-  for (const [id, asset] of Object.entries(session.assets)) remap[id] = await imageStore.put(new Blob([files[`images/${id}`] as BlobPart], { type: asset.mime }));
+  for (const [id, asset] of Object.entries(session.assets)) remap[id] = await imageStore.put(new Blob([files[`images/${id}`] as BlobPart], { type: asset.mime }), undefined, { durable: asset.mime.startsWith('video/') });
   session.assets = Object.fromEntries(Object.entries(session.assets).map(([id, asset]) => [remap[id], { ...asset, id: remap[id] }]));
   remapEventImages(session, remap);
   return validateEvent(session);
@@ -68,6 +68,7 @@ export function remapEventImages(event: EventSession, remap: Record<string, stri
     const activity = getActivity(segment.activityId);
     if (!activity) throw new Error(`This session uses an activity that is not installed: ${segment.activityId}.`);
     segment.game = activity.remapImages(segment.game, remap);
+    if (activity.remapSettings) segment.settings = activity.remapSettings(segment.settings, remap);
   }
 }
 export interface BundleImage { blob: Blob; name: string; mime: string; width: number; height: number }

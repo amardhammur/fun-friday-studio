@@ -53,7 +53,8 @@ export function resetEventProgress(event: EventSession) {
 // Replacing shared identities invalidates every activity, including completed ones.
 export function replaceEventPeople(event: EventSession, imported: ImportedFacePairs) {
   assertLibraryCapacity({ pairs: imported.facePairs.length, sets: imported.photoSets.length }, { people: 0, facePairs: 0, photoSets: 0 });
-  event.assets = imported.assets; event.photoSets = imported.photoSets; event.facePairs = imported.facePairs; event.people = imported.people;
+  const videos = Object.fromEntries(Object.entries(event.assets).filter(([, asset]) => asset.mime.startsWith('video/')));
+  event.assets = { ...videos, ...imported.assets }; event.photoSets = imported.photoSets; event.facePairs = imported.facePairs; event.people = imported.people;
   syncPlayers(event);
   resetEventProgress(event);
 }

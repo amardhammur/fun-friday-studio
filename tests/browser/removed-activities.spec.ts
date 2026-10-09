@@ -3,10 +3,10 @@ import { openActivities, openWelcome, personalKey, personalPhotoEvent, resumeEve
 
 test('the library and lineup offer the current activities', async ({ page }) => {
   await openWelcome(page); await openActivities(page);
-  await expect(page.locator('.activity-card h2')).toHaveText(['Childhood vs Now', 'Act It Out', 'Commercial Clash', 'Selfie Bottle Challenge']);
+  await expect(page.locator('.activity-card h2')).toHaveText(['Childhood vs Now', 'Act It Out', 'Commercial Clash', 'Selfie Bottle Challenge', 'Sharmila Awards', 'Clip to Stage']);
   await page.getByRole('button', { name: 'Welcome', exact: true }).click();
   await page.getByRole('button', { name: 'Build your Friday', exact: true }).click();
-  await expect(page.locator('.lineup-add button')).toHaveText(['Childhood vs Now', 'Act It Out', 'Commercial Clash', 'Selfie Bottle Challenge']);
+  await expect(page.locator('.lineup-add button')).toHaveText(['Childhood vs Now', 'Act It Out', 'Commercial Clash', 'Selfie Bottle Challenge', 'Sharmila Awards', 'Clip to Stage']);
   await page.getByRole('button', { name: 'Commercial Clash', exact: true }).click();
   await page.getByRole('button', { name: 'Set up first activity', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Start activity', exact: true })).toBeEnabled();

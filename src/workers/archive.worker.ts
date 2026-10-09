@@ -17,7 +17,7 @@ worker.onmessage = ({ data }) => {
         return true;
       } });
       if (!files['session.json'] && !data.allowMissingManifest) {
-        throw new Error('This is not a Fun Friday Studio session ZIP.');
+        throw new Error('This is not a Friday Live session ZIP.');
       }
       const manifest = files['session.json']
         ? JSON.parse(strFromU8(files['session.json']))

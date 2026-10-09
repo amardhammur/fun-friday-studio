@@ -43,6 +43,20 @@ describe('event people library', () => {
     expect(event.photoSets[0].nowImageId).toBe(event.facePairs[0].now!.sourceImageId);
     expect(validateEvent(event)).toEqual(event);
   });
+  it('keeps configured activity videos when replacing the photo library', () => {
+    const event = validateEvent(fixture), activity = getActivity('clip-to-stage')!;
+    const clip = createSegment(activity);
+    clip.settings = { ...activity.defaultSettings(), source: 'local', videoAssetId: 'reference-video' };
+    event.segments.push(clip);
+    const video = { id: 'reference-video', name: 'Song.webm', mime: 'video/webm', width: 320, height: 180 };
+    event.assets[video.id] = video;
+    event.assets['retired-photo'] = { id: 'retired-photo', name: 'Old.jpg', mime: 'image/jpeg', width: 10, height: 10 };
+    replaceEventPeople(event, imported());
+    expect(event.assets[video.id]).toEqual(video);
+    expect(event.assets['retired-photo']).toBeUndefined();
+    expect(event.segments[1]).toMatchObject({ status: 'pending', settings: { source: 'local', videoAssetId: video.id } });
+    expect(() => validateEvent(JSON.parse(JSON.stringify(event)))).not.toThrow();
+  });
   it('starting and restarting a segment keeps earlier awards and clears only its own awards', () => {
     const event = validateEvent(fixture), activity = getActivity('childhood-vs-now')!;
     const earlier = structuredClone(event.scoreEntries);

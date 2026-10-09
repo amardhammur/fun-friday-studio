@@ -9,7 +9,7 @@ const localFetch = globalThis.fetch.bind(globalThis);
 globalThis.fetch = (input, init) => {
   const url = new URL(input instanceof Request ? input.url : String(input), worker.location.href);
   const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
-  if (url.origin !== worker.location.origin || method.toUpperCase() !== 'GET') return Promise.reject(new Error('Fun Friday Studio only reads local assets.'));
+  if (url.origin !== worker.location.origin || method.toUpperCase() !== 'GET') return Promise.reject(new Error('Friday Live only reads local assets.'));
   return localFetch(input, init);
 };
 let detector: FaceDetector | undefined;
